@@ -8,13 +8,30 @@ workflow for the compilation of RequireJS bundled code.
 
 
 Introduction
-============
+------------
 
 This package will provide a toolchain to working with RequireJS and make
 use of the calmjs framework for specifying dependency on npm packages
 and generally working with node and npm.  This will also provide a
 framework to generate test harnesses for building testable JavaScript
 code from within a Python module.
+
+In essence, calmjs.rjs treats JavaScript files made available alongside
+Python packages as both source and compilation target.  Utilities are
+provided with calmjs.rjs that will generate bundled JavaScript files as
+per the needs of the site-integrators and/or end-users.  These bundled
+files can then be deployed over the web and be used by client browsers,
+in conjunction with the Python packages that implement the backend
+features.
+
+Ultimately, this integration package should ease the integration and
+interactions between of client-side JavaScript with server-side Python
+thus make it easier for the two to be built, shipped and deployed
+together.  Other utilities are provided to also aid the setup of
+local nodejs environments to aid the acquisition of npm dependencies,
+setting up of the test environments and harnesses for running of
+JavaScript tests that are part of the Python packages for the associated
+JavaScript code.
 
 
 Features
@@ -38,6 +55,7 @@ through the AMD API.
 
 .. _Asynchronous Module Definition: http://requirejs.org/docs/whyamd.html
 
+
 Installation
 ------------
 
@@ -45,6 +63,29 @@ Currently under development, please install by cloning this repository
 and run ``python setup.py develop`` within a working Python environment,
 or follow the local framework or operating system's default method on
 installation of development packages that have pulled this package in.
+
+
+Usage
+-----
+
+Any exposed JavaScript code through the ``calmjs.module`` registry will
+be picked up and compiled into a working RequireJS bundle.  For details
+on how that registry work please refer to the README included with the
+|calmjs|_ project.
+
+For example, given the following entry points for that registry::
+
+    [calmjs.module]
+    example.lib = example.lib
+    example.app = example.app
+
+All the JavaScript files included within those modules as package
+resource files will be extracted and be compiled into a bundle through
+this framework.  More documentation on how this is to be achieved will
+need to be done.
+
+.. |calmjs| replace:: ``calmjs``
+.. _calmjs: https://pypi.python.org/pypi/calmjs
 
 
 Contribute

@@ -3,6 +3,19 @@ import os
 
 version = '0.0'
 
+
+package_json = {
+    "dependencies": {
+        "requirejs": "~2.1.17",
+        # "requirejs-text": "~2.0.12",
+    },
+    "devDependencies": {
+        "grunt-contrib-requirejs": "~0.4.4",
+        "karma-requirejs": "~0.2.2",
+    },
+}
+
+
 long_description = (
     open('README.rst').read()
     + '\n' +
@@ -32,10 +45,10 @@ setup(name='calmjs.rjs',
       include_package_data=True,
       zip_safe=False,
       install_requires=[
-          'setuptools',
-          # -*- Extra requirements: -*-
+          'calmjs.dev',
       ],
       entry_points="""
       # -*- Entry points: -*-
       """,
+      package_json=package_json,
       )
