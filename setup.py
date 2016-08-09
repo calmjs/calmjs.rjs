@@ -51,4 +51,5 @@ setup(name='calmjs.rjs',
       # -*- Entry points: -*-
       """,
       package_json=package_json,
+      test_suite="calmjs.rjs.tests.test_suite",
       )
