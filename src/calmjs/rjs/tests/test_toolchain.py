@@ -13,7 +13,9 @@ from shutil import rmtree
 from io import StringIO
 
 from calmjs.toolchain import Spec
-from calmjs import npm
+from calmjs.npm import Driver
+from calmjs.npm import get_npm_version
+from calmjs.npm import npm_bin
 from calmjs import cli
 
 from calmjs.rjs import toolchain
@@ -22,7 +24,7 @@ from calmjs.testing import utils
 
 
 def skip_full_toolchain_test():  # pragma: no cover
-    if npm.get_npm_version() is None:
+    if get_npm_version() is None:
         return (True, 'npm not available')
     if os.environ.get('SKIP_FULL'):
         return (True, 'skipping due to SKIP_FULL environment variable')
@@ -129,7 +131,7 @@ class TranspilerTestCase(unittest.TestCase):
         ])
 
 
-@unittest.skipIf(npm.get_npm_version() is None, "npm is unavailable")
+@unittest.skipIf(get_npm_version() is None, "npm is unavailable")
 class ToolchainUnitTestCase(unittest.TestCase):
     """
     Just testing out the toolchain units.
@@ -293,7 +295,10 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         os.chdir(cls._cls_tmpdir)
         # avoid pulling in any of the devDependencies as these are only
         # capabilities test.
+        npm = Driver()
         npm.npm_install('calmjs.rjs', env={'NODE_ENV': 'production'})
+        # TODO figure out a better way to derive this.
+        cls.rjs_bin = join(npm_bin(npm), toolchain.RJSToolchain.rjs_bin)
         cls._srcdir = tempfile.mkdtemp()
         cls._ep_root = join(cls._srcdir, 'example', 'package')
         makedirs(cls._ep_root)
@@ -381,6 +386,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
             bundle_export_path=bundle_export_path,
             build_dir=build_dir,
         )
+        spec[rjs.rjs_bin_key] = self.rjs_bin
         rjs(spec)
 
         self.assertTrue(exists(bundle_export_path))
@@ -414,6 +420,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
             build_dir=build_dir,
             transpile_no_indent=True,
         )
+        spec[rjs.rjs_bin_key] = self.rjs_bin
         rjs(spec)
 
         self.assertTrue(exists(bundle_export_path))
