@@ -89,8 +89,23 @@ def update_base_requirejs_config(d):
     })
 
 
-def _transpile_generic_to_umd_node_amd_compat_rjs(reader, writer):
-    indent = ' ' * 8
+def _transpile_generic_to_umd_node_amd_compat_rjs(reader, writer, indent=8):
+    indent = ' ' * indent
+    _states = {
+        'pad': 3,  # length of the header to trac
+    }
+
+    def write_line(line):
+        contents = line.strip()
+        if _states['pad']:
+            if not contents:
+                _states['pad'] -= 1
+                return
+            _states['pad'] = 0
+        if contents:
+            writer.write(indent)
+        writer.write(line)
+
     line = reader.readline()
     if line.strip() in ("'use strict';", '"use strict";'):
         header_lines = iter(UMD_NODE_AMD_HEADER.splitlines(True))
@@ -101,13 +116,11 @@ def _transpile_generic_to_umd_node_amd_compat_rjs(reader, writer):
         writer.write(next(header_lines))
     else:
         writer.write(UMD_NODE_AMD_HEADER)
-        writer.write(indent)
-        writer.write(line)
+        write_line(line)
 
     while line:
         line = reader.readline()
-        writer.write(indent)
-        writer.write(line)
+        write_line(line)
 
     writer.write(UMD_NODE_AMD_FOOTER)
 

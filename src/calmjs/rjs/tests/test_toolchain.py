@@ -28,24 +28,7 @@ class TranspilerTestCase(unittest.TestCase):
     def test_transpile_generic_to_umd_node_amd_compat_rjs_basic(self):
         source = StringIO(
             'var dummy = function () {};\n'
-            'exports.dummy = dummy;\n'
-        )
-        target = StringIO()
-
-        toolchain._transpile_generic_to_umd_node_amd_compat_rjs(source, target)
-
-        self.assertEqual(target.getvalue().splitlines()[2:7], [
-            '        var exports = {};',
-            '        var dummy = function () {};',
-            '        exports.dummy = dummy;',
-            '        ',
-            '        return exports;',
-        ])
-
-    def test_transpile_generic_to_umd_node_amd_compat_rjs_strict(self):
-        source = StringIO(
-            '"use strict";\n'
-            'var dummy = function () {};\n'
+            '\n'
             'exports.dummy = dummy;\n'
         )
         target = StringIO()
@@ -53,11 +36,86 @@ class TranspilerTestCase(unittest.TestCase):
         toolchain._transpile_generic_to_umd_node_amd_compat_rjs(source, target)
 
         self.assertEqual(target.getvalue().splitlines()[2:8], [
+            '        var exports = {};',
+            '        var dummy = function () {};',
+            '',
+            '        exports.dummy = dummy;',
+            '',
+            '        return exports;',
+        ])
+
+    def test_transpile_generic_to_umd_node_amd_compat_rjs_strict(self):
+        source = StringIO(
+            '"use strict";\n'
+            'var dummy = function () {};\n'
+            '\n'
+            'exports.dummy = dummy;\n'
+        )
+        target = StringIO()
+
+        toolchain._transpile_generic_to_umd_node_amd_compat_rjs(source, target)
+
+        self.assertEqual(target.getvalue().splitlines()[2:9], [
             '        "use strict";',
             '        var exports = {};',
             '        var dummy = function () {};',
+            '',
             '        exports.dummy = dummy;',
-            '        ',
+            '',
+            '        return exports;',
+        ])
+
+    def test_transpile_generic_to_umd_node_amd_compat_rjs_strict_padded(self):
+        """
+        Show that padding empty lines will simply be used as padding,
+        and that the 'use strict' declaration will just be moved down.
+        This is to provide an option for developers so that line numbers
+        of the "transpiled" code can be mapped directly back to its
+        original.
+        """
+
+        original = (
+            'var dummy = function () {};\n'
+            'exports.dummy = dummy;'
+        )
+
+        source = StringIO(
+            '"use strict";\n'
+            '\n'
+            '\n'
+            '\n' +
+            original + '\n'
+        )
+        target = StringIO()
+
+        toolchain._transpile_generic_to_umd_node_amd_compat_rjs(
+            source, target, indent=0)
+
+        self.assertEqual(
+            '\n'.join(target.getvalue().splitlines()[4:6]), original)
+
+    def test_transpile_generic_to_umd_node_amd_compat_rjs_basic_padded(self):
+        """
+        Similar as above, but insufficient lines will just result in
+        not much happening...
+        """
+
+        source = StringIO(
+            '\n'
+            'var dummy = function () {};\n'
+            '\n'
+            'exports.dummy = dummy;\n'
+        )
+        target = StringIO()
+
+        toolchain._transpile_generic_to_umd_node_amd_compat_rjs(source, target)
+
+        self.assertEqual(target.getvalue().splitlines()[2:8], [
+            '        var exports = {};',  # no break after this.
+            '        var dummy = function () {};',
+            '',
+            '        exports.dummy = dummy;',
+            '',
             '        return exports;',
         ])
 
