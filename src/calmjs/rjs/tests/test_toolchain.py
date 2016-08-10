@@ -191,6 +191,10 @@ class ToolchainUnitTestCase(unittest.TestCase):
     def test_assemble_null(self):
         tmpdir = utils.mkdtemp(self)
 
+        with open(join(tmpdir, 'r.js'), 'w'):
+            # mock a r.js file.
+            pass
+
         spec = Spec(
             # this is not written
             bundle_export_path=join(tmpdir, 'bundle.js'),
@@ -201,6 +205,7 @@ class ToolchainUnitTestCase(unittest.TestCase):
         )
 
         rjs = toolchain.RJSToolchain()
+        spec[rjs.rjs_bin_key] = join(tmpdir, 'r.js')
         rjs.prepare(spec)
         rjs.assemble(spec)
 
@@ -224,6 +229,10 @@ class ToolchainUnitTestCase(unittest.TestCase):
     def test_assemble_compiled(self):
         tmpdir = utils.mkdtemp(self)
 
+        with open(join(tmpdir, 'r.js'), 'w'):
+            # mock a r.js file.
+            pass
+
         spec = Spec(
             # this is not written
             bundle_export_path=join(tmpdir, 'bundle.js'),
@@ -241,6 +250,7 @@ class ToolchainUnitTestCase(unittest.TestCase):
         )
 
         rjs = toolchain.RJSToolchain()
+        spec[rjs.rjs_bin_key] = join(tmpdir, 'r.js')
         rjs.prepare(spec)
         rjs.assemble(spec)
 
