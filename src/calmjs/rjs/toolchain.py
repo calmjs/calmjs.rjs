@@ -32,6 +32,7 @@ from __future__ import unicode_literals
 
 import json
 import logging
+from functools import partial
 from os.path import dirname
 from os.path import join
 from os.path import exists
@@ -46,8 +47,8 @@ from .umdjs import UMD_NODE_AMD_FOOTER
 from .umdjs import UMD_REQUIREJS_JSON_EXPORT_HEADER
 from .umdjs import UMD_REQUIREJS_JSON_EXPORT_FOOTER
 
-
 logger = logging.getLogger(__name__)
+
 
 def update_base_requirejs_config(d):
     d.update({
@@ -180,7 +181,11 @@ class RJSToolchain(Toolchain):
             raise RuntimeError(
                 "'bundle_export_path' must not be same as '%s'" % matched[0])
 
-        self.transpiler = _transpile_generic_to_umd_node_amd_compat_rjs
+        if spec.get('transpile_no_indent'):
+            self.transpiler = partial(
+                _transpile_generic_to_umd_node_amd_compat_rjs, indent=0)
+        else:
+            self.transpiler = _transpile_generic_to_umd_node_amd_compat_rjs
 
     def assemble(self, spec):
         """

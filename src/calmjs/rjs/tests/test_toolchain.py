@@ -5,7 +5,7 @@ import unittest
 import json
 import os
 import tempfile
-from os.path import dirname
+from os import makedirs
 from os.path import exists
 from os.path import join
 from shutil import rmtree
@@ -14,10 +14,19 @@ from io import StringIO
 
 from calmjs.toolchain import Spec
 from calmjs import npm
+from calmjs import cli
 
 from calmjs.rjs import toolchain
 
 from calmjs.testing import utils
+
+
+def skip_full_toolchain_test():  # pragma: no cover
+    if npm.get_npm_version() is None:
+        return (True, 'npm not available')
+    if os.environ.get('SKIP_FULL'):
+        return (True, 'skipping due to SKIP_FULL environment variable')
+    return (False, '')
 
 
 class TranspilerTestCase(unittest.TestCase):
@@ -254,10 +263,171 @@ class ToolchainUnitTestCase(unittest.TestCase):
         ])
 
         self.assertEqual(config_js['paths'], {
-            'example/module': 'example/module',
-            'bundled_pkg': 'bundled/index',
+            'example/module': '/path/to/src/example/module',
+            'bundled_pkg': '/path/to/bundled/index',
         })
         self.assertEqual(config_js['include'], [
             'example/module',
             'bundled_pkg',
         ])
+
+
+@unittest.skipIf(*skip_full_toolchain_test())
+class ToolchainIntegrationTestCase(unittest.TestCase):
+    """
+    Test out the full toolchain, involving requirejs completely.
+    """
+
+    # Ensure that requirejs is properly installed through the calmjs
+    # framework and specification for this package.  This environment
+    # will be reused for the duration for this test.
+
+    @classmethod
+    def setUpClass(cls):
+        # nosetest will still execute setUpClass, so the test condition
+        # will need to be checked here also.
+        if skip_full_toolchain_test()[0]:  # pragma: no cover
+            return
+        cls._cwd = os.getcwd()
+        cls._cls_tmpdir = tempfile.mkdtemp()
+        os.chdir(cls._cls_tmpdir)
+        # avoid pulling in any of the devDependencies as these are only
+        # capabilities test.
+        npm.npm_install('calmjs.rjs', env={'NODE_ENV': 'production'})
+        cls._srcdir = tempfile.mkdtemp()
+        cls._ep_root = join(cls._srcdir, 'example', 'package')
+        makedirs(cls._ep_root)
+
+        math_js = join(cls._ep_root, 'math.js')
+        with open(math_js, 'w') as fd:
+            fd.write(
+                '"use strict";\n'
+                '\n'
+                'exports.add = function(x, y) {\n'
+                '    return x + y;\n'
+                '};\n'
+                '\n'
+                'exports.mul = function(x, y) {\n'
+                '    return x * y;\n'
+                '};\n'
+            )
+
+        bad_js = join(cls._ep_root, 'bad.js')
+        with open(bad_js, 'w') as fd:
+            fd.write(
+                '"use strict";\n'
+                '\n'
+                '\n'
+                '\n'
+                'var die = function() {\n'
+                '    return notdefinedsymbol;\n'
+                '};\n'
+                '\n'
+                'exports.die = die;\n'
+            )
+
+        # TODO derive this (line, col) from the above
+        cls._bad_notdefinedsymbol = (6, 12)
+
+        main_js = join(cls._ep_root, 'main.js')
+        with open(main_js, 'w') as fd:
+            fd.write(
+                '"use strict";\n'
+                '\n'
+                'var math = require("example/package/math");\n'
+                'var bad = require("example/package/bad");\n'
+                '\n'
+                'var main = function(trigger) {\n'
+                '    console.log(math.add(1, 1));\n'
+                '    console.log(math.mul(2, 2));\n'
+                '    if (trigger === true) {\n'
+                '        bad.die();\n'
+                '    }\n'
+                '};\n'
+                '\n'
+                'exports.main = main;\n'
+            )
+
+        # JavaScript import/module names to filesystem path.
+        # Normally, these are supplied through the calmjs setuptools
+        # integration framework.
+        cls._example_package_map = {
+            'example/package/math': math_js,
+            'example/package/bad': bad_js,
+            'example/package/main': main_js,
+        }
+
+    @classmethod
+    def tearDownClass(cls):
+        # Ditto, as per above.
+        if skip_full_toolchain_test()[0]:  # pragma: no cover
+            return
+        os.chdir(cls._cwd)
+        rmtree(cls._cls_tmpdir)
+        rmtree(cls._srcdir)
+
+    def test_build_bundle_standard(self):
+        bundle_dir = utils.mkdtemp(self)
+        build_dir = utils.mkdtemp(self)
+        transpile_source_map = {}
+        transpile_source_map.update(self._example_package_map)
+        bundled_source_map = {}
+        bundle_export_path = join(bundle_dir, 'example.package.js')
+
+        rjs = toolchain.RJSToolchain()
+        spec = Spec(
+            transpile_source_map=transpile_source_map,
+            bundled_source_map=bundled_source_map,
+            bundle_export_path=bundle_export_path,
+            build_dir=build_dir,
+        )
+        rjs(spec)
+
+        self.assertTrue(exists(bundle_export_path))
+
+        # verify that the bundle works with node
+        stdout, stderr = cli.node(
+            'var requirejs = require("requirejs");\n'
+            'var define = requirejs.define;\n'
+            'require("%s");\n'
+            'var main = requirejs("example/package/main");\n'
+            'main.main();\n' % (
+                bundle_export_path,
+            )
+        )
+
+        self.assertEqual(stdout, '2\n4\n')
+
+    def test_build_bundle_no_indent(self):
+        bundle_dir = utils.mkdtemp(self)
+        build_dir = utils.mkdtemp(self)
+        transpile_source_map = {}
+        transpile_source_map.update(self._example_package_map)
+        bundled_source_map = {}
+        bundle_export_path = join(bundle_dir, 'example.package.js')
+
+        rjs = toolchain.RJSToolchain()
+        spec = Spec(
+            transpile_source_map=transpile_source_map,
+            bundled_source_map=bundled_source_map,
+            bundle_export_path=bundle_export_path,
+            build_dir=build_dir,
+            transpile_no_indent=True,
+        )
+        rjs(spec)
+
+        self.assertTrue(exists(bundle_export_path))
+
+        stdout, stderr = cli.node(
+            'var requirejs = require("requirejs");\n'
+            'var config = require("%s");\n'
+            'var main = requirejs("example/package/main");\n'
+            'main.main(true);\n' % (
+                spec['requirejs_config_js'],
+            )
+        )
+        self.assertEqual(stdout, '2\n4\n')
+        self.assertIn(
+            'example/package/bad.js:%d:%d' % self._bad_notdefinedsymbol,
+            stderr
+        )
