@@ -137,3 +137,69 @@ class ToolchainUnitTestCase(unittest.TestCase):
 
         self.assertTrue(exists(join(tmpdir, 'build.js')))
         self.assertTrue(exists(join(tmpdir, 'config.js')))
+
+        with open(join(tmpdir, 'build.js')) as fd:
+            # strip off the header and footer
+            build_js = json.loads(''.join(fd.readlines()[1:-1]))
+
+        with open(join(tmpdir, 'config.js')) as fd:
+            # strip off the header and footer
+            config_js = json.loads(''.join(fd.readlines()[4:-10]))
+
+        self.assertEqual(build_js['paths'], {})
+        self.assertEqual(build_js['include'], [])
+
+        self.assertEqual(config_js['paths'], {})
+        self.assertEqual(config_js['include'], [])
+
+    def test_assemble_compiled(self):
+        tmpdir = utils.mkdtemp(self)
+
+        spec = Spec(
+            # this is not written
+            bundle_export_path=join(tmpdir, 'bundle.js'),
+            build_dir=tmpdir,
+            compiled_paths={
+                'example/module': '/path/to/src/example/module'
+            },
+            bundled_paths={
+                'bundled_pkg': '/path/to/bundled/index'
+            },
+            module_names=[
+                'example/module',
+                'bundled_pkg',
+            ],
+        )
+
+        rjs = toolchain.RJSToolchain()
+        rjs.prepare(spec)
+        rjs.assemble(spec)
+
+        self.assertTrue(exists(join(tmpdir, 'build.js')))
+        self.assertTrue(exists(join(tmpdir, 'config.js')))
+
+        with open(join(tmpdir, 'build.js')) as fd:
+            # strip off the header and footer as this is for r.js
+            build_js = json.loads(''.join(fd.readlines()[1:-1]))
+
+        with open(join(tmpdir, 'config.js')) as fd:
+            # strip off the header and footer as this is for r.js
+            config_js = json.loads(''.join(fd.readlines()[4:-10]))
+
+        self.assertEqual(build_js['paths'], {
+            'example/module': '/path/to/src/example/module',
+            'bundled_pkg': '/path/to/bundled/index',
+        })
+        self.assertEqual(build_js['include'], [
+            'example/module',
+            'bundled_pkg',
+        ])
+
+        self.assertEqual(config_js['paths'], {
+            'example/module': 'example/module',
+            'bundled_pkg': 'bundled/index',
+        })
+        self.assertEqual(config_js['include'], [
+            'example/module',
+            'bundled_pkg',
+        ])

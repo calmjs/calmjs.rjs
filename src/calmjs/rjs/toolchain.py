@@ -49,43 +49,44 @@ from .umdjs import UMD_REQUIREJS_JSON_EXPORT_FOOTER
 
 logger = logging.getLogger(__name__)
 
-base_requirejs_config = {
-    'paths': {},
-    'shim': {},
+def update_base_requirejs_config(d):
+    d.update({
+        'paths': {},
+        'shim': {},
 
-    'wrapShim': True,
+        'wrapShim': True,
 
-    # other configuration options
-    'optimize': "none",
-    'generateSourceMaps': False,
-    'normalizeDirDefines': "skip",
-    'uglify': {
-        'toplevel': True,
-        'ascii_only': True,
-        'beautify': True,
-        'max_line_length': 1000,
-        'defines': {
-            'DEBUG': ['name', 'false']
+        # other configuration options
+        'optimize': "none",
+        'generateSourceMaps': False,
+        'normalizeDirDefines': "skip",
+        'uglify': {
+            'toplevel': True,
+            'ascii_only': True,
+            'beautify': True,
+            'max_line_length': 1000,
+            'defines': {
+                'DEBUG': ['name', 'false']
+            },
+            'no_mangle': True
         },
-        'no_mangle': True
-    },
-    'uglify2': {
-        'output': {
-            'beautify': True
+        'uglify2': {
+            'output': {
+                'beautify': True
+            },
+            'compress': {
+                'sequences': False,
+                'global_defs': {
+                    'DEBUG': False
+                }
+            },
+            'warnings': True,
+            'mangle': False
         },
-        'compress': {
-            'sequences': False,
-            'global_defs': {
-                'DEBUG': False
-            }
-        },
-        'warnings': True,
-        'mangle': False
-    },
-    'useStrict': True,
-    'wrap': True,
-    'logLevel': 0,
-}
+        'useStrict': True,
+        'wrap': True,
+        'logLevel': 0,
+    })
 
 
 def _transpile_generic_to_umd_node_amd_compat_rjs(reader, writer):
@@ -178,30 +179,35 @@ class RJSToolchain(Toolchain):
         bundled_paths = spec['bundled_paths']
         module_names = spec['module_names']
 
-        config = {}
+        # the build config is the file that will be passed to r.js for
+        # building the final bundle.
+        build_config = {}
         # Set up the statically defined settings.
-        config.update(base_requirejs_config)
-        config['shim'].update(spec.get('shim', {}))
-        config['out'] = spec['bundle_export_path']
+        update_base_requirejs_config(build_config)
+        build_config['shim'].update(spec.get('shim', {}))
+        build_config['out'] = spec['bundle_export_path']
 
         # Update paths with names pointing to built files in build_dir
         # and generate the list of included files into the final bundle.
-        config['paths'].update(compiled_paths)
-        config['paths'].update(bundled_paths)
-        config['include'] = module_names
+        build_config['paths'].update(compiled_paths)
+        build_config['paths'].update(bundled_paths)
+        build_config['include'] = module_names
 
         with open(spec['build_manifest_path'], 'w') as fd:
             fd.write('(\n')
-            json.dump(config, fd, indent=4)
+            json.dump(build_config, fd, indent=4)
             fd.write('\n)')
 
-        node_config = {}
-        node_config.update(config)
-        node_config['baseUrl'] = spec['build_dir']
+        # the requirejs config is for usage of the "built" (in this
+        # case, transpiled) files, so that the import names are mapped
+        # to the right location within the build_dir.
+        requirejs_config = {}
+        requirejs_config.update(build_config)
+        requirejs_config['baseUrl'] = spec['build_dir']
 
         with open(spec['requirejs_config_js'], 'w') as fd:
             fd.write(UMD_REQUIREJS_JSON_EXPORT_HEADER)
-            json.dump(node_config, fd, indent=4)
+            json.dump(requirejs_config, fd, indent=4)
             fd.write(UMD_REQUIREJS_JSON_EXPORT_FOOTER)
 
     def link(self, spec):
