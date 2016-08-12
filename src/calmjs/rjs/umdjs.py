@@ -32,6 +32,12 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 from __future__ import unicode_literals
 
+
+def _find_indent(s):
+    t = s.splitlines()[-1]
+    return len(t) - len(t.lstrip())
+
+
 # Template for configurating requireJS.
 
 UMD_REQUIREJS_JSON_EXPORT_HEADER = """\
@@ -98,3 +104,5 @@ UMD_NODE_AMD_FOOTER = """
         define
 ));
 """
+
+UMD_NODE_AMD_INDENT = _find_indent(UMD_NODE_AMD_HEADER)

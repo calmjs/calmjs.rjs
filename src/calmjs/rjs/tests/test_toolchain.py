@@ -43,8 +43,10 @@ class TranspilerTestCase(unittest.TestCase):
             'exports.dummy = dummy;\n'
         )
         target = StringIO()
+        spec = Spec()
 
-        toolchain._transpile_generic_to_umd_node_amd_compat_rjs(source, target)
+        toolchain._transpile_generic_to_umd_node_amd_compat_rjs(
+            spec, source, target)
 
         self.assertEqual(target.getvalue().splitlines()[2:8], [
             '        var exports = {};',
@@ -63,8 +65,10 @@ class TranspilerTestCase(unittest.TestCase):
             'exports.dummy = dummy;\n'
         )
         target = StringIO()
+        spec = Spec()
 
-        toolchain._transpile_generic_to_umd_node_amd_compat_rjs(source, target)
+        toolchain._transpile_generic_to_umd_node_amd_compat_rjs(
+            spec, source, target)
 
         self.assertEqual(target.getvalue().splitlines()[2:9], [
             '        "use strict";',
@@ -83,6 +87,8 @@ class TranspilerTestCase(unittest.TestCase):
         This is to provide an option for developers so that line numbers
         of the "transpiled" code can be mapped directly back to its
         original.
+
+        Naturally, spec will also need to have no indent specified.
         """
 
         original = (
@@ -98,9 +104,10 @@ class TranspilerTestCase(unittest.TestCase):
             original + '\n'
         )
         target = StringIO()
+        spec = Spec(transpile_no_indent=True)
 
         toolchain._transpile_generic_to_umd_node_amd_compat_rjs(
-            source, target, indent=0)
+            spec, source, target)
 
         self.assertEqual(
             '\n'.join(target.getvalue().splitlines()[4:6]), original)
@@ -118,8 +125,10 @@ class TranspilerTestCase(unittest.TestCase):
             'exports.dummy = dummy;\n'
         )
         target = StringIO()
+        spec = Spec()
 
-        toolchain._transpile_generic_to_umd_node_amd_compat_rjs(source, target)
+        toolchain._transpile_generic_to_umd_node_amd_compat_rjs(
+            spec, source, target)
 
         self.assertEqual(target.getvalue().splitlines()[2:8], [
             '        var exports = {};',  # no break after this.

@@ -44,6 +44,7 @@ from calmjs.npm import npm_bin
 
 from .umdjs import UMD_NODE_AMD_HEADER
 from .umdjs import UMD_NODE_AMD_FOOTER
+from .umdjs import UMD_NODE_AMD_INDENT
 from .umdjs import UMD_REQUIREJS_JSON_EXPORT_HEADER
 from .umdjs import UMD_REQUIREJS_JSON_EXPORT_FOOTER
 
@@ -90,8 +91,9 @@ def update_base_requirejs_config(d):
     })
 
 
-def _transpile_generic_to_umd_node_amd_compat_rjs(reader, writer, indent=8):
-    indent = ' ' * indent
+def _transpile_generic_to_umd_node_amd_compat_rjs(spec, reader, writer):
+    level = UMD_NODE_AMD_INDENT
+    indent = '' if spec.get('transpile_no_indent') else ' ' * level
     _states = {
         'pad': 3,  # length of the header to trac
     }
@@ -135,6 +137,9 @@ class RJSToolchain(Toolchain):
     rjs_bin = 'r.js'
     build_manifest_name = 'build.js'
     requirejs_config_name = 'config.js'
+
+    def setup_transpiler(self):
+        self.transpiler = _transpile_generic_to_umd_node_amd_compat_rjs
 
     def prepare(self, spec):
         """
@@ -180,12 +185,6 @@ class RJSToolchain(Toolchain):
         if matched:
             raise RuntimeError(
                 "'bundle_export_path' must not be same as '%s'" % matched[0])
-
-        if spec.get('transpile_no_indent'):
-            self.transpiler = partial(
-                _transpile_generic_to_umd_node_amd_compat_rjs, indent=0)
-        else:
-            self.transpiler = _transpile_generic_to_umd_node_amd_compat_rjs
 
     def assemble(self, spec):
         """
