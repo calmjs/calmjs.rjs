@@ -15,7 +15,6 @@ from io import StringIO
 from calmjs.toolchain import Spec
 from calmjs.npm import Driver
 from calmjs.npm import get_npm_version
-from calmjs.npm import npm_bin
 from calmjs import cli
 
 from calmjs.rjs import toolchain
@@ -146,24 +145,34 @@ class ToolchainUnitTestCase(unittest.TestCase):
     Just testing out the toolchain units.
     """
 
-    def test_prepare_no_node(self):
-        utils.stub_os_environ(self)
-        os.environ['PATH'] = ''
+    def test_prepare_failure_manual(self):
         rjs = toolchain.RJSToolchain()
-        spec = Spec()
-        with self.assertRaises(RuntimeError):
+        spec = Spec(rjs_bin='/no/such/path')
+        with self.assertRaises(RuntimeError) as e:
             rjs.prepare(spec)
 
-    def test_prepare_failure_not_found(self):
-        tmpdir = utils.mkdtemp(self)
+        self.assertEqual(
+            str(e.exception),
+            "'/no/such/path' does not exist; cannot be used as 'r.js' binary",
+        )
+
+    def test_prepare_failure_which_fail(self):
+        utils.stub_os_environ(self)
         utils.remember_cwd(self)
+
         # must go to a directory where r.js is guaranteed to not be
-        # available through node.
+        # available through node_modules or the environmental PATH
+        os.environ['NODE_PATH'] = ''
+        os.environ['PATH'] = ''
+        tmpdir = utils.mkdtemp(self)
         os.chdir(tmpdir)
+
         rjs = toolchain.RJSToolchain()
-        spec = Spec(build_dir=tmpdir)
-        with self.assertRaises(RuntimeError):
+        spec = Spec()
+        with self.assertRaises(RuntimeError) as e:
             rjs.prepare(spec)
+
+        self.assertEqual(str(e.exception), "unable to locate 'r.js'")
 
     def test_prepare_failure_bundle_export_path(self):
         tmpdir = utils.mkdtemp(self)
@@ -311,13 +320,16 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
             return
         cls._cwd = os.getcwd()
         cls._cls_tmpdir = tempfile.mkdtemp()
+
+        # For the duration of this test, we will operate in this tmpdir
+        # for the node_modules that will be installed shortly.
         os.chdir(cls._cls_tmpdir)
+
+        npm = Driver()
         # avoid pulling in any of the devDependencies as these are only
         # capabilities test.
-        npm = Driver()
         npm.npm_install('calmjs.rjs', env={'NODE_ENV': 'production'})
-        # TODO figure out a better way to derive this.
-        cls.rjs_bin = join(npm_bin(npm), toolchain.RJSToolchain.rjs_bin)
+
         cls._srcdir = tempfile.mkdtemp()
         cls._ep_root = join(cls._srcdir, 'example', 'package')
         makedirs(cls._ep_root)
@@ -405,7 +417,6 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
             bundle_export_path=bundle_export_path,
             build_dir=build_dir,
         )
-        spec[rjs.rjs_bin_key] = self.rjs_bin
         rjs(spec)
 
         self.assertTrue(exists(bundle_export_path))
@@ -439,7 +450,6 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
             build_dir=build_dir,
             transpile_no_indent=True,
         )
-        spec[rjs.rjs_bin_key] = self.rjs_bin
         rjs(spec)
 
         self.assertTrue(exists(bundle_export_path))

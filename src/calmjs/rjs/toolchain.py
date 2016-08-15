@@ -32,7 +32,6 @@ from __future__ import unicode_literals
 
 import json
 import logging
-from functools import partial
 from os.path import dirname
 from os.path import join
 from os.path import exists
@@ -40,7 +39,6 @@ from os.path import isdir
 from subprocess import call
 
 from calmjs.toolchain import Toolchain
-from calmjs.npm import npm_bin
 
 from .umdjs import UMD_NODE_AMD_HEADER
 from .umdjs import UMD_NODE_AMD_FOOTER
@@ -139,7 +137,9 @@ class RJSToolchain(Toolchain):
     requirejs_config_name = 'config.js'
 
     def setup_transpiler(self):
+        self.binary = self.rjs_bin
         self.transpiler = _transpile_generic_to_umd_node_amd_compat_rjs
+        self._set_env_path_with_node_modules()
 
     def prepare(self, spec):
         """
@@ -148,19 +148,19 @@ class RJSToolchain(Toolchain):
         """
 
         if self.rjs_bin_key not in spec:
-            logger.debug("invoking 'npm bin' to determine node binary path.")
-            npm_bin_path = npm_bin()
-            if npm_bin_path is None:
+            which_bin = spec[self.rjs_bin_key] = self.which()
+            if which_bin is None:
                 raise RuntimeError(
-                    "Attempt to derive node binary path with 'npm bin' "
-                    "failed.  Unable to locate r.js automatically."
-                )
-            spec[self.rjs_bin_key] = join(npm_bin_path, self.rjs_bin)
-
-        if not exists(spec[self.rjs_bin_key]):
+                    "unable to locate '%s'" % self.binary)
+            logger.debug("using '%s' as '%s'", which_bin, self.binary)
+        elif not exists(spec[self.rjs_bin_key]):
             # should we check whether target can be executed?
             raise RuntimeError(
-                'r.js binary not found at %s' % spec[self.rjs_bin_key])
+                "'%s' does not exist; cannot be used as '%s' binary" % (
+                    spec[self.rjs_bin_key],
+                    self.rjs_bin
+                )
+            )
 
         # with requirejs, it would be nice to also build a simple config
         # that can be used from within node with the stuff in just the
