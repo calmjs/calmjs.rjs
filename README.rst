@@ -16,19 +16,23 @@ and generally working with node and npm.  This will also provide a
 framework to generate test harnesses for building testable JavaScript
 code from within a Python module.
 
-In essence, calmjs.rjs treats JavaScript files made available alongside
-Python packages as both source and compilation target.  Utilities are
-provided with calmjs.rjs that will generate bundled JavaScript files as
-per the needs of the site-integrators and/or end-users.  These bundled
-files can then be deployed over the web and be used by client browsers,
-in conjunction with the Python packages that implement the backend
-features.
+In essence, ``calmjs.rjs`` treats JavaScript files as both source and
+compilation target, where the sources are provided from Python packages
+or sourced from npm or others, and the compilation target is the binary
+(bundle files) that is produced through the ``requirejs`` Node.js
+library.
+
+Utilities are provided with ``calmjs.rjs`` that will generate bundled
+JavaScript files as per the needs of the site-integrators and/or
+end-users.  These bundled files can then be deployed over the web and be
+used by client browsers, in conjunction with the Python packages that
+implement the backend features.
 
 Ultimately, this integration package should ease the integration and
 interactions between of client-side JavaScript with server-side Python
 thus make it easier for the two to be built, shipped and deployed
 together.  Other utilities are provided to also aid the setup of
-local nodejs environments to aid the acquisition of npm dependencies,
+local Node.js environments to aid the acquisition of npm dependencies,
 setting up of the test environments and harnesses for running of
 JavaScript tests that are part of the Python packages for the associated
 JavaScript code.

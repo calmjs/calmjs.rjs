@@ -7,6 +7,8 @@ version = '0.0'
 package_json = {
     "dependencies": {
         "requirejs": "~2.1.17",
+        # This should be provided by some templating library that
+        # require text templates through the same import mechanism.
         # "requirejs-text": "~2.0.12",
     },
     "devDependencies": {
@@ -45,8 +47,12 @@ setup(name='calmjs.rjs',
       include_package_data=True,
       zip_safe=False,
       install_requires=[
-          'calmjs.dev',
       ],
+      extras_require={
+          'dev': [
+              'calmjs.dev',
+          ],
+      },
       entry_points="""
       # -*- Entry points: -*-
       """,
