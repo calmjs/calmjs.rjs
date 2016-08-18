@@ -276,4 +276,4 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
             )
         )
 
-        self.assertEqual(stdout, 'service.rpc.lib.Library\n');
+        self.assertEqual(stdout, 'service.rpc.lib.Library\n')
