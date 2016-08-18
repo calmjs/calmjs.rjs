@@ -37,23 +37,11 @@ class DistIntegrationTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        from calmjs import dist as calmjs_dist
-        from calmjs.registry import _inst as root_registry
-        cls.dist_dir = tempfile.mkdtemp()
-        results = utils.generate_integration_environment(cls.dist_dir)
-        working_set, registry = results
-        cls.registry_name = registry.registry_name
-        root_registry.records[cls.registry_name] = registry
-        cls.root_working_set, calmjs_dist.default_working_set = (
-            calmjs_dist.default_working_set, working_set)
+        utils.setup_class_integration_environment(cls)
 
     @classmethod
     def tearDownClass(cls):
-        from calmjs import dist as calmjs_dist
-        from calmjs.registry import _inst as root_registry
-        rmtree(cls.dist_dir)
-        root_registry.records.pop(cls.registry_name)
-        calmjs_dist.default_working_set = cls.root_working_set
+        utils.teardown_class_integration_environment(cls)
 
     def test_generate_transpile_source_maps_none(self):
         mapping = dist.generate_transpile_source_maps(
