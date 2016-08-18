@@ -104,14 +104,13 @@ def generate_bundled_source_maps(
         Defaults to 'all'.
     """
 
-
     working_dir = working_dir if working_dir else getcwd()
     acquire_extras_calmjs = acquire_method(extras_calmjs_methods, method)
 
     if acquire_extras_calmjs is None:
         return {}
 
-    # the extras keys will be treated as valid nodejs package manager
+    # the extras keys will be treated as valid Node.js package manager
     # subdirectories.
     valid_pkgmgr_dirs = set(get('calmjs.extras_keys').iter_records())
     extras_calmjs = acquire_extras_calmjs(package_name)

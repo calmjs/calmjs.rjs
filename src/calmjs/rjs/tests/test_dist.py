@@ -1,15 +1,5 @@
 # -*- coding: utf-8 -*-
 import unittest
-import json
-import os
-import tempfile
-from os import makedirs
-from os.path import exists
-from os.path import join
-from shutil import rmtree
-
-from io import StringIO
-
 from calmjs.rjs import dist
 
 from calmjs.testing import utils

@@ -175,9 +175,16 @@ class RJSToolchain(Toolchain):
             raise RuntimeError(
                 "'bundle_export_path' not found in spec")
 
+        # no effect if bundle_export_path already absolute.
+        spec['bundle_export_path'] = self.join_cwd(spec['bundle_export_path'])
+
         if not isdir(dirname(spec['bundle_export_path'])):
             raise RuntimeError(
                 "'bundle_export_path' will not be writable")
+        logger.debug(
+            "'bundle_export_path' declared to be '%s'",
+            spec['bundle_export_path']
+        )
 
         keys = ('requirejs_config_js', 'build_manifest_path')
         matched = [k for k in keys if spec['bundle_export_path'] == spec[k]]
