@@ -200,7 +200,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         )
 
     def test_cli_make_spec(self):
-        spec = cli.make_spec('site', source_registries=(self.registry_name,))
+        spec = cli.make_spec(['site'], source_registries=(self.registry_name,))
         self.assertEqual(spec['bundle_export_path'], 'site.js')
 
     def test_cli_compile_all_site(self):
@@ -219,7 +219,8 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         npm.npm_install('site', env={'NODE_ENV': 'production'})
 
         # Trigger the compile using the module level compile function
-        spec = cli.compile_all('site', source_registries=(self.registry_name,))
+        spec = cli.compile_all(
+            ['site'], source_registries=(self.registry_name,))
         self.assertEqual(
             spec['bundle_export_path'], join(working_dir, 'site.js'))
 
@@ -254,7 +255,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         # Trigger the compile using the module level compile function,
         # but without bundling
         spec = cli.compile_all(
-            'service', source_registries=(self.registry_name,),
+            ['service'], source_registries=(self.registry_name,),
             bundled_map_method='none',
         )
         self.assertEqual(

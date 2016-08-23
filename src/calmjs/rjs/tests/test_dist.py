@@ -35,12 +35,12 @@ class DistIntegrationTestCase(unittest.TestCase):
 
     def test_generate_transpile_source_maps_none(self):
         mapping = dist.generate_transpile_source_maps(
-            'site', registries=(self.registry_name,), method='none')
+            ['site'], registries=(self.registry_name,), method='none')
         self.assertEqual(sorted(mapping.keys()), [])
 
     def test_generate_transpile_source_maps_site_default(self):
         mapping = dist.generate_transpile_source_maps(
-            'site', registries=(self.registry_name,))
+            ['site'], registries=(self.registry_name,))
         self.assertEqual(sorted(mapping.keys()), [
             'forms/ui', 'framework/lib', 'widget/core', 'widget/datepicker',
             'widget/richedit',
@@ -48,29 +48,32 @@ class DistIntegrationTestCase(unittest.TestCase):
 
     def test_generate_transpile_source_maps_service_default(self):
         mapping = dist.generate_transpile_source_maps(
-            'service', registries=(self.registry_name,))
+            ['service'], registries=(self.registry_name,))
         self.assertEqual(sorted(mapping.keys()), [
             'framework/lib', 'service/endpoint', 'service/rpc/lib',
         ])
 
     def test_generate_transpile_source_maps_service_top(self):
         mapping = dist.generate_transpile_source_maps(
-            'service', registries=(self.registry_name,), method='top')
+            ['service'], registries=(self.registry_name,), method='top')
         self.assertEqual(sorted(mapping.keys()), [
             'service/endpoint', 'service/rpc/lib',
         ])
 
     def test_generate_bundled_source_maps_none(self):
-        mapping = dist.generate_bundled_source_maps('site', method='none')
+        mapping = dist.generate_bundled_source_maps(
+            ['site'], method='none')
         self.assertEqual(sorted(mapping.keys()), [])
 
     def test_generate_bundled_source_maps_bad_dir(self):
         bad_dir = utils.mkdtemp(self)
-        mapping = dist.generate_bundled_source_maps('service', bad_dir)
+        mapping = dist.generate_bundled_source_maps(
+            ['service'], bad_dir)
         self.assertEqual(sorted(mapping.keys()), [])
 
     def test_generate_bundled_source_maps_site_default(self):
-        mapping = dist.generate_bundled_source_maps('site', self.dist_dir)
+        mapping = dist.generate_bundled_source_maps(
+            ['site'], self.dist_dir)
         self.assertEqual(sorted(mapping.keys()), ['jquery', 'underscore'])
         self.assertTrue(mapping['jquery'].endswith(
             'node_modules/jquery/dist/jquery.js'))
@@ -78,12 +81,14 @@ class DistIntegrationTestCase(unittest.TestCase):
             'node_modules/underscore/underscore.js'))
 
     def test_generate_bundled_source_maps_default(self):
-        mapping = dist.generate_bundled_source_maps('framework', self.dist_dir)
+        mapping = dist.generate_bundled_source_maps(
+            ['framework'], self.dist_dir)
         self.assertEqual(sorted(mapping.keys()), [
             'jquery', 'underscore',
         ])
         self.assertIn('underscore/underscore-min.js', mapping['underscore'])
-        mapping = dist.generate_bundled_source_maps('service', self.dist_dir)
+        mapping = dist.generate_bundled_source_maps(
+            ['service'], self.dist_dir)
         self.assertEqual(sorted(mapping.keys()), [
             'jquery', 'underscore',
         ])
@@ -91,6 +96,6 @@ class DistIntegrationTestCase(unittest.TestCase):
 
     def test_generate_bundled_source_maps_top(self):
         mapping = dist.generate_bundled_source_maps(
-            'service', self.dist_dir, method='top')
+            ['service'], self.dist_dir, method='top')
         self.assertEqual(sorted(mapping.keys()), ['underscore'])
         self.assertIn('underscore/underscore.js', mapping['underscore'])

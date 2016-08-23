@@ -36,15 +36,15 @@ def acquire_method(methods, key, default=_default):
 
 
 def generate_transpile_source_maps(
-        package_name, registries=('calmjs.module',), method=_default):
+        package_names, registries=('calmjs.module',), method=_default):
     """
     Invoke the module_registry_dependencies family of dist functions,
     with the specified registries, to produce the required source maps.
 
     Arguments:
 
-    package_name
-        The name of the Python package to generate the source maps for.
+    package_names
+        The names of the Python package to generate the source maps for.
     registries
         The names of the registries to source the packages from.
     method
@@ -72,20 +72,20 @@ def generate_transpile_source_maps(
     transpile_source_map = {}
     for registry_key in registries:
         transpile_source_map.update(acquire_module_registry_dependencies(
-            package_name, registry_key=registry_key))
+            package_names, registry_key=registry_key))
 
     return transpile_source_map
 
 
 def generate_bundled_source_maps(
-        package_name, working_dir=None, method=_default):
+        package_names, working_dir=None, method=_default):
     """
     Acquire the bundled source maps through the calmjs registry system.
 
     Arguments:
 
-    package_name
-        The name of the package to acquire the sources for.
+    package_names
+        The names of the package to acquire the sources for.
     working_dir
         The working directory.  Defaults to current working directory.
     method
@@ -113,7 +113,7 @@ def generate_bundled_source_maps(
     # the extras keys will be treated as valid Node.js package manager
     # subdirectories.
     valid_pkgmgr_dirs = set(get('calmjs.extras_keys').iter_records())
-    extras_calmjs = acquire_extras_calmjs(package_name)
+    extras_calmjs = acquire_extras_calmjs(package_names)
     bundled_source_map = {}
 
     for mgr in extras_calmjs:

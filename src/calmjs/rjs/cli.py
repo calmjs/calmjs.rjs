@@ -13,7 +13,7 @@ default_toolchain = RJSToolchain()
 
 
 def make_spec(
-        package_name, export_filename=None, working_dir=None, build_dir=None,
+        package_names, export_filename=None, working_dir=None, build_dir=None,
         source_registries=('calmjs.module',),
         source_map_method='all', bundled_map_method='all'):
     """
@@ -23,18 +23,19 @@ def make_spec(
     working_dir = working_dir if working_dir else default_toolchain.join_cwd()
 
     if export_filename is None:
-        export_filename = package_name + '.js'
+        # Take the final package name for now...
+        export_filename = package_names[-1] + '.js'
 
     return Spec(
         bundle_export_path=export_filename,
         build_dir=build_dir,
         transpile_source_map=generate_transpile_source_maps(
-            package_name=package_name,
+            package_names=package_names,
             registries=source_registries,
             method=source_map_method,
         ),
         bundled_source_map=generate_bundled_source_maps(
-            package_name=package_name,
+            package_names=package_names,
             working_dir=working_dir,
             method=bundled_map_method,
         ),
@@ -42,7 +43,7 @@ def make_spec(
 
 
 def compile_all(
-        package_name, export_filename=None, working_dir=None, build_dir=None,
+        package_names, export_filename=None, working_dir=None, build_dir=None,
         source_registries=('calmjs.module',),
         source_map_method='all', bundled_map_method='all',
         toolchain=default_toolchain):
@@ -117,7 +118,7 @@ def compile_all(
     """
 
     spec = make_spec(
-        package_name=package_name,
+        package_names=package_names,
         export_filename=export_filename,
         working_dir=working_dir,
         build_dir=build_dir,
