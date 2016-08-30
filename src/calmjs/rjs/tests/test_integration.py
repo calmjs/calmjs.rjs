@@ -13,6 +13,7 @@ from calmjs.toolchain import Spec
 from calmjs.npm import Driver
 from calmjs.npm import get_npm_version
 from calmjs.cli import node
+from calmjs import runtime
 
 from calmjs.rjs import toolchain
 from calmjs.rjs import cli
@@ -278,3 +279,48 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         )
 
         self.assertEqual(stdout, 'service.rpc.lib.Library\n')
+
+    def test_runtime_cli_compile_all_service(self):
+        from calmjs.rjs.runtime import default
+        # Set up the transpiler using the testcase's working directory
+        # which has the r.js binary installed.
+        cli.default_toolchain.setup_transpiler()
+        # ditto for the one in the cli_instance.
+        default.cli_driver.setup_transpiler()
+
+        # create a new working directory to install our current site
+        utils.remember_cwd(self)
+        target_dir = utils.mkdtemp(self)
+        target_file = join(target_dir, 'bundle.js')
+
+        # Invoke the thing through the main runtime
+        with self.assertRaises(SystemExit) as e:
+            runtime.main([
+                'rjs', 'service', 'site',
+                '--export-filename=' + target_file,
+                '--source-registry=' + self.registry_name,
+            ])
+        self.assertEqual(e.exception.args[0], 0)
+
+        # verify that the bundle works with node.  First change back to
+        # directory with requirejs library installed.
+        os.chdir(self._cls_tmpdir)
+
+        # The execution should then work as expected on the bundle we
+        # have.
+        stdout, stderr = node(
+            'var requirejs = require("requirejs");\n'
+            'var define = requirejs.define;\n'
+            'require("%s");\n'
+            'var datepicker = requirejs("widget/datepicker");\n'
+            'console.log(datepicker.DatePickerWidget);\n'
+            'var rpclib = requirejs("service/rpc/lib");\n'
+            'console.log(rpclib.Library);\n' % (
+                target_file
+            )
+        )
+
+        self.assertEqual(stdout, (
+            'widget.datepicker.DatePickerWidget\n'
+            'service.rpc.lib.Library\n'
+        ))

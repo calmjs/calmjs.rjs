@@ -54,7 +54,7 @@ def compile_all(
 
     Arguments:
 
-    package_name
+    package_names
         The name of the Python package to source the dependencies from.
 
     export_filename

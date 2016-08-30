@@ -53,9 +53,15 @@ setup(
             'calmjs.dev',
         ],
     },
-    entry_points="""
-    # -*- Entry points: -*-
-    """,
+    entry_points={
+        # If to be unleashed as a standalone tool.
+        # 'console_scripts': [
+        #     'rjs = calmjs.rjs.runtime:default',
+        # ],
+        'calmjs.runtime': [
+            'rjs = calmjs.rjs.runtime:default',
+        ],
+    },
     package_json=package_json,
     test_suite="calmjs.rjs.tests.test_suite",
 )
