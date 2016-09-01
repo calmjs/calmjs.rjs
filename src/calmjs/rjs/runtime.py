@@ -42,23 +42,31 @@ class RJSRuntime(DriverRuntime):
             help='output filename; defaults to last ${package_name}.js',
         )
 
+        cwd = self.cli_driver.join_cwd()
         argparser.add_argument(
-            '--working-dir', default=self.cli_driver.join_cwd(),
+            '--working-dir', default=cwd,
             dest='working_dir',
-            help='the working directory',
+            help='the working directory, where the bundled sources will be '
+                 'searched for to copy to build directory for bundling; '
+                 'default is current working directory (%s)' % cwd,
         )
 
         argparser.add_argument(
             '--build-dir', default=None,
             dest='build_dir',
-            help='the working directory',
+            help='the build directory, where all sources will be copied to '
+                 'for the bundling process; if left unspecified, the default '
+                 'behavior is to create a new temporary directory that will '
+                 'be removed upon conclusion of the build; if specified, it '
+                 'must be an existing directory and all files for the build '
+                 'will be copied there instead, with no cleanup done after.'
         )
 
         argparser.add_argument(
             '--source-registry', default=('calmjs.module',),
             dest='source_registries', nargs='+',
-            help='the registries to use for gathering sources; '
-                 'default: calmjs.module',
+            help='the registries to use for gathering JavaScript sources from '
+                 'Python packages; default: calmjs.module',
         )
 
         argparser.add_argument(
