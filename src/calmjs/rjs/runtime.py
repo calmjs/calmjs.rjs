@@ -7,7 +7,7 @@ from calmjs.runtime import DriverRuntime
 from calmjs.rjs.toolchain import RJSToolchain
 
 from calmjs.rjs.dist import extras_calmjs_methods
-from calmjs.rjs.dist import module_registry_dependencies_methods
+from calmjs.rjs.dist import source_map_methods_list
 from calmjs.rjs.cli import compile_all
 
 # toolchain = RJSToolchain.create()
@@ -64,7 +64,7 @@ class RJSRuntime(DriverRuntime):
         argparser.add_argument(
             '--source-map-method', default='all',
             dest='source_map_method',
-            choices=sorted(module_registry_dependencies_methods.keys()),
+            choices=sorted(source_map_methods_list.keys()),
             help='the acquisition method for getting the source mappings from'
                  'the source registry for the given packages',
         )

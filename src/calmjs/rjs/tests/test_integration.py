@@ -8,6 +8,7 @@ from os import makedirs
 from os.path import exists
 from os.path import join
 from shutil import rmtree
+from shutil import copytree
 
 from calmjs.toolchain import Spec
 from calmjs.npm import Driver
@@ -121,7 +122,8 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         }
 
         # This is done last, because the integration harness will stub
-        # out the root distribution which will break the real setup.
+        # out the root distribution which will break the installation of
+        # real tools (i.e. npm_install above)
         utils.setup_class_integration_environment(cls)
 
     @classmethod
@@ -215,9 +217,17 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         os.chdir(working_dir)
 
         # Finally, install dependencies for site in the new directory
-        npm = Driver()
-        # of course, no devDependencies.
-        npm.npm_install('site', env={'NODE_ENV': 'production'})
+        # normally this might be done
+        # npm = Driver()
+        # npm.npm_install('site', env={'NODE_ENV': 'production'})
+        # However, since we have our set of fake_modules, just install
+        # by copying the fake_modules dir from dist_dir into the current
+        # directory.
+
+        copytree(
+            join(self.dist_dir, 'fake_modules'),
+            join(working_dir, 'fake_modules'),
+        )
 
         # Trigger the compile using the module level compile function
         spec = cli.compile_all(
@@ -280,7 +290,53 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
 
         self.assertEqual(stdout, 'service.rpc.lib.Library\n')
 
-    def test_runtime_cli_compile_all_service(self):
+    def test_cli_compile_explicit_service(self):
+        cli.default_toolchain.setup_transpiler()
+        utils.remember_cwd(self)
+        working_dir = utils.mkdtemp(self)
+        os.chdir(working_dir)
+
+        # Trigger the compile using the module level compile function,
+        # but without bundling
+        spec = cli.compile_all(
+            ['service'], source_registries=(self.registry_name,),
+            bundled_map_method='none', source_map_method='explicit',
+        )
+        service_js = join(working_dir, 'service.js')
+        self.assertEqual(spec['bundle_export_path'], service_js)
+
+        with open(service_js) as fd:
+            self.assertIn('service/rpc/lib', fd.read())
+
+        # build its parent js separately, too
+        spec = cli.compile_all(
+            ['framework'], source_registries=(self.registry_name,),
+            bundled_map_method='none', source_map_method='explicit',
+        )
+        framework_js = join(working_dir, 'framework.js')
+        self.assertEqual(spec['bundle_export_path'], framework_js)
+
+        # verify that the bundle works with node.  First change back to
+        # directory with requirejs library installed.
+        os.chdir(self._cls_tmpdir)
+
+        # The execution should then work as expected if we loaded both
+        # bundles.
+        stdout, stderr = node(
+            'var requirejs = require("requirejs");\n'
+            'var define = requirejs.define;\n'
+            'require("%s");\n'
+            'require("%s");\n'
+            'var rpclib = requirejs("service/rpc/lib");\n'
+            'console.log(rpclib.Library);\n' % (
+                framework_js,
+                service_js,
+            )
+        )
+
+        self.assertEqual(stdout, 'service.rpc.lib.Library\n')
+
+    def setup_runtime_main_env(self):
         from calmjs.rjs.runtime import default
         # Set up the transpiler using the testcase's working directory
         # which has the r.js binary installed.
@@ -293,6 +349,18 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         target_dir = utils.mkdtemp(self)
         target_file = join(target_dir, 'bundle.js')
 
+        # invoke installation of "fake_modules"
+        os.chdir(target_dir)
+        copytree(
+            join(self.dist_dir, 'fake_modules'),
+            join(target_dir, 'fake_modules'),
+        )
+
+        return target_dir, target_file
+
+    def test_runtime_cli_compile_all_service(self):
+        target_dir, target_file = self.setup_runtime_main_env()
+
         # Invoke the thing through the main runtime
         with self.assertRaises(SystemExit) as e:
             runtime.main([
@@ -301,6 +369,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
                 '--source-registry=' + self.registry_name,
             ])
         self.assertEqual(e.exception.args[0], 0)
+        self.assertTrue(exists(target_file))
 
         # verify that the bundle works with node.  First change back to
         # directory with requirejs library installed.
@@ -312,15 +381,144 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
             'var requirejs = require("requirejs");\n'
             'var define = requirejs.define;\n'
             'require("%s");\n'
+            'var lib = requirejs("framework/lib");\n'
+            'console.log(lib.Core);\n'
             'var datepicker = requirejs("widget/datepicker");\n'
             'console.log(datepicker.DatePickerWidget);\n'
             'var rpclib = requirejs("service/rpc/lib");\n'
-            'console.log(rpclib.Library);\n' % (
+            'console.log(rpclib.Library);\n'
+            'var jquery = requirejs("jquery");\n'
+            'console.log(jquery);\n'
+            'var underscore = requirejs("underscore");\n'
+            'console.log(underscore);\n'
+            '' % (
                 target_file
             )
         )
 
         self.assertEqual(stdout, (
+            'framework.lib.Core\n'
             'widget.datepicker.DatePickerWidget\n'
             'service.rpc.lib.Library\n'
+            'jquery/dist/jquery.js\n'
+            'underscore/underscore.js\n'
+        ))
+
+    def test_runtime_cli_compile_explicit_site(self):
+        target_dir, target_file = self.setup_runtime_main_env()
+
+        # Invoke the thing through the main runtime
+        with self.assertRaises(SystemExit) as e:
+            runtime.main([
+                'rjs', 'site',
+                '--source-map-method=explicit',
+                '--bundled-map-method=none',
+                '--export-filename=' + target_file,
+                '--source-registry=' + self.registry_name,
+            ])
+        self.assertEqual(e.exception.args[0], 0)
+
+        with open(target_file) as fd:
+            contents = fd.read()
+
+        # Since the package has no sources, and we disabled bundling of
+        # sources (none works here because no code to automatically get
+        # r.js to look for them), it should generate an empty bundle.
+        self.assertEqual(contents, '(function () {}());')
+
+    def test_runtime_cli_compile_explicit_service_framework_widget(self):
+        def run_node_with_require(*requires):
+            os.chdir(self._cls_tmpdir)
+            return node(
+                'var requirejs = require("requirejs");\n'
+                'var define = requirejs.define;\n'
+                '%s\n'
+                'var lib = requirejs("framework/lib");\n'
+                'console.log(lib.Core);\n'
+                'var datepicker = requirejs("widget/datepicker");\n'
+                'console.log(datepicker.DatePickerWidget);\n'
+                'var jquery = requirejs("jquery");\n'
+                'console.log(jquery);\n'
+                'var underscore = requirejs("underscore");\n'
+                'console.log(underscore);\n'
+                '' % '\n'.join(
+                    'require("%s")' % r for r in requires
+                )
+            )
+
+        def runtime_main(args, error_code=0):
+            # Invoke the thing through the main runtime
+            os.chdir(target_dir)
+            with self.assertRaises(SystemExit) as e:
+                runtime.main(args)
+            self.assertEqual(e.exception.args[0], error_code)
+
+        target_dir, target_file = self.setup_runtime_main_env()
+
+        # Invoke the thing through the main runtime
+        runtime_main([
+            'rjs', 'framework', 'forms', 'service',
+            '--source-map-method=explicit',
+            '--export-filename=' + target_file,
+            '--source-registry=' + self.registry_name,
+        ])
+        self.assertTrue(exists(target_file))
+
+        # Try running it anyway with widget missing...
+        stdout, stderr = run_node_with_require(target_file)
+        # This naturally will not work, so the missing module will be in
+        # the error
+        self.assertIn('widget', stderr)
+
+        # try again, after building the missing widget bundle.
+        os.chdir(target_dir)
+        widget_js = join(target_dir, 'widget.js')
+        runtime_main([
+            'rjs', 'widget',
+            '--source-map-method=explicit',
+            '--export-filename=' + widget_js,
+            '--source-registry=' + self.registry_name,
+        ])
+
+        # The execution should now work if the widget bundle is loaded
+        # first, and output should be as expected.
+        stdout, stderr = run_node_with_require(widget_js, target_file)
+        self.assertEqual(stderr, '')
+        self.assertEqual(stdout, (
+            'framework.lib.Core\n'
+            'widget.datepicker.DatePickerWidget\n'
+            'jquery/dist/jquery.min.js\n'  # from widget
+            # widget_js contains this because the package 'framework'
+            # declared the follow location.
+            'underscore/underscore-min.js\n'
+        ))
+
+        # try again, this time the widget will NOT have underscore built
+        # in as the bundles will be emptied out - however we need the
+        # information in framework as the 'widget' package did NOT
+        # declare the extras_calmjs for underscore so compilation will
+        # fail otherwise.
+        widget_slim_js = join(target_dir, 'widget_slim.js')
+        runtime_main([
+            'rjs', 'widget',
+            '--source-map-method=all',  # using all
+            '--bundled-map-method=empty',
+            '--export-filename=' + widget_slim_js,
+            '--source-registry=' + self.registry_name,
+        ])
+
+        # The execution should now work if the widget bundle is loaded
+        # first, and output should be as expected.  This time the
+        # bundles are loaded in reversed order.
+        stdout, stderr = run_node_with_require(target_file, widget_slim_js)
+        # Output should be as expected
+        self.assertEqual(stderr, '')
+        self.assertEqual(stdout, (
+            'framework.lib.Core\n'
+            'widget.datepicker.DatePickerWidget\n'
+            'jquery/dist/jquery.min.js\n'  # from widget
+            # this time, the second bundle will supply this, which has
+            # the one originally sourced from the location declared by
+            # the 'service' package.
+            'underscore/underscore.js\n'
         ))

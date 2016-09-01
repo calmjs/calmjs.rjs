@@ -125,6 +125,45 @@ class TranspilerTestCase(unittest.TestCase):
             '        return exports;',
         ])
 
+    def test_modname_source_to_target(self):
+        rjs = toolchain.RJSToolchain()
+        self.assertEqual(rjs.pick_compiled_mod_target_name(
+            'example/module',
+            '/tmp/src/example/module', '/tmp/build/example/module'),
+            'example/module'
+        )
+        self.assertEqual(rjs.pick_compiled_mod_target_name(
+            'example/module',
+            'empty:', '/tmp/build/example/module'),
+            'empty:'
+        )
+
+    def test_compile_normal(self):
+        src_file = join(utils.mkdtemp(self), 'module.js')
+        tgt_file = join(utils.mkdtemp(self), 'module.js')
+        spec = Spec()
+
+        with open(src_file, 'w') as fd:
+            fd.write('console.log("Hello");')
+
+        rjs = toolchain.RJSToolchain()
+        rjs.compile(spec, src_file, tgt_file)
+
+        with open(tgt_file) as fd:
+            # The transpiler will mutate it.
+            result = fd.read()
+
+        self.assertNotEqual('console.log("Hello");', result)
+        self.assertIn('console.log("Hello");', result)
+
+    def test_compile_empty(self):
+        src_file = 'empty:'
+        tgt_file = join(utils.mkdtemp(self), 'module.js')
+        spec = Spec()
+        rjs = toolchain.RJSToolchain()
+        rjs.compile(spec, src_file, tgt_file)
+        self.assertFalse(exists(tgt_file))
+
 
 @unittest.skipIf(get_npm_version() is None, "npm is unavailable")
 class ToolchainUnitTestCase(unittest.TestCase):

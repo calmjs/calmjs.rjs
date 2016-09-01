@@ -46,6 +46,8 @@ from .umdjs import UMD_NODE_AMD_INDENT
 from .umdjs import UMD_REQUIREJS_JSON_EXPORT_HEADER
 from .umdjs import UMD_REQUIREJS_JSON_EXPORT_FOOTER
 
+from .dist import EMPTY
+
 logger = logging.getLogger(__name__)
 
 
@@ -140,6 +142,23 @@ class RJSToolchain(Toolchain):
         self.binary = self.rjs_bin
         self.transpiler = _transpile_generic_to_umd_node_amd_compat_rjs
         self._set_env_path_with_node_modules()
+
+    def pick_compiled_mod_target_name(self, modname, source, target):
+        """
+        Return 'empty:' if the source is also that, as this is the only
+        way to ensure r.js won't try to bundle that location if any
+        modules try to require whatever that was.
+        """
+
+        return EMPTY if source == EMPTY else modname
+
+    def compile(self, spec, source, target):
+        if source == EMPTY:
+            # This is inserted by the source mapper if this item was
+            # marked to be ignored for r.js, and so don't bother letting
+            # parent "compile" this (which is just a simple copying)
+            return
+        super(RJSToolchain, self).compile(spec, source, target)
 
     def prepare(self, spec):
         """

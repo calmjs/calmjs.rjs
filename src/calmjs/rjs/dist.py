@@ -16,17 +16,35 @@ from calmjs.dist import flatten_extras_calmjs
 from calmjs.dist import flatten_module_registry_dependencies
 
 logger = logging.getLogger(__name__)
+EMPTY = 'empty:'
 _default = 'all'
 
-module_registry_dependencies_methods = {
-    'all': flatten_module_registry_dependencies,
-    'explicit': get_module_registry_dependencies,
+
+def identity(v):
+    return v
+
+
+def empty(*a, **kw):
+    return EMPTY
+
+
+source_map_methods_list = {
+    # list of tuples of (function, filter)
+    'all': (
+        (flatten_module_registry_dependencies, identity),
+    ),
+    'explicit': (
+        (flatten_module_registry_dependencies, empty),
+        (get_module_registry_dependencies, identity),
+    ),
     'none': None,
 }
 
 extras_calmjs_methods = {
-    'all': flatten_extras_calmjs,
-    'explicit': get_extras_calmjs,
+    # function, joiner
+    'all': (flatten_extras_calmjs, join),
+    'explicit': (get_extras_calmjs, join),
+    'empty': (flatten_extras_calmjs, empty),
     'none': None,
 }
 
@@ -56,23 +74,36 @@ def generate_transpile_source_maps(
             Traverse the dependency graph for the specified package to
             acquire the mappings declared for each of those modules.
         'explicit'
-            Only acquire the declared sources for the specified package.
+            Same as all, however all will be stubbed out using 'empty:'
+            to prevent bundling.  Only the declared sources for the
+            specified packages will be untouched.
         'none'
             Produce an empty source map.
 
         Defaults to 'all'.
     """
 
-    acquire_module_registry_dependencies = acquire_method(
-        module_registry_dependencies_methods, method)
+    source_map_methods = acquire_method(source_map_methods_list, method)
 
-    if acquire_module_registry_dependencies is None:
+    if source_map_methods is None:
         return {}
 
     transpile_source_map = {}
-    for registry_key in registries:
-        transpile_source_map.update(acquire_module_registry_dependencies(
-            package_names, registry_key=registry_key))
+
+    # source mapping functions loop first, to prevent subsequent
+    # registries from providing key-value pairs via flatten that
+    # overwrite key-value pairs set initially by the get method for a
+    # key that has results for flatten but no results for get; in other
+    # words, this ensures the get source mapping function get executed
+    # last across all registeries, if needed.
+
+    for source_f, n_filter in source_map_methods:
+        for registry_key in registries:
+            transpile_source_map.update(
+                (k, n_filter(v)) for k, v in source_f(
+                    package_names, registry_key=registry_key
+                ).items()
+            )
 
     return transpile_source_map
 
@@ -90,7 +121,7 @@ def generate_bundled_source_maps(
         The working directory.  Defaults to current working directory.
     method
         The method to acquire the bundled sources for the given module.
-        Choices are between 'all', 'explicit' or None.
+        Choices are between 'all', 'explicit', 'none, or 'empty'.
 
         'all'
             Traverse the dependency graph for the specified package and
@@ -100,18 +131,27 @@ def generate_bundled_source_maps(
             package.
         'none'
             Produce an empty source map.  For requirejs, this means the
-            default fallback behavior of loading through CommonJS will
-            be used, if needed.  If truly none are required, try using
-            'empty' instead.
+            default fallback behavior of loading from the base_dir (i.e.
+            the build_dir) which will result in error on missing files.
+            However this is left here for low level manipulation and/or
+            usage.
+        'empty'
+            Same as all, but all paths will be replaced with 'empty:'.
+            This effectively achieves the same effect as 'none', however
+            in a way that should not error if the packages at hand have
+            declared all the extra sources used in the extras_calmjs
+            under the appropriate keys.
 
         Defaults to 'all'.
     """
 
     working_dir = working_dir if working_dir else getcwd()
-    acquire_extras_calmjs = acquire_method(extras_calmjs_methods, method)
+    methods = acquire_method(extras_calmjs_methods, method)
 
-    if acquire_extras_calmjs is None:
+    if methods is None:
         return {}
+
+    acquire_extras_calmjs, joiner = methods
 
     # the extras keys will be treated as valid Node.js package manager
     # subdirectories.
@@ -133,6 +173,6 @@ def generate_bundled_source_maps(
             continue  # pragma: no cover
 
         for k, v in extras_calmjs[mgr].items():
-            bundled_source_map[k] = join(basedir, v)
+            bundled_source_map[k] = joiner(basedir, v)
 
     return bundled_source_map

@@ -46,6 +46,25 @@ class DistIntegrationTestCase(unittest.TestCase):
             'widget/richedit',
         ])
 
+    def test_generate_transpile_source_maps_site_explicit(self):
+        mapping = dist.generate_transpile_source_maps(
+            ['site'], registries=(self.registry_name,), method='explicit')
+        # it doesn't remove this, but only mark it as empty as the
+        # underlying tool will fail otherwise if any require statements
+        # having that as its argument will result in r.js failing to do
+        # anything.
+        self.assertEqual(sorted(mapping.keys()), [
+            'forms/ui', 'framework/lib', 'widget/core', 'widget/datepicker',
+            'widget/richedit',
+        ])
+
+        self.assertEqual(sorted(
+            [k for k, v in mapping.items() if v == 'empty:']
+        ), [
+            'forms/ui', 'framework/lib', 'widget/core', 'widget/datepicker',
+            'widget/richedit',
+        ])
+
     def test_generate_transpile_source_maps_service_default(self):
         mapping = dist.generate_transpile_source_maps(
             ['service'], registries=(self.registry_name,))
@@ -57,8 +76,11 @@ class DistIntegrationTestCase(unittest.TestCase):
         mapping = dist.generate_transpile_source_maps(
             ['service'], registries=(self.registry_name,), method='explicit')
         self.assertEqual(sorted(mapping.keys()), [
-            'service/endpoint', 'service/rpc/lib',
+            'framework/lib', 'service/endpoint', 'service/rpc/lib',
         ])
+        self.assertEqual(mapping['framework/lib'], 'empty:')
+        self.assertNotEqual(mapping['service/endpoint'], 'empty:')
+        self.assertNotEqual(mapping['service/rpc/lib'], 'empty:')
 
     def test_generate_bundled_source_maps_none(self):
         mapping = dist.generate_bundled_source_maps(
@@ -76,9 +98,9 @@ class DistIntegrationTestCase(unittest.TestCase):
             ['site'], self.dist_dir)
         self.assertEqual(sorted(mapping.keys()), ['jquery', 'underscore'])
         self.assertTrue(mapping['jquery'].endswith(
-            'node_modules/jquery/dist/jquery.js'))
+            'fake_modules/jquery/dist/jquery.js'))
         self.assertTrue(mapping['underscore'].endswith(
-            'node_modules/underscore/underscore.js'))
+            'fake_modules/underscore/underscore.js'))
 
     def test_generate_bundled_source_maps_default(self):
         mapping = dist.generate_bundled_source_maps(
@@ -93,9 +115,27 @@ class DistIntegrationTestCase(unittest.TestCase):
             'jquery', 'underscore',
         ])
         self.assertIn('underscore/underscore.js', mapping['underscore'])
+        self.assertIn('jquery', mapping['jquery'])
 
-    def test_generate_bundled_source_maps_explicit(self):
+    def test_generate_bundled_source_maps_service_explicit(self):
         mapping = dist.generate_bundled_source_maps(
             ['service'], self.dist_dir, method='explicit')
         self.assertEqual(sorted(mapping.keys()), ['underscore'])
         self.assertIn('underscore/underscore.js', mapping['underscore'])
+
+    def test_generate_bundled_source_maps_service_empty(self):
+        mapping = dist.generate_bundled_source_maps(
+            ['service'], self.dist_dir, method='empty')
+        # Note that this ends up including all it sparents
+        self.assertEqual(mapping, {
+            'jquery': 'empty:',
+            'underscore': 'empty:',
+        })
+
+    def test_generate_bundled_source_maps_site_empty(self):
+        # This one declares exact, should still work.
+        mapping = dist.generate_bundled_source_maps(
+            ['site'], self.dist_dir, method='empty')
+        self.assertEqual(sorted(mapping.keys()), ['jquery', 'underscore'])
+        self.assertEqual(mapping['jquery'], 'empty:')
+        self.assertEqual(mapping['underscore'], 'empty:')
