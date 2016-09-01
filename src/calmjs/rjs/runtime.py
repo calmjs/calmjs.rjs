@@ -57,7 +57,8 @@ class RJSRuntime(DriverRuntime):
         argparser.add_argument(
             '--source-registry', default=('calmjs.module',),
             dest='source_registries', nargs='+',
-            help='the clamjs registries to use for gathering sources',
+            help='the registries to use for gathering sources; '
+                 'default: calmjs.module',
         )
 
         argparser.add_argument(

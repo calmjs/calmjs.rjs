@@ -18,15 +18,15 @@ from calmjs.dist import flatten_module_registry_dependencies
 logger = logging.getLogger(__name__)
 _default = 'all'
 
-extras_calmjs_methods = {
-    'top': get_extras_calmjs,
-    'all': flatten_extras_calmjs,
+module_registry_dependencies_methods = {
+    'all': flatten_module_registry_dependencies,
+    'explicit': get_module_registry_dependencies,
     'none': None,
 }
 
-module_registry_dependencies_methods = {
-    'top': get_module_registry_dependencies,
-    'all': flatten_module_registry_dependencies,
+extras_calmjs_methods = {
+    'all': flatten_extras_calmjs,
+    'explicit': get_extras_calmjs,
     'none': None,
 }
 
@@ -50,12 +50,12 @@ def generate_transpile_source_maps(
     method
         The method to acquire the dependencies for the given module
         across all the registries specified.  Choices are between 'all',
-        'top' or None.  Defaults to 'all'.
+        'explicit' or None.  Defaults to 'all'.
 
         'all'
             Traverse the dependency graph for the specified package to
             acquire the mappings declared for each of those modules.
-        'top'
+        'explicit'
             Only acquire the declared sources for the specified package.
         'none'
             Produce an empty source map.
@@ -90,16 +90,19 @@ def generate_bundled_source_maps(
         The working directory.  Defaults to current working directory.
     method
         The method to acquire the bundled sources for the given module.
-        Choices are between 'all', 'top' or None.  Defaults to 'all'.
+        Choices are between 'all', 'explicit' or None.
 
         'all'
             Traverse the dependency graph for the specified package and
-            acquire the declarations.
-        'top'
+            acquire the declarations. [default]
+        'explicit'
             Only acquire the bundled sources declared for the specified
             package.
         'none'
-            Produce an empty source map.
+            Produce an empty source map.  For requirejs, this means the
+            default fallback behavior of loading through CommonJS will
+            be used, if needed.  If truly none are required, try using
+            'empty' instead.
 
         Defaults to 'all'.
     """

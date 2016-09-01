@@ -53,9 +53,9 @@ class DistIntegrationTestCase(unittest.TestCase):
             'framework/lib', 'service/endpoint', 'service/rpc/lib',
         ])
 
-    def test_generate_transpile_source_maps_service_top(self):
+    def test_generate_transpile_source_maps_service_explicit(self):
         mapping = dist.generate_transpile_source_maps(
-            ['service'], registries=(self.registry_name,), method='top')
+            ['service'], registries=(self.registry_name,), method='explicit')
         self.assertEqual(sorted(mapping.keys()), [
             'service/endpoint', 'service/rpc/lib',
         ])
@@ -94,8 +94,8 @@ class DistIntegrationTestCase(unittest.TestCase):
         ])
         self.assertIn('underscore/underscore.js', mapping['underscore'])
 
-    def test_generate_bundled_source_maps_top(self):
+    def test_generate_bundled_source_maps_explicit(self):
         mapping = dist.generate_bundled_source_maps(
-            ['service'], self.dist_dir, method='top')
+            ['service'], self.dist_dir, method='explicit')
         self.assertEqual(sorted(mapping.keys()), ['underscore'])
         self.assertIn('underscore/underscore.js', mapping['underscore'])
