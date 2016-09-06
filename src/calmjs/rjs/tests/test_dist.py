@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 import unittest
 from os.path import join
+from calmjs.utils import pretty_logging
 from calmjs.rjs import dist
 
 from calmjs.testing import utils
+from calmjs.testing.mocks import StringIO
 
 
 class BaseDistTestCase(unittest.TestCase):
@@ -90,9 +92,11 @@ class DistIntegrationTestCase(unittest.TestCase):
 
     def test_generate_bundled_source_maps_bad_dir(self):
         bad_dir = utils.mkdtemp(self)
-        mapping = dist.generate_bundled_source_maps(
-            ['service'], bad_dir)
+        with pretty_logging(stream=StringIO()) as log:
+            mapping = dist.generate_bundled_source_maps(
+                ['service'], bad_dir)
         self.assertEqual(sorted(mapping.keys()), [])
+        self.assertIn('fake_modules', log.getvalue())
 
     def test_generate_bundled_source_maps_site_default(self):
         mapping = dist.generate_bundled_source_maps(

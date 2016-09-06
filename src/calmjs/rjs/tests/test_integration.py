@@ -15,11 +15,13 @@ from calmjs.npm import Driver
 from calmjs.npm import get_npm_version
 from calmjs.cli import node
 from calmjs import runtime
+from calmjs.utils import pretty_logging
 
 from calmjs.rjs import toolchain
 from calmjs.rjs import cli
 
 from calmjs.testing import utils
+from calmjs.testing.mocks import StringIO
 
 
 def skip_full_toolchain_test():  # pragma: no cover
@@ -28,6 +30,14 @@ def skip_full_toolchain_test():  # pragma: no cover
     if os.environ.get('SKIP_FULL'):
         return (True, 'skipping due to SKIP_FULL environment variable')
     return (False, '')
+
+
+def run_node(src, *requires):
+    # cross platform node runner with require paths.
+    # escape backslashes in require paths.
+    return node(src % ('\n'.join(
+        'require("%s");' % r.replace('\\', '\\\\') for r in requires
+    )))
 
 
 @unittest.skipIf(*skip_full_toolchain_test())
@@ -54,9 +64,15 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         os.chdir(cls._cls_tmpdir)
 
         npm = Driver()
-        # avoid pulling in any of the devDependencies as these are only
-        # capabilities test.
-        npm.npm_install('calmjs.rjs', env={'NODE_ENV': 'production'})
+        # Some platforms require a pile of environment variables (win32)
+        # so we are going to throw a copy for setting NODE_ENV to
+        # production to avoid pulling devDependencies.
+        # Perhaps if upstream _PLATFORM_ENV_KEYS could have APPDATA
+        # be included for the win32 section.
+        env = {}
+        env.update(os.environ)
+        env['NODE_ENV'] = 'production'
+        npm.npm_install('calmjs.rjs', env=env)
 
         # Save this as the env_path for RJSToolchain instance.  The
         # reason this is done here rather than using setup_transpiler
@@ -174,16 +190,16 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         self.assertTrue(exists(bundle_export_path))
 
         # verify that the bundle works with node
-        stdout, stderr = node(
+        stdout, stderr = run_node(
             'var requirejs = require("requirejs");\n'
             'var define = requirejs.define;\n'
-            'require("%s");\n'
+            '%s\n'
             'var main = requirejs("example/package/main");\n'
-            'main.main();\n' % (
-                bundle_export_path,
-            )
+            'main.main();\n',
+            bundle_export_path,
         )
 
+        self.assertEqual(stderr, '')
         self.assertEqual(stdout, '2\n4\n')
 
     def test_build_bundle_no_indent(self):
@@ -206,22 +222,25 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
 
         self.assertTrue(exists(bundle_export_path))
 
-        stdout, stderr = node(
+        stdout, stderr = run_node(
             'var requirejs = require("requirejs");\n'
-            'var config = require("%s");\n'
+            '%s\n'
             'var main = requirejs("example/package/main");\n'
-            'main.main(true);\n' % (
-                spec['requirejs_config_js'],
-            )
+            'main.main(true);\n',
+            spec['requirejs_config_js'],
         )
-        self.assertEqual(stdout, '2\n4\n')
         self.assertIn(
-            'example/package/bad.js:%d:%d' % self._bad_notdefinedsymbol,
+            join('example', 'package', 'bad.js') + ':%d:%d' % (
+                self._bad_notdefinedsymbol
+            ),
             stderr
         )
+        self.assertEqual(stdout, '2\n4\n')
 
     def test_cli_make_spec(self):
-        spec = cli.make_spec(['site'], source_registries=(self.registry_name,))
+        with pretty_logging(stream=StringIO()):
+            spec = cli.make_spec(
+                ['site'], source_registries=(self.registry_name,))
         self.assertEqual(spec['bundle_export_path'], 'site.js')
 
     def test_cli_compile_all_site(self):
@@ -255,16 +274,16 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
 
         # The execution should then work as expected on the bundle we
         # have.
-        stdout, stderr = node(
+        stdout, stderr = run_node(
             'var requirejs = require("requirejs");\n'
             'var define = requirejs.define;\n'
-            'require("%s");\n'
+            '%s\n'
             'var datepicker = requirejs("widget/datepicker");\n'
-            'console.log(datepicker.DatePickerWidget);\n' % (
-                spec['bundle_export_path'],
-            )
+            'console.log(datepicker.DatePickerWidget);\n',
+            spec['bundle_export_path'],
         )
 
+        self.assertEqual(stderr, '')
         self.assertEqual(stdout, 'widget.datepicker.DatePickerWidget\n')
 
     def test_cli_compile_all_service(self):
@@ -288,16 +307,16 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
 
         # The execution should then work as expected on the bundle we
         # have.
-        stdout, stderr = node(
+        stdout, stderr = run_node(
             'var requirejs = require("requirejs");\n'
             'var define = requirejs.define;\n'
-            'require("%s");\n'
+            '%s\n'
             'var rpclib = requirejs("service/rpc/lib");\n'
-            'console.log(rpclib.Library);\n' % (
-                spec['bundle_export_path'],
-            )
+            'console.log(rpclib.Library);\n',
+            spec['bundle_export_path'],
         )
 
+        self.assertEqual(stderr, '')
         self.assertEqual(stdout, 'service.rpc.lib.Library\n')
 
     def test_cli_compile_explicit_service(self):
@@ -331,18 +350,17 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
 
         # The execution should then work as expected if we loaded both
         # bundles.
-        stdout, stderr = node(
+        stdout, stderr = run_node(
             'var requirejs = require("requirejs");\n'
             'var define = requirejs.define;\n'
-            'require("%s");\n'
-            'require("%s");\n'
+            '%s\n'
             'var rpclib = requirejs("service/rpc/lib");\n'
-            'console.log(rpclib.Library);\n' % (
-                framework_js,
-                service_js,
-            )
+            'console.log(rpclib.Library);\n',
+            framework_js,
+            service_js,
         )
 
+        self.assertEqual(stderr, '')
         self.assertEqual(stdout, 'service.rpc.lib.Library\n')
 
     def setup_runtime_main_env(self):
@@ -379,10 +397,10 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
 
         # The execution should then work as expected on the bundle we
         # have.
-        stdout, stderr = node(
+        stdout, stderr = run_node(
             'var requirejs = require("requirejs");\n'
             'var define = requirejs.define;\n'
-            'require("%s");\n'
+            '%s\n'
             'var lib = requirejs("framework/lib");\n'
             'console.log(lib.Core);\n'
             'var datepicker = requirejs("widget/datepicker");\n'
@@ -393,11 +411,11 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
             'console.log(jquery);\n'
             'var underscore = requirejs("underscore");\n'
             'console.log(underscore);\n'
-            '' % (
-                target_file
-            )
+            '',
+            target_file
         )
 
+        self.assertEqual(stderr, '')
         self.assertEqual(stdout, (
             'framework.lib.Core\n'
             'widget.datepicker.DatePickerWidget\n'
@@ -431,7 +449,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
     def test_runtime_cli_compile_explicit_service_framework_widget(self):
         def run_node_with_require(*requires):
             os.chdir(self._cls_tmpdir)
-            return node(
+            return run_node(
                 'var requirejs = require("requirejs");\n'
                 'var define = requirejs.define;\n'
                 '%s\n'
@@ -442,10 +460,8 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
                 'var jquery = requirejs("jquery");\n'
                 'console.log(jquery);\n'
                 'var underscore = requirejs("underscore");\n'
-                'console.log(underscore);\n'
-                '' % '\n'.join(
-                    'require("%s")' % r for r in requires
-                )
+                'console.log(underscore);\n',
+                *requires
             )
 
         def runtime_main(args, error_code=0):
