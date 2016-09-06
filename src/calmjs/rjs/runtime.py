@@ -4,13 +4,11 @@ The calmjs runtime collection
 """
 
 from calmjs.runtime import DriverRuntime
-from calmjs.rjs.toolchain import RJSToolchain
 
 from calmjs.rjs.dist import extras_calmjs_methods
 from calmjs.rjs.dist import source_map_methods_list
 from calmjs.rjs.cli import compile_all
-
-# toolchain = RJSToolchain.create()
+from calmjs.rjs.cli import default_toolchain
 
 
 class RJSRuntime(DriverRuntime):
@@ -109,4 +107,4 @@ class RJSRuntime(DriverRuntime):
         )
 
 
-default = RJSRuntime(RJSToolchain.create())
+default = RJSRuntime(default_toolchain)

@@ -337,12 +337,9 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         self.assertEqual(stdout, 'service.rpc.lib.Library\n')
 
     def setup_runtime_main_env(self):
-        from calmjs.rjs.runtime import default
         # Set up the transpiler using the testcase's working directory
         # which has the r.js binary installed.
         cli.default_toolchain.setup_transpiler()
-        # ditto for the one in the cli_instance.
-        default.cli_driver.setup_transpiler()
 
         # create a new working directory to install our current site
         utils.remember_cwd(self)
