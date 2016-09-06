@@ -29,6 +29,8 @@ matrix:
       env: PY_VER=3.5.2
 
 before_install:
+  - node --version
+  - npm --version
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
       brew update || brew update ;
       brew install pyenv ;
