@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import unittest
+from os.path import join
 from calmjs.rjs import dist
 
 from calmjs.testing import utils
@@ -98,9 +99,9 @@ class DistIntegrationTestCase(unittest.TestCase):
             ['site'], self.dist_dir)
         self.assertEqual(sorted(mapping.keys()), ['jquery', 'underscore'])
         self.assertTrue(mapping['jquery'].endswith(
-            'fake_modules/jquery/dist/jquery.js'))
+            join('fake_modules', 'jquery', 'dist', 'jquery.js')))
         self.assertTrue(mapping['underscore'].endswith(
-            'fake_modules/underscore/underscore.js'))
+            join('fake_modules', 'underscore', 'underscore.js')))
 
     def test_generate_bundled_source_maps_default(self):
         mapping = dist.generate_bundled_source_maps(
@@ -108,20 +109,23 @@ class DistIntegrationTestCase(unittest.TestCase):
         self.assertEqual(sorted(mapping.keys()), [
             'jquery', 'underscore',
         ])
-        self.assertIn('underscore/underscore-min.js', mapping['underscore'])
+        self.assertIn(
+            (join('underscore', 'underscore-min.js')), mapping['underscore'])
         mapping = dist.generate_bundled_source_maps(
             ['service'], self.dist_dir)
         self.assertEqual(sorted(mapping.keys()), [
             'jquery', 'underscore',
         ])
-        self.assertIn('underscore/underscore.js', mapping['underscore'])
+        self.assertIn(
+            (join('underscore', 'underscore.js')), mapping['underscore'])
         self.assertIn('jquery', mapping['jquery'])
 
     def test_generate_bundled_source_maps_service_explicit(self):
         mapping = dist.generate_bundled_source_maps(
             ['service'], self.dist_dir, method='explicit')
         self.assertEqual(sorted(mapping.keys()), ['underscore'])
-        self.assertIn('underscore/underscore.js', mapping['underscore'])
+        self.assertIn(
+            (join('underscore', 'underscore.js')), mapping['underscore'])
 
     def test_generate_bundled_source_maps_service_empty(self):
         mapping = dist.generate_bundled_source_maps(

@@ -173,6 +173,6 @@ def generate_bundled_source_maps(
             continue  # pragma: no cover
 
         for k, v in extras_calmjs[mgr].items():
-            bundled_source_map[k] = joiner(basedir, v)
+            bundled_source_map[k] = joiner(basedir, *(v.split('/')))
 
     return bundled_source_map
