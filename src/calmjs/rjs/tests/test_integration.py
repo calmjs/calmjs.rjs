@@ -58,6 +58,14 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         # capabilities test.
         npm.npm_install('calmjs.rjs', env={'NODE_ENV': 'production'})
 
+        # Save this as the env_path for RJSToolchain instance.  The
+        # reason this is done here rather than using setup_transpiler
+        # method is purely because under environments that have the
+        # standard node_modules/.bin part of the PATH, it never gets
+        # set, and then if the test changes the working directory, it
+        # will then not be able to find the runtime needed.
+        cls._env_path = join(cls._cls_tmpdir, 'node_modules', '.bin')
+
         cls._srcdir = tempfile.mkdtemp()
         cls._ep_root = join(cls._srcdir, 'example', 'package')
         makedirs(cls._ep_root)
@@ -136,6 +144,16 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         rmtree(cls._cls_tmpdir)
         rmtree(cls._srcdir)
 
+    def setUp(self):
+        # Set up the transpiler using env_path assigned in setUpClass,
+        # which installed r.js to ensure the tests will find this.
+        cli.default_toolchain.env_path = self._env_path
+
+    def tearDown(self):
+        # As the manipulation is done, should set this back to its
+        # default state.
+        cli.default_toolchain.env_path = None
+
     def test_build_bundle_standard(self):
         bundle_dir = utils.mkdtemp(self)
         build_dir = utils.mkdtemp(self)
@@ -207,10 +225,6 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         self.assertEqual(spec['bundle_export_path'], 'site.js')
 
     def test_cli_compile_all_site(self):
-        # Set up the transpiler using the testcase's working directory
-        # which has the r.js binary installed.
-        cli.default_toolchain.setup_transpiler()
-
         # create a new working directory to install our current site
         utils.remember_cwd(self)
         working_dir = utils.mkdtemp(self)
@@ -254,10 +268,6 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         self.assertEqual(stdout, 'widget.datepicker.DatePickerWidget\n')
 
     def test_cli_compile_all_service(self):
-        # Set up the transpiler using the testcase's working directory
-        # which has the r.js binary installed.
-        cli.default_toolchain.setup_transpiler()
-
         # create a new working directory to install our current site
         utils.remember_cwd(self)
         working_dir = utils.mkdtemp(self)
@@ -291,7 +301,6 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         self.assertEqual(stdout, 'service.rpc.lib.Library\n')
 
     def test_cli_compile_explicit_service(self):
-        cli.default_toolchain.setup_transpiler()
         utils.remember_cwd(self)
         working_dir = utils.mkdtemp(self)
         os.chdir(working_dir)
@@ -337,10 +346,6 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         self.assertEqual(stdout, 'service.rpc.lib.Library\n')
 
     def setup_runtime_main_env(self):
-        # Set up the transpiler using the testcase's working directory
-        # which has the r.js binary installed.
-        cli.default_toolchain.setup_transpiler()
-
         # create a new working directory to install our current site
         utils.remember_cwd(self)
         target_dir = utils.mkdtemp(self)
