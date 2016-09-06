@@ -1,0 +1,66 @@
+sudo: false
+matrix:
+  allow_failures:
+    - os: osx
+  include:
+    - language: python
+      python: 2.7
+      addons:
+    - language: python
+      python: 3.3
+      addons:
+    - language: python
+      python: 3.4
+      addons:
+    - language: python
+      python: 3.5
+      addons:
+    - language: python
+      python: pypy
+      addons:
+    # test different versions of Node.js on osx
+    - language: node_js
+      node_js: 4.5
+      os: osx
+      env: PY_VER=3.4.5
+    - language: node_js
+      node_js: 6.5
+      os: osx
+      env: PY_VER=3.5.2
+
+before_install:
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+      brew update || brew update ;
+      brew install pyenv ;
+      brew outdated pyenv || brew upgrade pyenv ;
+      pyenv install $PY_VER ;
+      pyenv global $PY_VER ;
+      pyenv rehash ;
+      python -m pip install --user virtualenv ;
+      python -m virtualenv ~/.venv ;
+      source ~/.venv/bin/activate ;
+    fi
+
+install:
+  - pip install nose coverage flake8
+  # must be installed first, as this writes package_json into egg-info
+  - pip install calmjs
+  - python setup.py develop
+script:
+  - flake8 setup.py src
+  - nosetests --with-coverage --cover-package=calmjs.rjs --with-doctest
+  - coverage report -m
+# Alternatively without nose
+#  - coverage run --include=src/* -m unittest calmjs.rjs.tests.make_suite
+#  - coverage report -m
+after_success:
+  # only submit coverage when testing under linux.
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+      pip install coveralls ;
+      coveralls ;
+    fi
+branches:
+  only:
+    - testing
+    - master
+    - 1.0.x
