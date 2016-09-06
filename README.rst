@@ -7,7 +7,7 @@ through standard JavaScript or `Node.js`_ packages.
 
 .. image:: https://travis-ci.org/calmjs/calmjs.rjs.svg?branch=master
     :target: https://travis-ci.org/calmjs/calmjs.rjs
-.. image:: https://coveralls.io/repos/github/calmjs/calmjs.rjs.svg?branch=master
+.. image:: https://coveralls.io/repos/github/calmjs/calmjs.rjs/badge.svg?branch=master
     :target: https://coveralls.io/github/calmjs/calmjs.rjs?branch=master
 
 .. |calmjs| replace:: ``calmjs``
