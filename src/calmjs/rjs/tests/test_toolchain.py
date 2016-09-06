@@ -17,6 +17,19 @@ from calmjs.rjs import toolchain
 from calmjs.testing import utils
 
 
+class ToolchainBootstrapTestCase(unittest.TestCase):
+    """
+    Test the bootstrap function
+    """
+
+    def test_runtime_name(self):
+        # seems redundant, but...
+        platform = 'posix'
+        self.assertEqual(toolchain.get_rjs_runtime_name(platform), 'r.js')
+        platform = 'win32'
+        self.assertEqual(toolchain.get_rjs_runtime_name(platform), 'r.js.cmd')
+
+
 class TranspilerTestCase(unittest.TestCase):
     """
     Test various "transpilers"  in the toolchain module
@@ -179,7 +192,9 @@ class ToolchainUnitTestCase(unittest.TestCase):
 
         self.assertEqual(
             str(e.exception),
-            "'/no/such/path' does not exist; cannot be used as 'r.js' binary",
+            "'/no/such/path' does not exist; cannot be used as '%s' binary" % (
+                rjs.rjs_bin
+            ),
         )
 
     def test_prepare_failure_which_fail(self):
@@ -198,7 +213,9 @@ class ToolchainUnitTestCase(unittest.TestCase):
         with self.assertRaises(RuntimeError) as e:
             rjs.prepare(spec)
 
-        self.assertEqual(str(e.exception), "unable to locate 'r.js'")
+        self.assertEqual(str(e.exception), "unable to locate '%s'" % (
+            rjs.rjs_bin
+        ))
 
     def test_prepare_failure_bundle_export_path(self):
         tmpdir = utils.mkdtemp(self)

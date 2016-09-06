@@ -32,6 +32,7 @@ from __future__ import unicode_literals
 
 import json
 import logging
+import sys
 from os.path import dirname
 from os.path import join
 from os.path import exists
@@ -49,6 +50,15 @@ from .umdjs import UMD_REQUIREJS_JSON_EXPORT_FOOTER
 from .dist import EMPTY
 
 logger = logging.getLogger(__name__)
+
+_PLATFORM_SPECIFIC_RUNTIME = {
+    'win32': 'r.js.cmd',
+}
+_DEFAULT_RUNTIME = 'r.js'
+
+
+def get_rjs_runtime_name(platform):
+    return _PLATFORM_SPECIFIC_RUNTIME.get(platform, 'r.js')
 
 
 def update_base_requirejs_config(d):
@@ -134,7 +144,7 @@ class RJSToolchain(Toolchain):
     """
 
     rjs_bin_key = 'rjs_bin'
-    rjs_bin = 'r.js'
+    rjs_bin = get_rjs_runtime_name(sys.platform)
     build_manifest_name = 'build.js'
     requirejs_config_name = 'config.js'
 
