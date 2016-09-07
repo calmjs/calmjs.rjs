@@ -1,7 +1,7 @@
 from setuptools import setup
 from setuptools import find_packages
 
-version = '0.0'
+version = '1.0.0'
 
 package_json = {
     "dependencies": {
@@ -19,9 +19,6 @@ package_json = {
 
 long_description = (
     open('README.rst').read()
-    + '\n' +
-    'Contributors\n'
-    '============\n'
     + '\n' +
     open('CHANGES.rst').read()
     + '\n')
@@ -47,6 +44,7 @@ setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=[
+        'calmjs>=1.0.3',
     ],
     extras_require={
         'dev': [
@@ -63,5 +61,5 @@ setup(
         ],
     },
     package_json=package_json,
-    test_suite="calmjs.rjs.tests.test_suite",
+    test_suite="calmjs.rjs.tests.make_suite",
 )
