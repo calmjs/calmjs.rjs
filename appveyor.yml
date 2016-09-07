@@ -1,0 +1,25 @@
+environment:
+  matrix:
+    - PYTHON: "C:\\Python27"
+      nodejs_version: "4.5"
+    - PYTHON: "C:\\Python33"
+      nodejs_version: "4.5"
+    - PYTHON: "C:\\Python34"
+      nodejs_version: "6.5"
+    - PYTHON: "C:\\Python35"
+      nodejs_version: "6.5"
+
+install:
+  - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
+  - ps: Install-Product node $env:nodejs_version
+  - pip install coverage calmjs
+  - "%PYTHON%\\python.exe setup.py install"
+
+test_script:
+  - coverage run setup.py test
+  - coverage report -m
+
+artifacts:
+  - path: dist\*
+
+build: off
