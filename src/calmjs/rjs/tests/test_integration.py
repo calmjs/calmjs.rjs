@@ -15,6 +15,7 @@ from calmjs.npm import Driver
 from calmjs.npm import get_npm_version
 from calmjs.cli import node
 from calmjs import runtime
+from calmjs.utils import finalize_env
 from calmjs.utils import pretty_logging
 
 from calmjs.rjs import toolchain
@@ -22,6 +23,7 @@ from calmjs.rjs import cli
 
 from calmjs.testing import utils
 from calmjs.testing.mocks import StringIO
+from calmjs.rjs.testing import env
 
 
 def skip_full_toolchain_test():  # pragma: no cover
@@ -64,15 +66,8 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         os.chdir(cls._cls_tmpdir)
 
         npm = Driver()
-        # Some platforms require a pile of environment variables (win32)
-        # so we are going to throw a copy for setting NODE_ENV to
-        # production to avoid pulling devDependencies.
-        # Perhaps if upstream _PLATFORM_ENV_KEYS could have APPDATA
-        # be included for the win32 section.
-        env = {}
-        env.update(os.environ)
-        env['NODE_ENV'] = 'production'
-        npm.npm_install('calmjs.rjs', env=env)
+        # str is for win32 Python2.
+        npm.npm_install('calmjs.rjs', env=finalize_env(env))
 
         # Save this as the env_path for RJSToolchain instance.  The
         # reason this is done here rather than using setup_transpiler
