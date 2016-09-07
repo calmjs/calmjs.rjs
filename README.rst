@@ -1,15 +1,18 @@
 calmjs.rjs
 ==========
 
-A `RequireJS`_ toolchain built on top of |calmjs|_ for a well managed
+A `RequireJS`__ toolchain built on top of |calmjs|_ for a well managed
 workflow for bundling JavaScript code sourced from Python modules or
 through standard JavaScript or `Node.js`_ packages.
 
+.. __: http://requirejs.org/
 .. image:: https://travis-ci.org/calmjs/calmjs.rjs.svg?branch=master
     :target: https://travis-ci.org/calmjs/calmjs.rjs
 .. image:: https://coveralls.io/repos/github/calmjs/calmjs.rjs/badge.svg?branch=master
     :target: https://coveralls.io/github/calmjs/calmjs.rjs?branch=master
 
+.. |AMD| replace:: AMD (Asynchronous Module Definition)
+.. |bower| replace:: ``bower``
 .. |calmjs| replace:: ``calmjs``
 .. |calmjs.bower| replace:: ``calmjs.bower``
 .. |calmjs.rjs| replace:: ``calmjs.rjs``
@@ -17,14 +20,13 @@ through standard JavaScript or `Node.js`_ packages.
 .. |npm| replace:: ``npm``
 .. |r.js| replace:: ``r.js``
 .. |requirejs| replace:: ``requirejs``
-.. _Asynchronous Module Definition: http://requirejs.org/docs/whyamd.html
+.. _AMD: https://github.com/amdjs/amdjs-api/blob/master/AMD.md
 .. _bower: https://bower.io/
 .. _calmjs: https://pypi.python.org/pypi/calmjs
 .. _calmjs.bower: https://pypi.python.org/pypi/calmjs.bower
 .. _calmjs.dev: https://pypi.python.org/pypi/calmjs.dev
 .. _Node.js: https://nodejs.org/
 .. _npm: https://www.npmjs.com/
-.. _RequireJS: http://requirejs.org/
 .. _requirejs: https://www.npmjs.com/package/requirejs
 
 
@@ -32,32 +34,58 @@ Introduction
 ------------
 
 User interfaces for web applications typically rely on some form of
-JavaScript code, no matter what languages the backend is written in.
-Many Python packages have adopted the usage of `Node.js`_ for testing
-the JavaScript code that's required by the front-end, with |npm|_ (or
-|bower|_) being the package manager for the JavaScript side of the
-library.  This often resulted in the separation of what would have been
-a single package into two for each of the respective language's
-distribution channels.  The consequences of this decision can end up
-being problematic due to the difficulty in propagating the package's
-version and dependency information across both channels in a consistent
-and reproducible manner, ensuring difficulty for downstream package
-users to acquire all the requirements and the supporting facilities to
-generate the required backend stack with the appropriate front-end
-artifacts needed to serve the application.  The calmjs framework is able
-to bring the separation back together through the |calmjs.rjs| package,
-by enabling the production of deployable artifacts from JavaScript code
-within Python packages and whatever other sources they might have
-declared (i.e. sourced from |npm| or others).
+JavaScript for its front-end user interfaces, regardless of what
+language the backend is written in.  Many Python packages have adopted
+the usage of `Node.js`_ for testing the JavaScript code that's required
+by the front-end, with |npm|_ (or |bower|_) being the package manager
+for the acquisition of JavaScript packages required for the associated
+functionality.  This often resulted in the separation of what would have
+been a single set of configuration into multiple sets, and often this
+also resulted in the package being fractured into two parts to fit in
+with the distribution channels being used (PyPI vs npm and others).
 
-This is done by treating JavaScript files as both source and compilation
-target, where the final artifact is produced through |r.js| from the
-|requirejs|_ package.  These artifacts will contain the JavaScript
-sources extracted from Python packages required by the selected Python
-packages, plus all other sources declared as needed via the Node.js
-environment.  Finally, these artifacts can then be deployed to a given
-site and be used by client browsers, in conjunction with the originally
-selected Python packages that provided the packend features.
+The consequences of this decision can end up being problematic due to
+the increase in difficulty in propagating the package's version and
+dependency information across both channels in a consistent and
+reproducible manner for downstream packages and their users.  The
+problem Python packages and their users face is that there is no native
+or unified way to generate all the required artifacts needed to make
+this version of the site to run; very often users have to reply on
+package specific instructions on getting those artifacts downloaded or
+generated.
+
+The goal of the calmjs framework is to bring this separation back
+together by providing the method to expose JavaScript sources included
+with Python packages, with this package, |calmjs.rjs|, provide the
+facilities to produce deployable artifacts from those exported source
+files, plus the other declared external bundles to be sourced from |npm|
+or other related Node.js package management systems.
+
+
+Features
+--------
+
+How it works
+~~~~~~~~~~~~
+
+This is achieved by treating JavaScript files as both source and
+compilation target, with the final deployable artifact(s) being produced
+through |r.js| from the |requirejs|_ package.  Under the most default
+configuration, the sources included within the Python packages are
+headerless and footerless JavaScript files that have ``require`` and
+``exports.obj = obj;`` statements; note how the ``exports`` is not
+``module.exports`` as the ``calmjs rjs`` transpiler will add the
+appropriate headers and footers for the target platform to be generated,
+(currently |AMD|_ only, but support for CommonJS and later ES6 can be
+provided).
+
+The resulting sources will be placed in a build directory, along with
+all the declared bundled sources acquired from the Node.js package
+repositories.  A build file will then be generated that includes all the
+relevant sources as selected to enable the generation of the final
+artifact file through |r.js|.  These can then be deployed to the
+appropriate environment, or the whole above process can be included as
+part of the functionality of the Python backend at hand.
 
 Ultimately, the goal of |calmjs.rjs| is to ease the integration and
 interactions between of client-side JavaScript with server-side Python,
@@ -72,17 +100,6 @@ to set up the test environment and harnesses for running of JavaScript
 tests that are part of the Python packages for the associated JavaScript
 code.
 
-
-Features
---------
-
-The core of the package is a toolchain that will load and compile all
-registered JavaScript files within a Python environment and bundle
-everything into a single artifact file, as per the source package's
-package requirements (i.e. its declared dependencies).  The resulting
-artifact will be a JavaScript file generated by |r.js| which will comply
-with the `Asynchronous Module Definition`_ (AMD) API.
-
 Do note, in the initial implementation, the source file loosely follows
 certain definitions that only mimic what ES6 intends to provide.  Even
 with this, as a consequence of treating JavaScript within the Python
@@ -96,10 +113,88 @@ will be usable through the AMD API.
 Installation
 ------------
 
-Currently under development, please install by cloning this repository
-and run ``python setup.py develop`` within a working Python environment,
-or follow the local framework or operating system's default method on
-installation of development packages that have pulled this package in.
+It is recommended that the local environment already have Node.js and
+|npm| installed at the very minimum to enable the installation of
+|requirejs|, if it hasn't already been installed and available.
+
+To install |calmjs.rjs| into a given Python environment, it may be
+installed directly from PyPI with the following command:
+
+.. code:: sh
+
+    $ pip install calmjs.rjs
+
+If a local installation of RequireJS into the current directory is
+desired, it can be done through |calmjs| with the following command:
+
+.. code:: sh
+
+    $ calmjs npm --install calmjs.rjs
+
+Which does the equivalent of ``npm install requirejs``; while this does
+not seem immediately advantageous, other Python packages that declared
+their dependencies for specific sets of tool can be invoked like so, and
+to follow through on that.  As an example, ``example.package`` may
+declare dependencies on RequireJS through |npm| plus a number of other
+packages available through |requirejs|, the process then simply become
+this:
+
+.. code:: sh
+
+    $ calmjs npm --install example.package
+
+All standard JavaScript and Node.js dependencies for ``example.package``
+will now be installed into the current directory through the relevant
+tools.  This process will also install all the other dependencies
+through |npm| or |requirejs| that other Python packages depended on by
+``example.package`` have declared.  For more usage please refer to
+further down this document or the documentation for |calmjs|_.
+
+Alternative installation methods (advanced users)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Development is still ongoing with |calmjs.requirejs|, for the latest
+features and bug fixes, the development version can be installed through
+git like so:
+
+.. code:: sh
+
+    $ pip install calmjs
+    $ pip install git+https://github.com/calmjs/calmjs.rjs.git#egg=calmjs.rjs
+
+Alternatively, the git repository can be cloned directly and execute
+``python setup.py develop`` while inside the root of the source
+directory.
+
+Keep in mind that |calmjs| MUST be available before the ``setup.py``
+within the |calmjs.rjs| source tree is executed, for it needs the
+``package_json`` writing capabilities in |calmjs|.  Please refer to the
+base package for further information.
+
+As |calmjs| is declared as both a namespace and a package, mixing
+installation methods as described above when installing with other
+|calmjs| packages may result in the module importer being unable to look
+up the target module.  While this normally will not affect end users,
+provided they use the same, standard installation method (i.e. wheel),
+for developers it can be troublesome.  To resolve this, either stick to
+the same installation method for all packages (i.e. ``python setup.py
+develop``), or import a module from the main |calmjs| package.  Here
+is an example run:
+
+.. code:: python
+
+    >>> import calmjs.rjs
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+    ImportError: No module named 'calmjs.rjs'
+    >>> import calmjs.base
+    >>> import calmjs.rjs
+    >>>
+
+If this behavior (and workaround) is undesirable, please ensure the
+installation of all |calmjs| related packages follow the same method
+(i.e. either ``python setup.py develop`` for all packages, or using the
+wheels acquired through ``pip``).
 
 
 Usage
@@ -107,8 +202,8 @@ Usage
 
 Any exposed JavaScript code through the ``calmjs.module`` registry will
 be picked up and compiled into a working RequireJS artifact.  For
-details on how that registry work please refer to the README included
-with the |calmjs|_ project.
+details on how the calmjs registry system works please refer to the
+README included with the |calmjs|_ project.
 
 For example, given the following entry points for that registry defined
 by a package named ``example``:
@@ -205,7 +300,7 @@ The resulting calmjs run may then end up looking something like this:
 
 
 The transpiler will add the appropriate boilerplates and thus the
-``require`` statements through ``requirejs`` will import from
+``require`` statements through |requirejs| will import from
 ``node_modules`` if the extras_calmjs have been declared.  However,
 there are cases where the desired artifact should only contain the
 sources from the Python package without the extras or vice versa (due to
