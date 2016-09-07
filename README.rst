@@ -8,6 +8,8 @@ through standard JavaScript or `Node.js`_ packages.
 .. __: http://requirejs.org/
 .. image:: https://travis-ci.org/calmjs/calmjs.rjs.svg?branch=master
     :target: https://travis-ci.org/calmjs/calmjs.rjs
+.. image:: https://ci.appveyor.com/api/projects/status/jbta6dfdynk5ke59/branch/master?svg=true
+    :target: https://ci.appveyor.com/project/metatoaster/calmjs-rjs/branch/master
 .. image:: https://coveralls.io/repos/github/calmjs/calmjs.rjs/badge.svg?branch=master
     :target: https://coveralls.io/github/calmjs/calmjs.rjs?branch=master
 
