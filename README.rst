@@ -1,9 +1,13 @@
 calmjs.rjs
 ==========
 
-A `RequireJS`__ toolchain built on top of |calmjs|_ for a well managed
-workflow for bundling JavaScript code sourced from Python modules or
-through standard JavaScript or `Node.js`_ packages.
+Integration of `RequireJS`__ into a the Python environment through the
+|calmjs|_ framework, to provide a well managed workflow that enables the
+generation of deployable artifacts from JavaScript source code
+associated with Python packages.  These JavaScript source code could be
+sourced from Python packages declared through the |calmjs| framework, or
+through standard JavaScript or `Node.js`_ packages sourced from |npm|_
+or other similar package repositories.
 
 .. __: http://requirejs.org/
 .. image:: https://travis-ci.org/calmjs/calmjs.rjs.svg?branch=master
@@ -342,7 +346,7 @@ through ``bower`` (supported via |calmjs.bower|_); instead of using
 ``node_modules`` as the key, ``bower_components`` should be used
 instead.
 
-Alternative registeries aside from ``calmjs.module`` can be specified
+Alternative registries aside from ``calmjs.module`` can be specified
 with the ``--source-registry`` flag.  Assuming there are registries in
 the current environment registered as ``myreg1`` and ``myreg2`` and the
 ``example`` package has registered sources to both of them, the command
