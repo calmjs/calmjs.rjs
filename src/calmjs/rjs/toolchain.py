@@ -101,6 +101,13 @@ def update_base_requirejs_config(d):
     })
 
 
+def _null_transpiler(spec, reader, writer):
+    line = reader.readline()
+    while line:
+        writer.write(line)
+        line = reader.readline()
+
+
 def _transpile_generic_to_umd_node_amd_compat_rjs(spec, reader, writer):
     level = UMD_NODE_AMD_INDENT
     indent = '' if spec.get('transpile_no_indent') else ' ' * level
@@ -136,6 +143,21 @@ def _transpile_generic_to_umd_node_amd_compat_rjs(spec, reader, writer):
         write_line(line)
 
     writer.write(UMD_NODE_AMD_FOOTER)
+
+
+def _rjs_transpiler(spec, reader, writer):
+    # ensure the reader is done from beginning
+    reader.seek(0)
+    line = reader.readline()
+    while line and line.strip() in ('', "'use strict';", '"use strict";'):
+        line = reader.readline()
+    # back to the beginning
+    reader.seek(0)
+    if line.strip().startswith('define('):
+        return _null_transpiler(spec, reader, writer)
+    else:
+        return _transpile_generic_to_umd_node_amd_compat_rjs(
+            spec, reader, writer)
 
 
 class RJSToolchain(Toolchain):

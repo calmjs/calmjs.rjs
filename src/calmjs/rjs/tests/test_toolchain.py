@@ -138,6 +138,35 @@ class TranspilerTestCase(unittest.TestCase):
             '        return exports;',
         ])
 
+        target_main = StringIO()
+        toolchain._rjs_transpiler(spec, source, target_main)
+        self.assertEqual(target.getvalue(), target_main.getvalue())
+
+    def test_transpile_skip_on_amd(self):
+        source = StringIO(
+            "\n"
+            "define(['jquery'], function($) {\n"
+            "    'use strict';\n"
+            "    return {'testing': {}}\n"
+            "});\n"
+        )
+        target = StringIO()
+        spec = Spec()
+        toolchain._rjs_transpiler(spec, source, target)
+        self.assertEqual(source.getvalue(), target.getvalue())
+
+    def test_transpile_skip_on_amd_strict_top(self):
+        source = StringIO(
+            "'use strict';\n"
+            "define(['jquery'], function($) {\n"
+            "    return {'testing': {}}\n"
+            "});\n"
+        )
+        target = StringIO()
+        spec = Spec()
+        toolchain._rjs_transpiler(spec, source, target)
+        self.assertEqual(source.getvalue(), target.getvalue())
+
     def test_modname_source_to_target(self):
         rjs = toolchain.RJSToolchain()
         self.assertEqual(rjs.pick_compiled_mod_target_name(
