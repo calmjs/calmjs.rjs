@@ -170,13 +170,13 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         build_dir = utils.mkdtemp(self)
         transpile_source_map = {}
         transpile_source_map.update(self._example_package_map)
-        bundled_source_map = {}
+        bundle_source_map = {}
         bundle_export_path = join(bundle_dir, 'example.package.js')
 
         rjs = toolchain.RJSToolchain()
         spec = Spec(
             transpile_source_map=transpile_source_map,
-            bundled_source_map=bundled_source_map,
+            bundle_source_map=bundle_source_map,
             bundle_export_path=bundle_export_path,
             build_dir=build_dir,
         )
@@ -202,13 +202,13 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         build_dir = utils.mkdtemp(self)
         transpile_source_map = {}
         transpile_source_map.update(self._example_package_map)
-        bundled_source_map = {}
+        bundle_source_map = {}
         bundle_export_path = join(bundle_dir, 'example.package.js')
 
         rjs = toolchain.RJSToolchain()
         spec = Spec(
             transpile_source_map=transpile_source_map,
-            bundled_source_map=bundled_source_map,
+            bundle_source_map=bundle_source_map,
             bundle_export_path=bundle_export_path,
             build_dir=build_dir,
             transpile_no_indent=True,
@@ -291,7 +291,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         # but without bundling
         spec = cli.compile_all(
             ['service'], source_registries=(self.registry_name,),
-            bundled_map_method='none',
+            bundle_map_method='none',
         )
         self.assertEqual(
             spec['bundle_export_path'], join(working_dir, 'service.js'))
@@ -323,7 +323,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         # but without bundling
         spec = cli.compile_all(
             ['service'], source_registries=(self.registry_name,),
-            bundled_map_method='none', source_map_method='explicit',
+            bundle_map_method='none', source_map_method='explicit',
         )
         service_js = join(working_dir, 'service.js')
         self.assertEqual(spec['bundle_export_path'], service_js)
@@ -334,7 +334,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         # build its parent js separately, too
         spec = cli.compile_all(
             ['framework'], source_registries=(self.registry_name,),
-            bundled_map_method='none', source_map_method='explicit',
+            bundle_map_method='none', source_map_method='explicit',
         )
         framework_js = join(working_dir, 'framework.js')
         self.assertEqual(spec['bundle_export_path'], framework_js)
@@ -427,7 +427,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
             runtime.main([
                 'rjs', 'site',
                 '--source-map-method=explicit',
-                '--bundled-map-method=none',
+                '--bundle-map-method=none',
                 '--export-filename=' + target_file,
                 '--source-registry=' + self.registry_name,
             ])
@@ -515,7 +515,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         runtime_main([
             'rjs', 'widget',
             '--source-map-method=all',  # using all
-            '--bundled-map-method=empty',
+            '--bundle-map-method=empty',
             '--export-filename=' + widget_slim_js,
             '--source-registry=' + self.registry_name,
         ])

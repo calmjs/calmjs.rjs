@@ -167,43 +167,50 @@ class TranspilerTestCase(unittest.TestCase):
         toolchain._rjs_transpiler(spec, source, target)
         self.assertEqual(source.getvalue(), target.getvalue())
 
-    def test_modname_source_to_target(self):
+    def test_modname_source_target_to_modpath(self):
         rjs = toolchain.RJSToolchain()
-        self.assertEqual(rjs.pick_compiled_mod_target_name(
+        spec = Spec()
+        self.assertEqual(rjs.modname_source_target_to_modpath(
+            spec,
             'example/module',
             '/tmp/src/example/module', '/tmp/build/example/module'),
             'example/module'
         )
-        self.assertEqual(rjs.pick_compiled_mod_target_name(
+        self.assertEqual(rjs.modname_source_target_to_modpath(
+            spec,
             'example/module',
             'empty:', '/tmp/build/example/module'),
             'empty:'
         )
 
-    def test_compile_normal(self):
+    def test_transpile_modname_source_target_normal(self):
+        modname = 'module'
         src_file = join(utils.mkdtemp(self), 'module.js')
-        tgt_file = join(utils.mkdtemp(self), 'module.js')
-        spec = Spec()
+        tgt_file = 'module.js'
+        tgt_dir = utils.mkdtemp(self)
+        spec = Spec(build_dir=tgt_dir)
 
         with open(src_file, 'w') as fd:
             fd.write('console.log("Hello");')
 
         rjs = toolchain.RJSToolchain()
-        rjs.compile(spec, src_file, tgt_file)
+        rjs.transpile_modname_source_target(spec, modname, src_file, tgt_file)
 
-        with open(tgt_file) as fd:
+        with open(join(tgt_dir, tgt_file)) as fd:
             # The transpiler will mutate it.
             result = fd.read()
 
         self.assertNotEqual('console.log("Hello");', result)
         self.assertIn('console.log("Hello");', result)
 
-    def test_compile_empty(self):
+    def test_transpile_modname_source_target_empty(self):
+        modname = 'module'
         src_file = 'empty:'
-        tgt_file = join(utils.mkdtemp(self), 'module.js')
-        spec = Spec()
+        tgt_dir = utils.mkdtemp(self)
+        tgt_file = join(tgt_dir, 'module.js')
+        spec = Spec(build_dir=tgt_dir)
         rjs = toolchain.RJSToolchain()
-        rjs.compile(spec, src_file, tgt_file)
+        rjs.transpile_modname_source_target(spec, modname, src_file, tgt_file)
         self.assertFalse(exists(tgt_file))
 
 
@@ -289,7 +296,7 @@ class ToolchainUnitTestCase(unittest.TestCase):
             # this is not written
             bundle_export_path=join(tmpdir, 'bundle.js'),
             build_dir=tmpdir,
-            compiled_paths={},
+            transpiled_paths={},
             bundled_paths={},
             module_names=[],
         )
@@ -316,7 +323,7 @@ class ToolchainUnitTestCase(unittest.TestCase):
         self.assertEqual(config_js['paths'], {})
         self.assertEqual(config_js['include'], [])
 
-    def test_assemble_compiled(self):
+    def test_prepare_assemble(self):
         tmpdir = utils.mkdtemp(self)
 
         with open(join(tmpdir, 'r.js'), 'w'):
@@ -327,7 +334,7 @@ class ToolchainUnitTestCase(unittest.TestCase):
             # this is not written
             bundle_export_path=join(tmpdir, 'bundle.js'),
             build_dir=tmpdir,
-            compiled_paths={
+            transpiled_paths={
                 'example/module': '/path/to/src/example/module'
             },
             bundled_paths={
@@ -342,6 +349,7 @@ class ToolchainUnitTestCase(unittest.TestCase):
         rjs = toolchain.RJSToolchain()
         spec[rjs.rjs_bin_key] = join(tmpdir, 'r.js')
         rjs.prepare(spec)
+        # skip the compile step as there is nothing to compile
         rjs.assemble(spec)
 
         self.assertTrue(exists(join(tmpdir, 'build.js')))

@@ -44,7 +44,7 @@ setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=[
-        'calmjs>=1.0.3',
+        'calmjs>=2.0.0.dev,<3',
     ],
     extras_require={
         'dev': [

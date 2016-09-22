@@ -108,10 +108,10 @@ def generate_transpile_source_maps(
     return transpile_source_map
 
 
-def generate_bundled_source_maps(
+def generate_bundle_source_maps(
         package_names, working_dir=None, method=_default):
     """
-    Acquire the bundled source maps through the calmjs registry system.
+    Acquire the bundle source maps through the calmjs registry system.
 
     Arguments:
 
@@ -120,14 +120,14 @@ def generate_bundled_source_maps(
     working_dir
         The working directory.  Defaults to current working directory.
     method
-        The method to acquire the bundled sources for the given module.
+        The method to acquire the bundle sources for the given module.
         Choices are between 'all', 'explicit', 'none, or 'empty'.
 
         'all'
             Traverse the dependency graph for the specified package and
             acquire the declarations. [default]
         'explicit'
-            Only acquire the bundled sources declared for the specified
+            Only acquire the bundle sources declared for the specified
             package.
         'none'
             Produce an empty source map.  For requirejs, this means the
@@ -157,7 +157,7 @@ def generate_bundled_source_maps(
     # subdirectories.
     valid_pkgmgr_dirs = set(get('calmjs.extras_keys').iter_records())
     extras_calmjs = acquire_extras_calmjs(package_names)
-    bundled_source_map = {}
+    bundle_source_map = {}
 
     for mgr in extras_calmjs:
         if mgr not in valid_pkgmgr_dirs:
@@ -173,6 +173,6 @@ def generate_bundled_source_maps(
             continue  # pragma: no cover
 
         for k, v in extras_calmjs[mgr].items():
-            bundled_source_map[k] = joiner(basedir, *(v.split('/')))
+            bundle_source_map[k] = joiner(basedir, *(v.split('/')))
 
-    return bundled_source_map
+    return bundle_source_map

@@ -7,7 +7,7 @@ from calmjs.toolchain import Spec
 from calmjs.rjs.toolchain import RJSToolchain
 
 from calmjs.rjs.dist import generate_transpile_source_maps
-from calmjs.rjs.dist import generate_bundled_source_maps
+from calmjs.rjs.dist import generate_bundle_source_maps
 
 default_toolchain = RJSToolchain()
 
@@ -15,7 +15,7 @@ default_toolchain = RJSToolchain()
 def make_spec(
         package_names, export_filename=None, working_dir=None, build_dir=None,
         source_registries=('calmjs.module',),
-        source_map_method='all', bundled_map_method='all'):
+        source_map_method='all', bundle_map_method='all'):
     """
     Produce a spec for the compilation through the RJSToolchain.
     """
@@ -34,10 +34,10 @@ def make_spec(
             registries=source_registries,
             method=source_map_method,
         ),
-        bundled_source_map=generate_bundled_source_maps(
+        bundle_source_map=generate_bundle_source_maps(
             package_names=package_names,
             working_dir=working_dir,
-            method=bundled_map_method,
+            method=bundle_map_method,
         ),
     )
 
@@ -45,7 +45,7 @@ def make_spec(
 def compile_all(
         package_names, export_filename=None, working_dir=None, build_dir=None,
         source_registries=('calmjs.module',),
-        source_map_method='all', bundled_map_method='all',
+        source_map_method='all', bundle_map_method='all',
         toolchain=default_toolchain):
     """
     Invoke the r.js compiler to generate a JavaScript bundle file for a
@@ -88,10 +88,10 @@ def compile_all(
             Only acquire the sources for the specified package.
         'none'
             Do not acquire sources.  Useful for creating bundles of just
-            the bundled sources.
+            the bundle sources.
 
-    bundled_map_method
-        The acquisition method for the bundled sources for the given
+    bundle_map_method
+        The acquisition method for the bundle sources for the given
         module.  Choices are between 'all', 'top' or None.  Defaults to
         'all'.
 
@@ -99,7 +99,7 @@ def compile_all(
             Traverse the dependency graph for the specified package and
             acquire the declarations.
         'top'
-            Only acquire the bundled sources declared for the specified
+            Only acquire the bundle sources declared for the specified
             package.
         'none'
             Do not bundle the declared bundles.  Useful for cases where
@@ -124,7 +124,7 @@ def compile_all(
         build_dir=build_dir,
         source_registries=source_registries,
         source_map_method=source_map_method,
-        bundled_map_method=bundled_map_method,
+        bundle_map_method=bundle_map_method,
     )
     toolchain(spec)
     return spec

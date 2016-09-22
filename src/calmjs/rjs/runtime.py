@@ -44,8 +44,8 @@ class RJSRuntime(DriverRuntime):
         argparser.add_argument(
             '--working-dir', default=cwd,
             dest='working_dir',
-            help='the working directory, where the bundled sources will be '
-                 'searched for to copy to build directory for bundling; '
+            help='the working directory; for this tool it will be used as the '
+                 'base directory to find source files declared for bundling; '
                  'default is current working directory (%s)' % cwd,
         )
 
@@ -76,8 +76,8 @@ class RJSRuntime(DriverRuntime):
         )
 
         argparser.add_argument(
-            '--bundled-map-method', default='all',
-            dest='bundled_map_method',
+            '--bundle-map-method', default='all',
+            dest='bundle_map_method',
             choices=sorted(extras_calmjs_methods.keys()),
             help='the acquisition method for the bundle sources for the given '
                  'packages',
@@ -90,7 +90,7 @@ class RJSRuntime(DriverRuntime):
 
     def run(self, package_names=(), export_filename=None, working_dir=None,
             build_dir=None, source_registries=('calmjs.module',),
-            source_map_method='all', bundled_map_method='all',
+            source_map_method='all', bundle_map_method='all',
             toolchain=None, **kwargs):
         """
         Accept all arguments, but also the explicit set of arguments
@@ -102,7 +102,7 @@ class RJSRuntime(DriverRuntime):
             export_filename=export_filename, working_dir=working_dir,
             build_dir=build_dir, source_registries=source_registries,
             source_map_method=source_map_method,
-            bundled_map_method=bundled_map_method,
+            bundle_map_method=bundle_map_method,
             toolchain=self.cli_driver,
         )
 

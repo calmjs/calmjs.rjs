@@ -85,21 +85,21 @@ class DistIntegrationTestCase(unittest.TestCase):
         self.assertNotEqual(mapping['service/endpoint'], 'empty:')
         self.assertNotEqual(mapping['service/rpc/lib'], 'empty:')
 
-    def test_generate_bundled_source_maps_none(self):
-        mapping = dist.generate_bundled_source_maps(
+    def test_generate_bundle_source_maps_none(self):
+        mapping = dist.generate_bundle_source_maps(
             ['site'], method='none')
         self.assertEqual(sorted(mapping.keys()), [])
 
-    def test_generate_bundled_source_maps_bad_dir(self):
+    def test_generate_bundle_source_maps_bad_dir(self):
         bad_dir = utils.mkdtemp(self)
         with pretty_logging(stream=StringIO()) as log:
-            mapping = dist.generate_bundled_source_maps(
+            mapping = dist.generate_bundle_source_maps(
                 ['service'], bad_dir)
         self.assertEqual(sorted(mapping.keys()), [])
         self.assertIn('fake_modules', log.getvalue())
 
-    def test_generate_bundled_source_maps_site_default(self):
-        mapping = dist.generate_bundled_source_maps(
+    def test_generate_bundle_source_maps_site_default(self):
+        mapping = dist.generate_bundle_source_maps(
             ['site'], self.dist_dir)
         self.assertEqual(sorted(mapping.keys()), ['jquery', 'underscore'])
         self.assertTrue(mapping['jquery'].endswith(
@@ -107,15 +107,15 @@ class DistIntegrationTestCase(unittest.TestCase):
         self.assertTrue(mapping['underscore'].endswith(
             join('fake_modules', 'underscore', 'underscore.js')))
 
-    def test_generate_bundled_source_maps_default(self):
-        mapping = dist.generate_bundled_source_maps(
+    def test_generate_bundle_source_maps_default(self):
+        mapping = dist.generate_bundle_source_maps(
             ['framework'], self.dist_dir)
         self.assertEqual(sorted(mapping.keys()), [
             'jquery', 'underscore',
         ])
         self.assertIn(
             (join('underscore', 'underscore-min.js')), mapping['underscore'])
-        mapping = dist.generate_bundled_source_maps(
+        mapping = dist.generate_bundle_source_maps(
             ['service'], self.dist_dir)
         self.assertEqual(sorted(mapping.keys()), [
             'jquery', 'underscore',
@@ -124,15 +124,15 @@ class DistIntegrationTestCase(unittest.TestCase):
             (join('underscore', 'underscore.js')), mapping['underscore'])
         self.assertIn('jquery', mapping['jquery'])
 
-    def test_generate_bundled_source_maps_service_explicit(self):
-        mapping = dist.generate_bundled_source_maps(
+    def test_generate_bundle_source_maps_service_explicit(self):
+        mapping = dist.generate_bundle_source_maps(
             ['service'], self.dist_dir, method='explicit')
         self.assertEqual(sorted(mapping.keys()), ['underscore'])
         self.assertIn(
             (join('underscore', 'underscore.js')), mapping['underscore'])
 
-    def test_generate_bundled_source_maps_service_empty(self):
-        mapping = dist.generate_bundled_source_maps(
+    def test_generate_bundle_source_maps_service_empty(self):
+        mapping = dist.generate_bundle_source_maps(
             ['service'], self.dist_dir, method='empty')
         # Note that this ends up including all it sparents
         self.assertEqual(mapping, {
@@ -140,9 +140,9 @@ class DistIntegrationTestCase(unittest.TestCase):
             'underscore': 'empty:',
         })
 
-    def test_generate_bundled_source_maps_site_empty(self):
+    def test_generate_bundle_source_maps_site_empty(self):
         # This one declares exact, should still work.
-        mapping = dist.generate_bundled_source_maps(
+        mapping = dist.generate_bundle_source_maps(
             ['site'], self.dist_dir, method='empty')
         self.assertEqual(sorted(mapping.keys()), ['jquery', 'underscore'])
         self.assertEqual(mapping['jquery'], 'empty:')

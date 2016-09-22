@@ -175,7 +175,7 @@ class RJSToolchain(Toolchain):
         self.transpiler = _transpile_generic_to_umd_node_amd_compat_rjs
         self._set_env_path_with_node_modules()
 
-    def pick_compiled_mod_target_name(self, modname, source, target):
+    def modname_source_target_to_modpath(self, spec, modname, source, target):
         """
         Return 'empty:' if the source is also that, as this is the only
         way to ensure r.js won't try to bundle that location if any
@@ -184,13 +184,14 @@ class RJSToolchain(Toolchain):
 
         return EMPTY if source == EMPTY else modname
 
-    def compile(self, spec, source, target):
+    def transpile_modname_source_target(self, spec, modname, source, target):
         if source == EMPTY:
             # This is inserted by the source mapper if this item was
             # marked to be ignored for r.js, and so don't bother letting
             # parent "compile" this (which is just a simple copying)
             return
-        super(RJSToolchain, self).compile(spec, source, target)
+        super(RJSToolchain, self).transpile_modname_source_target(
+            spec, modname, source, target)
 
     def prepare(self, spec):
         """
@@ -250,7 +251,7 @@ class RJSToolchain(Toolchain):
         required files for the final bundling.
         """
 
-        compiled_paths = spec['compiled_paths']
+        transpiled_paths = spec['transpiled_paths']
         bundled_paths = spec['bundled_paths']
         module_names = spec['module_names']
 
@@ -264,7 +265,7 @@ class RJSToolchain(Toolchain):
 
         # Update paths with names pointing to built files in build_dir
         # and generate the list of included files into the final bundle.
-        build_config['paths'].update(compiled_paths)
+        build_config['paths'].update(transpiled_paths)
         build_config['paths'].update(bundled_paths)
         build_config['include'] = module_names
 
