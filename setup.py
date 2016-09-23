@@ -3,6 +3,19 @@ from setuptools import find_packages
 
 version = '1.0.0'
 
+classifiers = """
+Development Status :: 4 - Beta
+Environment :: Console
+Intended Audience :: Developers
+License :: OSI Approved :: GNU General Public License v2 or later (GPLv2+)
+Operating System :: OS Independent
+Programming Language :: JavaScript
+Programming Language :: Python :: 2.7
+Programming Language :: Python :: 3.3
+Programming Language :: Python :: 3.4
+Programming Language :: Python :: 3.5
+""".strip().splitlines()
+
 package_json = {
     "dependencies": {
         "requirejs": "~2.1.17",
@@ -30,9 +43,7 @@ setup(
     long_description=long_description,
     # Get more strings from
     # http://pypi.python.org/pypi?%3Aaction=list_classifiers
-    classifiers=[
-      "Programming Language :: Python",
-      ],
+    classifiers=classifiers,
     keywords='',
     author='Tommy Yu',
     author_email='tommy.yu@auckland.ac.nz',
