@@ -17,6 +17,81 @@ from calmjs.rjs import toolchain
 from calmjs.testing import utils
 
 
+class SpecUpdateSourceMapTestCase(unittest.TestCase):
+    """
+    A function for updating the spec with a source map for target keys,
+    in such a way that makes it compatible with the base system.
+    """
+
+    def test_dict_get(self):
+        # Primarily used here so test here.
+        items = {}
+        toolchain._dict_get(items, 'a_key')
+        self.assertEqual(items, {'a_key': {}})
+
+        a_key = items['a_key']
+        toolchain._dict_get(items, 'a_key')
+        self.assertIs(items['a_key'], a_key)
+
+    def test_spec_update_source_map_standard_modules_base(self):
+        source_map = {
+            'standard/module': 'standard/module',
+            'standard.module': 'standard.module',
+        }
+        spec = {}
+
+        toolchain.spec_update_source_map(spec, source_map, 'source_key')
+        self.assertEqual(spec, {
+            'source_key': {
+                'standard/module': 'standard/module',
+                'standard.module': 'standard.module',
+            }
+        })
+
+    def test_spec_update_source_map_standard_modules_id(self):
+        source_map = {
+            'standard/module': 'standard/module',
+        }
+        base_map = {}
+        spec = {'source_key': base_map}
+
+        toolchain.spec_update_source_map(spec, source_map, 'source_key')
+        self.assertIs(spec['source_key'], base_map)
+        self.assertEqual(base_map, {
+            'standard/module': 'standard/module',
+        })
+
+    def test_spec_update_source_map_plugin_modules(self):
+        source_map = {
+            'plugin/module!argument': 'some/filesystem/path',
+            'text!argument': 'some/text/file.txt',
+        }
+        spec = {}
+
+        toolchain.spec_update_source_map(spec, source_map, 'source_key')
+        self.maxDiff = 123123
+        self.assertEqual(spec, {
+            'requirejs_plugins': {
+                'plugin/module': {
+                    'plugin/module!argument': 'some/filesystem/path',
+                },
+                'text': {
+                    'text!argument': 'some/text/file.txt',
+                },
+            },
+            'source_key': {
+            },
+        })
+
+        toolchain.spec_update_source_map(spec, {
+            'text!argument2': 'some/text/file2.txt',
+        }, 'source_key')
+        self.assertEqual(spec['requirejs_plugins']['text'], {
+            'text!argument': 'some/text/file.txt',
+            'text!argument2': 'some/text/file2.txt',
+        })
+
+
 class ToolchainBootstrapTestCase(unittest.TestCase):
     """
     Test the bootstrap function

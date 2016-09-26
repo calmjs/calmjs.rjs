@@ -55,6 +55,27 @@ _PLATFORM_SPECIFIC_RUNTIME = {
     'win32': 'r.js.cmd',
 }
 _DEFAULT_RUNTIME = 'r.js'
+_RJS_PLUGIN_KEY = 'requirejs_plugins'
+
+
+def _dict_get(d, key):
+    value = d[key] = d.get(key, {})
+    return value
+
+
+def spec_update_source_map(spec, source_map, default_source_key):
+    default = _dict_get(spec, default_source_key)
+    for modname, source in source_map.items():
+        parts = modname.split('!', 1)
+        if len(parts) == 1:
+            # default
+            default[modname] = source
+            continue
+
+        plugin_name, arguments = parts
+        plugins = _dict_get(spec, _RJS_PLUGIN_KEY)
+        plugin = _dict_get(plugins, plugin_name)
+        plugin[modname] = source
 
 
 def get_rjs_runtime_name(platform):

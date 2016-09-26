@@ -5,6 +5,7 @@ CalmJS RequireJS cli tools.
 
 from calmjs.toolchain import Spec
 from calmjs.rjs.toolchain import RJSToolchain
+from calmjs.rjs.toolchain import spec_update_source_map
 
 from calmjs.rjs.dist import generate_transpile_source_maps
 from calmjs.rjs.dist import generate_bundle_source_maps
@@ -26,20 +27,24 @@ def make_spec(
         # Take the final package name for now...
         export_filename = package_names[-1] + '.js'
 
-    return Spec(
+    spec = Spec(
         bundle_export_path=export_filename,
         build_dir=build_dir,
-        transpile_source_map=generate_transpile_source_maps(
-            package_names=package_names,
-            registries=source_registries,
-            method=source_map_method,
-        ),
-        bundle_source_map=generate_bundle_source_maps(
-            package_names=package_names,
-            working_dir=working_dir,
-            method=bundle_map_method,
-        ),
     )
+
+    spec_update_source_map(spec, generate_transpile_source_maps(
+        package_names=package_names,
+        registries=source_registries,
+        method=source_map_method,
+    ), 'transpile_source_map')
+
+    spec_update_source_map(spec, generate_bundle_source_maps(
+        package_names=package_names,
+        working_dir=working_dir,
+        method=bundle_map_method,
+    ), 'bundle_source_map')
+
+    return spec
 
 
 def compile_all(
