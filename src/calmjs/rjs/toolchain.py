@@ -39,6 +39,7 @@ from os.path import exists
 from os.path import isdir
 from subprocess import call
 
+from calmjs.registry import get
 from calmjs.toolchain import Toolchain
 
 from .umdjs import UMD_NODE_AMD_HEADER
@@ -191,16 +192,25 @@ class RJSToolchain(Toolchain):
     build_manifest_name = 'build.js'
     requirejs_config_name = 'config.js'
 
-    def setup_transpiler(self):
+    def __init__(
+            self,
+            loader_plugin_registry='calmjs.rjs.loader_plugin',
+            *a, **kw):
+        super(RJSToolchain, self).__init__(*a, **kw)
+        self.loader_plugin_registry = get(loader_plugin_registry)
         self.binary = self.rjs_bin
-        self.transpiler = _transpile_generic_to_umd_node_amd_compat_rjs
         self._set_env_path_with_node_modules()
+
+    def setup_transpiler(self):
+        self.transpiler = _transpile_generic_to_umd_node_amd_compat_rjs
 
     def modname_source_target_to_modpath(self, spec, modname, source, target):
         """
         Return 'empty:' if the source is also that, as this is the only
         way to ensure r.js won't try to bundle that location if any
-        modules try to require whatever that was.
+        modules try to require whatever that was.  Also not raising an
+        exception simply because these entries are needed to be added to
+        the resulting paths.
         """
 
         return EMPTY if source == EMPTY else modname
@@ -265,6 +275,14 @@ class RJSToolchain(Toolchain):
         if matched:
             raise RuntimeError(
                 "'bundle_export_path' must not be same as '%s'" % matched[0])
+
+        plugin_source_map = spec['plugin_source_map'] = {}
+        raw_plugins = spec.get(_RJS_PLUGIN_KEY, {})
+        for key, value in raw_plugins.items():
+            handler = self.loader_plugin_registry.get_record(key)
+            if handler:
+                # assume handler will do the job.
+                plugin_source_map.update(value)
 
     def assemble(self, spec):
         """

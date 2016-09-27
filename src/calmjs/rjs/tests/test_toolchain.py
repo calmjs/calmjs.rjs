@@ -481,3 +481,35 @@ class ToolchainUnitTestCase(unittest.TestCase):
             'example/module',
             'bundled_pkg',
         ])
+
+    def test_prepare_rjs_plugin_key(self):
+        tmpdir = utils.mkdtemp(self)
+        rjs = toolchain.RJSToolchain()
+
+        with open(join(tmpdir, 'r.js'), 'w'):
+            # mock a r.js file.
+            pass
+
+        spec = Spec(
+            # this is not written
+            bundle_export_path=join(tmpdir, 'bundle.js'),
+            build_dir=tmpdir,
+            transpiled_paths={},
+            bundled_paths={},
+            module_names=[],
+        )
+        spec[rjs.rjs_bin_key] = join(tmpdir, 'r.js')
+        spec[toolchain._RJS_PLUGIN_KEY] = {
+            'text': {
+                'text!namespace/module/path.txt': '/namespace/module/path.txt',
+            },
+            'some_unsupported_plugin/unknown': {
+                'also this is an invalid value': '/some/path',
+            },
+        }
+
+        rjs.prepare(spec)
+
+        self.assertEqual(spec['plugin_source_map'], {
+            'text!namespace/module/path.txt': '/namespace/module/path.txt',
+        })
