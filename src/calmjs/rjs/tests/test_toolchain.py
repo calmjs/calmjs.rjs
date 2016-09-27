@@ -289,6 +289,32 @@ class TranspilerTestCase(unittest.TestCase):
         self.assertFalse(exists(tgt_file))
 
 
+class ToolchainBaseUnitTestCase(unittest.TestCase):
+    """
+    Test the base functions in the toolchain.
+    """
+
+    def test_modname_source_target_to_modpath(self):
+        modname = 'module'
+        source = 'somemodule'
+        rjs = toolchain.RJSToolchain()
+        spec = Spec()
+        self.assertEqual(
+            rjs.modname_source_target_to_modpath(spec, modname, source, ''),
+            'module',
+        )
+
+    def test_modname_source_target_to_modpath_empty(self):
+        modname = 'module'
+        source = 'empty:'
+        rjs = toolchain.RJSToolchain()
+        spec = Spec()
+        self.assertEqual(
+            rjs.modname_source_target_to_modpath(spec, modname, source, ''),
+            'empty:',
+        )
+
+
 @unittest.skipIf(get_npm_version() is None, "npm is unavailable")
 class ToolchainUnitTestCase(unittest.TestCase):
     """
