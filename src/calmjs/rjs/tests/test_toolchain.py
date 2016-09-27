@@ -289,6 +289,60 @@ class TranspilerTestCase(unittest.TestCase):
         self.assertFalse(exists(tgt_file))
 
 
+class ToolchainCompilePluginTestCase(unittest.TestCase):
+    """
+    Test the compile_plugin method
+    """
+
+    def test_compile_plugin_base(self):
+        build_dir = utils.mkdtemp(self)
+        src_dir = utils.mkdtemp(self)
+        src = join(src_dir, 'mod.js')
+        spec = {'build_dir': build_dir}
+
+        with open(src, 'w') as fd:
+            fd.write('hello world')
+
+        # prepare targets
+        target1 = 'mod1.txt'
+        target2 = join('namespace', 'mod2.txt')
+        target3 = join('nested', 'namespace', 'mod3.txt')
+        target4 = 'namespace.mod4.txt'
+
+        rjs = toolchain.RJSToolchain()
+        rjs.compile_plugin(spec, [
+            ('text!mod1.txt', src, target1, 'mod1'),
+            ('text!namespace/mod2.txt', src, target2, 'mod2'),
+            ('text!nested/namespace/mod3.txt', src, target3, 'mod3'),
+            ('text!namespace.mod4.txt', src, target4, 'mod4'),
+        ])
+
+        self.assertTrue(exists(join(build_dir, target1)))
+        self.assertTrue(exists(join(build_dir, target2)))
+        self.assertTrue(exists(join(build_dir, target3)))
+        self.assertTrue(exists(join(build_dir, target4)))
+
+    def test_compile_plugin_error(self):
+        build_dir = utils.mkdtemp(self)
+        src_dir = utils.mkdtemp(self)
+        src = join(src_dir, 'mod.js')
+        spec = {'build_dir': build_dir}
+
+        with open(src, 'w') as fd:
+            fd.write('hello world')
+
+        # prepare targets
+        target = 'target.txt'
+
+        rjs = toolchain.RJSToolchain()
+        with self.assertRaises(TypeError):
+            # This normally shouldn't happen, and for now the method
+            # will not trap exceptions.
+            rjs.compile_plugin(spec, [
+                ('unregistered/mod!target.txt', src, target, 'target.txt'),
+            ])
+
+
 class ToolchainBaseUnitTestCase(unittest.TestCase):
     """
     Test the base functions in the toolchain.
@@ -509,7 +563,6 @@ class ToolchainUnitTestCase(unittest.TestCase):
         }
 
         rjs.prepare(spec)
-
         self.assertEqual(spec['plugin_source_map'], {
             'text!namespace/module/path.txt': '/namespace/module/path.txt',
         })

@@ -20,9 +20,11 @@ from calmjs.utils import pretty_logging
 
 from calmjs.rjs import toolchain
 from calmjs.rjs import cli
+from calmjs.rjs.registry import LoaderPlugin
 
 from calmjs.testing import utils
 from calmjs.testing.mocks import StringIO
+from calmjs.testing.mocks import WorkingSet
 from calmjs.rjs.testing import env
 
 
@@ -140,6 +142,32 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
             'example/package/main': main_js,
         }
 
+        # custom loader
+        loader_js = join(cls._ep_root, 'loader.js')
+        with open(loader_js, 'w') as fd:
+            fd.write(
+                # pulled from requirejs.org's plugin documentation
+                'exports.load = function (name, req, onload, config) {\n'
+                '    req([name], function (value) {\n'
+                '        onload(value);\n'
+                '    });\n'
+                '}\n'
+            )
+
+        cls._example_package_loader = {
+            'example/package/loader': loader_js,
+        }
+
+        # other data
+        data_js = join(cls._ep_root, 'data.js')
+        with open(data_js, 'w') as fd:
+            fd.write(
+                '(function() { define({"results": {"item_count": 0}})}());')
+
+        cls._example_package_data = {
+            'example/package/loader!example/package/data.js': data_js,
+        }
+
         # This is done last, because the integration harness will stub
         # out the root distribution which will break the installation of
         # real tools (i.e. npm_install above)
@@ -231,6 +259,49 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
             stderr
         )
         self.assertEqual(stdout, '2\n4\n')
+
+    def test_build_bundle_with_data(self):
+        bundle_dir = utils.mkdtemp(self)
+        build_dir = utils.mkdtemp(self)
+        transpile_source_map = {}
+        transpile_source_map.update(self._example_package_map)
+        # include custom loader and data
+        transpile_source_map.update(self._example_package_loader)
+        bundle_source_map = {}
+        bundle_export_path = join(bundle_dir, 'example.package.js')
+        requirejs_plugins = {
+            'example/package/loader': self._example_package_data
+        }
+
+        custom_registry = LoaderPlugin('custom', _working_set=WorkingSet({
+            'custom': ['example/package/loader = calmjs.rjs.plugin:text']
+        }))
+        rjs = toolchain.RJSToolchain()
+        rjs.loader_plugin_registry = custom_registry
+        spec = Spec(
+            transpile_source_map=transpile_source_map,
+            bundle_source_map=bundle_source_map,
+            requirejs_plugins=requirejs_plugins,
+            bundle_export_path=bundle_export_path,
+            build_dir=build_dir,
+        )
+        rjs(spec)
+
+        self.assertTrue(exists(bundle_export_path))
+
+        # verify that the bundle works with node
+        stdout, stderr = run_node(
+            'var requirejs = require("requirejs");\n'
+            'var define = requirejs.define;\n'
+            '%s\n'
+            'var result = requirejs(\n'
+            '    "example/package/loader!example/package/data.js");\n'
+            'process.stdout.write("" + result.results.item_count);\n',
+            bundle_export_path,
+        )
+
+        self.assertEqual(stderr, '')
+        self.assertEqual(stdout, '0')
 
     def test_cli_make_spec(self):
         with pretty_logging(stream=StringIO()):

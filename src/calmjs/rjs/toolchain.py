@@ -204,6 +204,23 @@ class RJSToolchain(Toolchain):
     def setup_transpiler(self):
         self.transpiler = _transpile_generic_to_umd_node_amd_compat_rjs
 
+    def build_compile_entries(self):
+        return super(RJSToolchain, self).build_compile_entries() + (
+            ('plugin', 'plugin', 'plugins'),
+        )
+
+    def compile_plugin(self, spec, entries):
+        plugin_paths = {}
+        module_names = []
+
+        for modname, source, target, modpath in entries:
+            plugin_name, arguments = modname.split('!', 1)
+            handler = self.loader_plugin_registry.get_record(plugin_name)
+            p_ps, m_ns = handler(self, spec, modname, source, target, modpath)
+            plugin_paths.update(p_ps)
+            module_names.extend(m_ns)
+        return plugin_paths, module_names
+
     def modname_source_target_to_modpath(self, spec, modname, source, target):
         """
         Return 'empty:' if the source is also that, as this is the only
