@@ -67,6 +67,12 @@ setup(
         # 'console_scripts': [
         #     'rjs = calmjs.rjs.runtime:default',
         # ],
+        'calmjs.registry': [
+            'calmjs.rjs.loader_plugin = calmjs.rjs.registry:LoaderPlugin',
+        ],
+        'calmjs.rjs.loader_plugin': [
+            'text = calmjs.rjs.plugin:text',
+        ],
         'calmjs.runtime': [
             'rjs = calmjs.rjs.runtime:default',
         ],
