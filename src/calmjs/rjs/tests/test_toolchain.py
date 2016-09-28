@@ -217,7 +217,7 @@ class TranspilerTestCase(unittest.TestCase):
         toolchain._rjs_transpiler(spec, source, target_main)
         self.assertEqual(target.getvalue(), target_main.getvalue())
 
-    def test_transpile_skip_on_amd(self):
+    def test_transpile_skip_on_amd_newline(self):
         source = StringIO(
             "\n"
             "define(['jquery'], function($) {\n"
@@ -293,6 +293,19 @@ class ToolchainCompilePluginTestCase(unittest.TestCase):
     """
     Test the compile_plugin method
     """
+
+    def test_toolchain_instance_transpile_skip_on_amd(self):
+        source = StringIO(
+            "define(['jquery'], function($) {\n"
+            "    'use strict';\n"
+            "    return {'testing': {}}\n"
+            "});\n"
+        )
+        target = StringIO()
+        spec = Spec()
+        rjs = toolchain.RJSToolchain()
+        rjs.transpiler(spec, source, target)
+        self.assertEqual(source.getvalue(), target.getvalue())
 
     def test_compile_plugin_base(self):
         build_dir = utils.mkdtemp(self)

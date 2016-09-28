@@ -203,7 +203,7 @@ class RJSToolchain(Toolchain):
         self._set_env_path_with_node_modules()
 
     def setup_transpiler(self):
-        self.transpiler = _transpile_generic_to_umd_node_amd_compat_rjs
+        self.transpiler = _rjs_transpiler
 
     def build_compile_entries(self):
         return super(RJSToolchain, self).build_compile_entries() + (
