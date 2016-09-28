@@ -42,6 +42,7 @@ from subprocess import call
 from calmjs.registry import get
 from calmjs.toolchain import Toolchain
 
+from .exc import RJSRuntimeError
 from .umdjs import UMD_NODE_AMD_HEADER
 from .umdjs import UMD_NODE_AMD_FOOTER
 from .umdjs import UMD_NODE_AMD_INDENT
@@ -210,6 +211,11 @@ class RJSToolchain(Toolchain):
         )
 
     def compile_plugin(self, spec, entries):
+        """
+        The associated spec entry that ultimately call this should be
+        prepared through this class's prepare method.
+        """
+
         plugin_paths = {}
         module_names = []
 
@@ -244,18 +250,18 @@ class RJSToolchain(Toolchain):
     def prepare(self, spec):
         """
         Attempts to locate the r.js binary if not already specified.  If
-        the binary file was not found, RuntimeError will be raised.
+        the binary file was not found, RJSRuntimeError will be raised.
         """
 
         if self.rjs_bin_key not in spec:
             which_bin = spec[self.rjs_bin_key] = self.which()
             if which_bin is None:
-                raise RuntimeError(
+                raise RJSRuntimeError(
                     "unable to locate '%s'" % self.binary)
             logger.debug("using '%s' as '%s'", which_bin, self.binary)
         elif not exists(spec[self.rjs_bin_key]):
             # should we check whether target can be executed?
-            raise RuntimeError(
+            raise RJSRuntimeError(
                 "'%s' does not exist; cannot be used as '%s' binary" % (
                     spec[self.rjs_bin_key],
                     self.rjs_bin
@@ -272,14 +278,14 @@ class RJSToolchain(Toolchain):
             spec['build_dir'], self.build_manifest_name)
 
         if 'bundle_export_path' not in spec:
-            raise RuntimeError(
+            raise RJSRuntimeError(
                 "'bundle_export_path' not found in spec")
 
         # no effect if bundle_export_path already absolute.
         spec['bundle_export_path'] = self.join_cwd(spec['bundle_export_path'])
 
         if not isdir(dirname(spec['bundle_export_path'])):
-            raise RuntimeError(
+            raise RJSRuntimeError(
                 "'bundle_export_path' will not be writable")
         logger.debug(
             "'bundle_export_path' declared to be '%s'",
@@ -290,7 +296,7 @@ class RJSToolchain(Toolchain):
         matched = [k for k in keys if spec['bundle_export_path'] == spec[k]]
 
         if matched:
-            raise RuntimeError(
+            raise RJSRuntimeError(
                 "'bundle_export_path' must not be same as '%s'" % matched[0])
 
         plugin_source_map = spec['plugin_source_map'] = {}
