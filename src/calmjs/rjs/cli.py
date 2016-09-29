@@ -16,7 +16,8 @@ default_toolchain = RJSToolchain()
 def make_spec(
         package_names, export_filename=None, working_dir=None, build_dir=None,
         source_registries=('calmjs.module',),
-        source_map_method='all', bundle_map_method='all'):
+        source_map_method='all', bundle_map_method='all',
+        transpile_no_indent=False):
     """
     Produce a spec for the compilation through the RJSToolchain.
     """
@@ -25,11 +26,15 @@ def make_spec(
 
     if export_filename is None:
         # Take the final package name for now...
-        export_filename = package_names[-1] + '.js'
+        if package_names:
+            export_filename = package_names[-1] + '.js'
+        else:
+            export_filename = 'calmjs.rjs.export.js'
 
     spec = Spec(
         bundle_export_path=export_filename,
         build_dir=build_dir,
+        transpile_no_indent=transpile_no_indent,
     )
 
     spec_update_source_map(spec, generate_transpile_source_maps(
@@ -51,6 +56,7 @@ def compile_all(
         package_names, export_filename=None, working_dir=None, build_dir=None,
         source_registries=('calmjs.module',),
         source_map_method='all', bundle_map_method='all',
+        transpile_no_indent=False,
         toolchain=default_toolchain):
     """
     Invoke the r.js compiler to generate a JavaScript bundle file for a
@@ -113,6 +119,9 @@ def compile_all(
 
         Defaults to 'all'.
 
+    transpile_no_indent
+        Ensure that the transpile targets have no indents.
+
     toolchain
         The toolchain instance to use.  Default is the instance in this
         module.
@@ -130,6 +139,7 @@ def compile_all(
         source_registries=source_registries,
         source_map_method=source_map_method,
         bundle_map_method=bundle_map_method,
+        transpile_no_indent=transpile_no_indent,
     )
     toolchain(spec)
     return spec
