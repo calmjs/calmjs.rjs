@@ -8,6 +8,7 @@ import tempfile
 from os import makedirs
 from os.path import exists
 from os.path import join
+from os.path import realpath
 from shutil import rmtree
 from shutil import copytree
 
@@ -64,18 +65,28 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         if skip_full_toolchain_test()[0]:  # pragma: no cover
             return
         cls._cwd = os.getcwd()
-        cls._cls_tmpdir = tempfile.mkdtemp()
+        cls._node_root = cls._cls_tmpdir = tempfile.mkdtemp()
 
-        npm = Driver(working_dir=cls._cls_tmpdir)
-        npm.npm_install('calmjs.rjs', env=finalize_env(env))
+        test_env = os.environ.get('CALMJS_RJS_TEST_ENV')
+        if not test_env:
+            npm = Driver(working_dir=cls._cls_tmpdir)
+            npm.npm_install('calmjs.rjs', env=finalize_env(env))
+            # Save this as the env_path for RJSToolchain instance.  The
+            # reason this is done here rather than using setup_transpiler
+            # method is purely because under environments that have the
+            # standard node_modules/.bin part of the PATH, it never gets
+            # set, and then if the test changes the working directory, it
+            # will then not be able to find the runtime needed.
+            cls._env_path = join(cls._cls_tmpdir, 'node_modules', '.bin')
+        else:  # pragma: no cover
+            # This is for static test environment for development, not
+            # generally suitable for repeatable tests
+            cls._node_root = realpath(test_env)
+            cls._env_path = join(cls._node_root, 'node_modules', '.bin')
 
-        # Save this as the env_path for RJSToolchain instance.  The
-        # reason this is done here rather than using setup_transpiler
-        # method is purely because under environments that have the
-        # standard node_modules/.bin part of the PATH, it never gets
-        # set, and then if the test changes the working directory, it
-        # will then not be able to find the runtime needed.
-        cls._env_path = join(cls._cls_tmpdir, 'node_modules', '.bin')
+        # For the duration of this test, operate in the tmpdir where the
+        # node_modules are available.
+        os.chdir(cls._node_root)
 
         # This is done after the above, as the setup of the following
         # integration harness will stub out the root distribution which
@@ -350,7 +361,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
 
         # verify that the bundle works with node.  First change back to
         # directory with requirejs library installed.
-        os.chdir(self._cls_tmpdir)
+        os.chdir(self._node_root)
 
         # The execution should then work as expected on the bundle we
         # have.
@@ -383,7 +394,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
 
         # verify that the bundle works with node.  First change back to
         # directory with requirejs library installed.
-        os.chdir(self._cls_tmpdir)
+        os.chdir(self._node_root)
 
         # The execution should then work as expected on the bundle we
         # have.
@@ -426,7 +437,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
 
         # verify that the bundle works with node.  First change back to
         # directory with requirejs library installed.
-        os.chdir(self._cls_tmpdir)
+        os.chdir(self._node_root)
 
         # The execution should then work as expected if we loaded both
         # bundles.
@@ -473,7 +484,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
 
         # verify that the bundle works with node.  First change back to
         # directory with requirejs library installed.
-        os.chdir(self._cls_tmpdir)
+        os.chdir(self._node_root)
 
         # The execution should then work as expected on the bundle we
         # have.
@@ -528,7 +539,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
 
     def test_runtime_cli_compile_explicit_service_framework_widget(self):
         def run_node_with_require(*requires):
-            os.chdir(self._cls_tmpdir)
+            os.chdir(self._node_root)
             return run_node(
                 'var requirejs = require("requirejs");\n'
                 'var define = requirejs.define;\n'
