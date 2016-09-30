@@ -315,6 +315,7 @@ class RJSToolchain(Toolchain):
 
         transpiled_paths = spec['transpiled_paths']
         bundled_paths = spec['bundled_paths']
+        plugins_paths = spec['plugins_paths']
         module_names = spec['module_names']
 
         # the build config is the file that will be passed to r.js for
@@ -329,6 +330,7 @@ class RJSToolchain(Toolchain):
         # and generate the list of included files into the final bundle.
         build_config['paths'].update(transpiled_paths)
         build_config['paths'].update(bundled_paths)
+        build_config['paths'].update(plugins_paths)
         build_config['include'] = module_names
 
         with open(spec['build_manifest_path'], 'w') as fd:
