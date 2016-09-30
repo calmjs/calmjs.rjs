@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 
 import unittest
 import os
+import re
 import tempfile
 from os import makedirs
 from os.path import exists
@@ -15,6 +16,7 @@ from calmjs.npm import Driver
 from calmjs.npm import get_npm_version
 from calmjs.cli import node
 from calmjs import runtime
+from calmjs.registry import get as get_registry
 from calmjs.utils import finalize_env
 from calmjs.utils import pretty_logging
 
@@ -56,6 +58,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        from calmjs import dist as calmjs_dist
         # nosetest will still execute setUpClass, so the test condition
         # will need to be checked here also.
         if skip_full_toolchain_test()[0]:  # pragma: no cover
@@ -63,12 +66,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         cls._cwd = os.getcwd()
         cls._cls_tmpdir = tempfile.mkdtemp()
 
-        # For the duration of this test, we will operate in this tmpdir
-        # for the node_modules that will be installed shortly.
-        os.chdir(cls._cls_tmpdir)
-
-        npm = Driver()
-        # str is for win32 Python2.
+        npm = Driver(working_dir=cls._cls_tmpdir)
         npm.npm_install('calmjs.rjs', env=finalize_env(env))
 
         # Save this as the env_path for RJSToolchain instance.  The
@@ -79,8 +77,13 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         # will then not be able to find the runtime needed.
         cls._env_path = join(cls._cls_tmpdir, 'node_modules', '.bin')
 
-        cls._srcdir = tempfile.mkdtemp()
-        cls._ep_root = join(cls._srcdir, 'example', 'package')
+        # This is done after the above, as the setup of the following
+        # integration harness will stub out the root distribution which
+        # will break the installation of real tools.
+        utils.setup_class_integration_environment(cls)
+
+        # cls.dist_dir created by setup_class_integration_environment
+        cls._ep_root = join(cls.dist_dir, 'example', 'package')
         makedirs(cls._ep_root)
 
         math_js = join(cls._ep_root, 'math.js')
@@ -168,10 +171,22 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
             'example/package/loader!example/package/data.js': data_js,
         }
 
-        # This is done last, because the integration harness will stub
-        # out the root distribution which will break the installation of
-        # real tools (i.e. npm_install above)
-        utils.setup_class_integration_environment(cls)
+        # also add a proper mock distribution for this.
+        utils.make_dummy_dist(None, (
+            ('requires.txt', ''),
+            ('entry_points.txt', (
+                '[%s]\n'
+                'example.package = example.package' % cls.registry_name
+            )),
+        ), 'example.package', '1.0', working_dir=cls.dist_dir)
+        # readd it again
+        calmjs_dist.default_working_set.add_entry(cls.dist_dir)
+        # TODO produce package_module_map
+
+        registry = get_registry(cls.registry_name)
+        record = registry.records['example.package'] = {}
+        record.update(cls._example_package_map)
+        registry.package_module_map['example.package'] = ['example.package']
 
     @classmethod
     def tearDownClass(cls):
@@ -181,7 +196,6 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         utils.teardown_class_integration_environment(cls)
         os.chdir(cls._cwd)
         rmtree(cls._cls_tmpdir)
-        rmtree(cls._srcdir)
 
     def setUp(self):
         # Set up the transpiler using env_path assigned in setUpClass,
@@ -606,3 +620,40 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
             # the 'service' package.
             'underscore/underscore.js\n'
         ))
+
+    def test_runtime_cli_compile_no_indent(self):
+        utils.remember_cwd(self)
+        target_dir = utils.mkdtemp(self)
+        target_file = join(target_dir, 'bundle.js')
+
+        # Invoke the thing through the main runtime
+        with self.assertRaises(SystemExit) as e:
+            runtime.main([
+                'rjs', 'example.package',
+                '--transpile-no-indent',
+                '--export-filename=' + target_file,
+                '--source-registry=' + self.registry_name,
+            ])
+        self.assertEqual(e.exception.args[0], 0)
+        self.assertTrue(exists(target_file))
+
+        stdout, stderr = run_node(
+            'var requirejs = require("requirejs");\n'
+            'var define = requirejs.define;\n'
+            '%s\n'
+            'var main = requirejs("example/package/main");\n'
+            'main.main(true);\n',
+            target_file,
+        )
+        # The test should really test the files in the build directory,
+        # but if we are doing this as an integration test, the bundle
+        # should also at least maintain the same column when ran...
+        patt = re.compile('%s:[0-9]+:%d' % (
+            target_file.replace('\\', '\\\\'), self._bad_notdefinedsymbol[-1]))
+        self.assertTrue(patt.search(stderr))
+        self.assertEqual(stdout, '2\n4\n')
+
+        # ... or, just see that the bad line is there, too.
+        with open(target_file) as fd:
+            bundle_source = fd.read()
+        self.assertIn('\nvar die = function() {\n', bundle_source)

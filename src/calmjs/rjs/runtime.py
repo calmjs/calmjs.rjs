@@ -84,6 +84,12 @@ class RJSRuntime(DriverRuntime):
         )
 
         argparser.add_argument(
+            '--transpile-no-indent',
+            dest='transpile_no_indent', action='store_true',
+            help='disable indentation of transpile sources',
+        )
+
+        argparser.add_argument(
             'package_names', help='names of the python package to use',
             metavar='package_names', nargs='+',
         )
@@ -91,6 +97,7 @@ class RJSRuntime(DriverRuntime):
     def run(self, package_names=(), export_filename=None, working_dir=None,
             build_dir=None, source_registries=('calmjs.module',),
             source_map_method='all', bundle_map_method='all',
+            transpile_no_indent=False,
             toolchain=None, **kwargs):
         """
         Accept all arguments, but also the explicit set of arguments
@@ -103,6 +110,7 @@ class RJSRuntime(DriverRuntime):
             build_dir=build_dir, source_registries=source_registries,
             source_map_method=source_map_method,
             bundle_map_method=bundle_map_method,
+            transpile_no_indent=transpile_no_indent,
             toolchain=self.cli_driver,
         )
 
