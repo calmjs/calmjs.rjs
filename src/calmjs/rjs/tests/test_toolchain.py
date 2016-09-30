@@ -464,8 +464,9 @@ class ToolchainUnitTestCase(unittest.TestCase):
             # this is not written
             bundle_export_path=join(tmpdir, 'bundle.js'),
             build_dir=tmpdir,
-            transpiled_paths={},
-            bundled_paths={},
+            transpiled_modpaths={},
+            bundled_modpaths={},
+            plugins_modpaths={},
             module_names=[],
         )
 
@@ -502,22 +503,26 @@ class ToolchainUnitTestCase(unittest.TestCase):
             # this is not written
             bundle_export_path=join(tmpdir, 'bundle.js'),
             build_dir=tmpdir,
-            transpiled_paths={
+            transpiled_modpaths={
                 'example/module': '/path/to/src/example/module'
             },
-            bundled_paths={
+            bundled_modpaths={
                 'bundled_pkg': '/path/to/bundled/index'
+            },
+            plugins_modpaths={
+                'loader/plugin!resource/name': '/resource/name'
             },
             module_names=[
                 'example/module',
                 'bundled_pkg',
+                'loader/plugin!resource/name',
             ],
         )
 
         rjs = toolchain.RJSToolchain()
         spec[rjs.rjs_bin_key] = join(tmpdir, 'r.js')
         rjs.prepare(spec)
-        # skip the compile step as there is nothing to compile
+        # skip the compile step as those entries are manually applied.
         rjs.assemble(spec)
 
         self.assertTrue(exists(join(tmpdir, 'build.js')))
@@ -534,19 +539,23 @@ class ToolchainUnitTestCase(unittest.TestCase):
         self.assertEqual(build_js['paths'], {
             'example/module': '/path/to/src/example/module',
             'bundled_pkg': '/path/to/bundled/index',
+            'loader/plugin!resource/name': '/resource/name',
         })
         self.assertEqual(build_js['include'], [
             'example/module',
             'bundled_pkg',
+            'loader/plugin!resource/name',
         ])
 
         self.assertEqual(config_js['paths'], {
             'example/module': '/path/to/src/example/module',
             'bundled_pkg': '/path/to/bundled/index',
+            'loader/plugin!resource/name': '/resource/name',
         })
         self.assertEqual(config_js['include'], [
             'example/module',
             'bundled_pkg',
+            'loader/plugin!resource/name',
         ])
 
     def test_prepare_rjs_plugin_key(self):
@@ -561,8 +570,8 @@ class ToolchainUnitTestCase(unittest.TestCase):
             # this is not written
             bundle_export_path=join(tmpdir, 'bundle.js'),
             build_dir=tmpdir,
-            transpiled_paths={},
-            bundled_paths={},
+            transpiled_modpaths={},
+            bundled_modpaths={},
             module_names=[],
         )
         spec[rjs.rjs_bin_key] = join(tmpdir, 'r.js')

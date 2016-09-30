@@ -28,9 +28,12 @@ class TextTestCase(unittest.TestCase):
 
         result = plugin.text(toolchain, spec, modname, source, target, modpath)
         self.assertTrue(exists(join(build_dir, 'text_file.txt')))
-        bundled_path, module_name = result
+        bundled_modpaths, bundled_targets, module_name = result
 
-        self.assertEqual(bundled_path, {
+        self.assertEqual(bundled_modpaths, {
+            'text!text_file.txt': 'text_file.txt',
+        })
+        self.assertEqual(bundled_targets, {
             'text!text_file.txt': 'text_file.txt',
         })
         self.assertEqual(module_name, ['text!text_file.txt'])
@@ -53,8 +56,11 @@ class TextTestCase(unittest.TestCase):
 
         result = plugin.text(toolchain, spec, modname, source, target, modpath)
         self.assertTrue(exists(join(build_dir, 'namespace', 'text_file.txt')))
-        bundled_path, module_name = result
-        self.assertEqual(bundled_path, {
+        bundled_modpaths, bundled_targets, module_name = result
+        self.assertEqual(bundled_modpaths, {
+            'text!namespace/text_file.txt': 'namespace/text_file.txt',
+        })
+        self.assertEqual(bundled_targets, {
             'text!namespace/text_file.txt': 'namespace/text_file.txt',
         })
         self.assertEqual(module_name, ['text!namespace/text_file.txt'])

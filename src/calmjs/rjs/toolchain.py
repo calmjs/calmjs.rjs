@@ -216,16 +216,19 @@ class RJSToolchain(Toolchain):
         prepared through this class's prepare method.
         """
 
-        plugin_paths = {}
+        plugin_modpaths = {}
+        plugin_targets = {}
         module_names = []
 
         for modname, source, target, modpath in entries:
             plugin_name, arguments = modname.split('!', 1)
             handler = self.loader_plugin_registry.get_record(plugin_name)
-            p_ps, m_ns = handler(self, spec, modname, source, target, modpath)
-            plugin_paths.update(p_ps)
+            p_ps, p_pt, m_ns = handler(
+                self, spec, modname, source, target, modpath)
+            plugin_modpaths.update(p_ps)
+            plugin_targets.update(p_pt)
             module_names.extend(m_ns)
-        return plugin_paths, module_names
+        return plugin_modpaths, plugin_targets, module_names
 
     def modname_source_target_to_modpath(self, spec, modname, source, target):
         """
@@ -313,9 +316,9 @@ class RJSToolchain(Toolchain):
         required files for the final bundling.
         """
 
-        transpiled_paths = spec['transpiled_paths']
-        bundled_paths = spec['bundled_paths']
-        plugins_paths = spec['plugins_paths']
+        transpiled_modpaths = spec['transpiled_modpaths']
+        bundled_modpaths = spec['bundled_modpaths']
+        plugins_modpaths = spec['plugins_modpaths']
         module_names = spec['module_names']
 
         # the build config is the file that will be passed to r.js for
@@ -328,9 +331,9 @@ class RJSToolchain(Toolchain):
 
         # Update paths with names pointing to built files in build_dir
         # and generate the list of included files into the final bundle.
-        build_config['paths'].update(transpiled_paths)
-        build_config['paths'].update(bundled_paths)
-        build_config['paths'].update(plugins_paths)
+        build_config['paths'].update(transpiled_modpaths)
+        build_config['paths'].update(bundled_modpaths)
+        build_config['paths'].update(plugins_modpaths)
         build_config['include'] = module_names
 
         with open(spec['build_manifest_path'], 'w') as fd:

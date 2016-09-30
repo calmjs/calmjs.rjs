@@ -12,7 +12,7 @@ functions must have the following signature
     def plugin(toolchain, spec, modname, source, target, modpath):
         # do processing
         # typical return value
-        return {modname: modpath}, [modname]
+        return {modname: modpath}, {modname: target}, [modname]
 
 The RJSToolchain compile_plugins method will make use of functions of
 the above type registered to the registry system.
@@ -27,8 +27,8 @@ from os.path import join
 
 def text(toolchain, spec, modname, source, target, modpath):
     """
-    Each of these should return this bundled_path and the exported
-    module_name
+    Each of these should return this bundled_modpaths, bundled_targets,
+    and the exported module_name.
     """
 
     plugin_name, resource_name = modname.split('!', 1)
@@ -37,6 +37,7 @@ def text(toolchain, spec, modname, source, target, modpath):
     if not exists(dirname(copy_target)):
         makedirs(dirname(copy_target))
     shutil.copy(source, copy_target)
-    bundled_paths = {modname: target}
+    bundled_modpaths = {modname: target}
+    bundled_targets = {modname: target}
     module_names = [modname]
-    return bundled_paths, module_names
+    return bundled_modpaths, bundled_targets, module_names
