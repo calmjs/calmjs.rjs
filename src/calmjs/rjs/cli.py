@@ -20,48 +20,6 @@ def make_spec(
         transpile_no_indent=False):
     """
     Produce a spec for the compilation through the RJSToolchain.
-    """
-
-    working_dir = working_dir if working_dir else default_toolchain.join_cwd()
-
-    if export_filename is None:
-        # Take the final package name for now...
-        if package_names:
-            export_filename = package_names[-1] + '.js'
-        else:
-            export_filename = 'calmjs.rjs.export.js'
-
-    spec = Spec(
-        bundle_export_path=export_filename,
-        build_dir=build_dir,
-        transpile_no_indent=transpile_no_indent,
-    )
-
-    spec_update_source_map(spec, generate_transpile_source_maps(
-        package_names=package_names,
-        registries=source_registries,
-        method=source_map_method,
-    ), 'transpile_source_map')
-
-    spec_update_source_map(spec, generate_bundle_source_maps(
-        package_names=package_names,
-        working_dir=working_dir,
-        method=bundle_map_method,
-    ), 'bundle_source_map')
-
-    return spec
-
-
-def compile_all(
-        package_names, export_filename=None, working_dir=None, build_dir=None,
-        source_registries=('calmjs.module',),
-        source_map_method='all', bundle_map_method='all',
-        transpile_no_indent=False,
-        toolchain=default_toolchain):
-    """
-    Invoke the r.js compiler to generate a JavaScript bundle file for a
-    given Python package.  The bundle will include all the dependencies
-    as specified by it and its parents.
 
     Arguments:
 
@@ -122,9 +80,57 @@ def compile_all(
     transpile_no_indent
         Ensure that the transpile targets have no indents.
 
+    """
+
+    working_dir = working_dir if working_dir else default_toolchain.join_cwd()
+
+    if export_filename is None:
+        # Take the final package name for now...
+        if package_names:
+            export_filename = package_names[-1] + '.js'
+        else:
+            export_filename = 'calmjs.rjs.export.js'
+
+    spec = Spec(
+        bundle_export_path=export_filename,
+        build_dir=build_dir,
+        transpile_no_indent=transpile_no_indent,
+    )
+
+    spec_update_source_map(spec, generate_transpile_source_maps(
+        package_names=package_names,
+        registries=source_registries,
+        method=source_map_method,
+    ), 'transpile_source_map')
+
+    spec_update_source_map(spec, generate_bundle_source_maps(
+        package_names=package_names,
+        working_dir=working_dir,
+        method=bundle_map_method,
+    ), 'bundle_source_map')
+
+    return spec
+
+
+def compile_all(
+        package_names, export_filename=None, working_dir=None, build_dir=None,
+        source_registries=('calmjs.module',),
+        source_map_method='all', bundle_map_method='all',
+        transpile_no_indent=False,
+        toolchain=default_toolchain):
+    """
+    Invoke the r.js compiler to generate a JavaScript bundle file for a
+    given Python package.  The bundle will include all the dependencies
+    as specified by it and its parents.
+
+    Arguments:
+
     toolchain
         The toolchain instance to use.  Default is the instance in this
         module.
+
+    For other arguments, please refer to make_spec as they are passed to
+    it.
 
     Naturally, this package will need all its extras calmjs declarations
     available, plus the availability of r.js, before anything can be
