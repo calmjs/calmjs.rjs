@@ -3,7 +3,7 @@ import unittest
 
 from calmjs.toolchain import Spec
 
-from calmjs.rjs.cli import make_spec
+from calmjs.rjs.cli import create_spec
 from calmjs.rjs.cli import compile_all
 
 
@@ -13,8 +13,8 @@ class CliTestCase(unittest.TestCase):
     in the toolchain and/or the integration tests.
     """
 
-    def test_make_spec_empty(self):
-        spec = make_spec([])
+    def test_create_spec_empty(self):
+        spec = create_spec([])
         self.assertTrue(isinstance(spec, Spec))
         self.assertEqual(spec['bundle_export_path'], 'calmjs.rjs.export.js')
 

@@ -13,7 +13,7 @@ from calmjs.rjs.dist import generate_bundle_source_maps
 default_toolchain = RJSToolchain()
 
 
-def make_spec(
+def create_spec(
         package_names, export_filename=None, working_dir=None, build_dir=None,
         source_registries=('calmjs.module',),
         source_map_method='all', bundle_map_method='all',
@@ -129,15 +129,15 @@ def compile_all(
         The toolchain instance to use.  Default is the instance in this
         module.
 
-    For other arguments, please refer to make_spec as they are passed to
-    it.
+    For other arguments, please refer to create_spec as they are passed
+    to it.
 
     Naturally, this package will need all its extras calmjs declarations
     available, plus the availability of r.js, before anything can be
     done.
     """
 
-    spec = make_spec(
+    spec = create_spec(
         package_names=package_names,
         export_filename=export_filename,
         working_dir=working_dir,

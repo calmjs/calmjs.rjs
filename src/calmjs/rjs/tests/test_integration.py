@@ -328,9 +328,9 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         self.assertEqual(stderr, '')
         self.assertEqual(stdout, '0')
 
-    def test_cli_make_spec(self):
+    def test_cli_create_spec(self):
         with pretty_logging(stream=StringIO()):
-            spec = cli.make_spec(
+            spec = cli.create_spec(
                 ['site'], source_registries=(self.registry_name,))
         self.assertEqual(spec['bundle_export_path'], 'site.js')
 

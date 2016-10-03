@@ -3,15 +3,15 @@
 The calmjs runtime collection
 """
 
-from calmjs.runtime import DriverRuntime
+from calmjs.runtime import ToolchainRuntime
 
 from calmjs.rjs.dist import extras_calmjs_methods
 from calmjs.rjs.dist import source_map_methods_list
-from calmjs.rjs.cli import compile_all
+from calmjs.rjs.cli import create_spec
 from calmjs.rjs.cli import default_toolchain
 
 
-class RJSRuntime(DriverRuntime):
+class RJSRuntime(ToolchainRuntime):
     """
     A calmjs runtime
 
@@ -50,17 +50,6 @@ class RJSRuntime(DriverRuntime):
         )
 
         argparser.add_argument(
-            '--build-dir', default=None,
-            dest='build_dir',
-            help='the build directory, where all sources will be copied to '
-                 'for the bundling process; if left unspecified, the default '
-                 'behavior is to create a new temporary directory that will '
-                 'be removed upon conclusion of the build; if specified, it '
-                 'must be an existing directory and all files for the build '
-                 'will be copied there instead, with no cleanup done after.'
-        )
-
-        argparser.add_argument(
             '--source-registry', default=('calmjs.module',),
             dest='source_registries', nargs='+',
             help='the registries to use for gathering JavaScript sources from '
@@ -71,7 +60,7 @@ class RJSRuntime(DriverRuntime):
             '--source-map-method', default='all',
             dest='source_map_method',
             choices=sorted(source_map_methods_list.keys()),
-            help='the acquisition method for getting the source mappings from'
+            help='the acquisition method for getting the source mappings from '
                  'the source registry for the given packages',
         )
 
@@ -94,24 +83,24 @@ class RJSRuntime(DriverRuntime):
             metavar='package_names', nargs='+',
         )
 
-    def run(self, package_names=(), export_filename=None, working_dir=None,
+    def create_spec(
+            self, package_names=(), export_filename=None, working_dir=None,
             build_dir=None, source_registries=('calmjs.module',),
             source_map_method='all', bundle_map_method='all',
             transpile_no_indent=False,
             toolchain=None, **kwargs):
         """
         Accept all arguments, but also the explicit set of arguments
-        that get passed down onto the compile_all function.
+        that get passed down onto the toolchain.
         """
 
-        return compile_all(
+        return create_spec(
             package_names=package_names,
             export_filename=export_filename, working_dir=working_dir,
             build_dir=build_dir, source_registries=source_registries,
             source_map_method=source_map_method,
             bundle_map_method=bundle_map_method,
             transpile_no_indent=transpile_no_indent,
-            toolchain=self.cli_driver,
         )
 
 
