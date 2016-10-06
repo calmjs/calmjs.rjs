@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 import unittest
 import os
 import re
+import sys
 import tempfile
 from os import makedirs
 from os.path import exists
@@ -590,6 +591,13 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         # As the registry is NOT declared for that package, it should
         # result in nothing.
         self.assertNotIn('framework/lib', contents)
+        self.assertIn(
+            'no calmjs module registry declarations found for packages',
+            sys.stderr.getvalue(),
+        )
+        self.assertIn("'site'", sys.stderr.getvalue())
+        self.assertIn(
+            "using acquisition method 'explicit'", sys.stderr.getvalue())
 
     def test_runtime_cli_bundle_method_empty(self):
         utils.stub_stdouts(self)

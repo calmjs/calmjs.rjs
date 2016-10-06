@@ -49,19 +49,10 @@ class DistIntegrationTestCase(unittest.TestCase):
             'widget/richedit',
         ])
 
-    def test_generate_transpile_source_maps_auto(self):
-        # since site depends ultimately on a package that has the
-        # registry defined
-        mapping = dist.generate_transpile_source_maps(['forms'])
-        self.assertEqual(sorted(mapping.keys()), [
-            'forms/ui', 'framework/lib', 'widget/core', 'widget/datepicker',
-            'widget/richedit',
-        ])
-
     def test_generate_transpile_source_maps_explicit_registry_auto(self):
         # explicitly use the package only for source
         mapping = dist.generate_transpile_source_maps(
-            ['site'], source_method='explicit')
+            ['site'], registries=(self.registry_name,), method='explicit')
         # all keys should be present.
         self.assertEqual(sorted(mapping.keys()), [
             'forms/ui', 'framework/lib', 'widget/core', 'widget/datepicker',
@@ -73,32 +64,41 @@ class DistIntegrationTestCase(unittest.TestCase):
         )
 
         mapping = dist.generate_transpile_source_maps(
-            ['forms'], source_method='explicit')
+            ['forms'], registries=(self.registry_name,), method='explicit')
         self.assertEqual(
             sorted(k for k in mapping.keys() if mapping[k] != dist.EMPTY),
             ['forms/ui']
         )
 
-    def test_generate_transpile_source_auto_registry_explicit(self):
+    def test_get_calmjs_module_registry_for_site_no_registry(self):
         # since site doesn't actually define an explicit registry that
         # it needs.
-        mapping = dist.generate_transpile_source_maps(
-            ['site'], registry_method='explicit')
-        self.assertEqual(sorted(mapping.keys()), [])
+        self.assertEqual(
+            dist.get_calmjs_module_registry_for(['site'], method='explicit'),
+            [],
+        )
 
-        mapping = dist.generate_transpile_source_maps(
-            ['forms'], registry_method='explicit')
-        self.assertEqual(sorted(mapping.keys()), [])
+        self.assertEqual(
+            dist.get_calmjs_module_registry_for(['site'], method='all'),
+            [self.registry_name],
+        )
 
-    def test_generate_transpile_source_maps_registry_none(self):
-        # of course, nothing
-        mapping = dist.generate_transpile_source_maps(
-            ['site'], registry_method='none')
-        self.assertEqual(sorted(mapping.keys()), [])
+        self.assertEqual(
+            dist.get_calmjs_module_registry_for(['site'], method='none'),
+            [],
+        )
 
-        mapping = dist.generate_transpile_source_maps(
-            ['forms'], registry_method='none')
-        self.assertEqual(sorted(mapping.keys()), [])
+    def test_get_calmjs_module_registry_for_explicit_get(self):
+        self.assertEqual(
+            dist.get_calmjs_module_registry_for(
+                ['calmjs.simulated'], method='explicit'),
+            [self.registry_name],
+        )
+
+        self.assertEqual(
+            dist.get_calmjs_module_registry_for(['forms'], method='auto'),
+            [self.registry_name],
+        )
 
     def test_generate_transpile_source_maps_site_explicit_method(self):
         mapping = dist.generate_transpile_source_maps(

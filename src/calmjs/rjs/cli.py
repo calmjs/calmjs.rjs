@@ -3,14 +3,18 @@
 CalmJS RequireJS cli tools.
 """
 
+import logging
+
 from calmjs.toolchain import Spec
 from calmjs.rjs.toolchain import RJSToolchain
 from calmjs.rjs.toolchain import spec_update_source_map
 
 from calmjs.rjs.dist import generate_transpile_source_maps
 from calmjs.rjs.dist import generate_bundle_source_maps
+from calmjs.rjs.dist import get_calmjs_module_registry_for
 
 default_toolchain = RJSToolchain()
+logger = logging.getLogger(__name__)
 
 
 def create_spec(
@@ -117,11 +121,25 @@ def create_spec(
         transpile_no_indent=transpile_no_indent,
     )
 
+    if source_registries is None:
+        source_registries = get_calmjs_module_registry_for(
+            package_names, method=source_registry_method)
+        if source_registries:
+            logger.info(
+                "automatically picked registries %r for building source map",
+                source_registries,
+            )
+        else:
+            logger.warning(
+                "no calmjs module registry declarations found for packages %r "
+                "using acquisition method '%s'",
+                package_names, source_registry_method,
+            )
+
     spec_update_source_map(spec, generate_transpile_source_maps(
         package_names=package_names,
         registries=source_registries,
-        source_method=source_map_method,
-        registry_method=source_registry_method,
+        method=source_map_method,
     ), 'transpile_source_map')
 
     spec_update_source_map(spec, generate_bundle_source_maps(
