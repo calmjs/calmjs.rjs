@@ -41,6 +41,8 @@ from subprocess import call
 
 from calmjs.registry import get
 from calmjs.toolchain import Toolchain
+from calmjs.toolchain import CONFIG_JS_FILES
+from calmjs.toolchain import EXPORT_TARGET
 
 from .exc import RJSRuntimeError
 from .exc import RJSExitError
@@ -281,27 +283,29 @@ class RJSToolchain(Toolchain):
         spec['build_manifest_path'] = join(
             spec['build_dir'], self.build_manifest_name)
 
-        if 'bundle_export_path' not in spec:
+        if EXPORT_TARGET not in spec:
             raise RJSRuntimeError(
-                "'bundle_export_path' not found in spec")
+                "'%s' not found in spec" % EXPORT_TARGET)
 
-        # no effect if bundle_export_path already absolute.
-        spec['bundle_export_path'] = self.join_cwd(spec['bundle_export_path'])
+        # no effect if EXPORT_TARGET already absolute.
+        spec[EXPORT_TARGET] = spec[EXPORT_TARGET] = self.join_cwd(
+            spec[EXPORT_TARGET])
+        spec[CONFIG_JS_FILES] = [spec['requirejs_config_js']]
 
-        if not isdir(dirname(spec['bundle_export_path'])):
+        if not isdir(dirname(spec[EXPORT_TARGET])):
             raise RJSRuntimeError(
-                "'bundle_export_path' will not be writable")
+                "'%s' will not be writable" % EXPORT_TARGET)
         logger.debug(
-            "'bundle_export_path' declared to be '%s'",
-            spec['bundle_export_path']
+            "'%s' declared to be '%s'",
+            EXPORT_TARGET, spec[EXPORT_TARGET]
         )
 
         keys = ('requirejs_config_js', 'build_manifest_path')
-        matched = [k for k in keys if spec['bundle_export_path'] == spec[k]]
+        matched = [k for k in keys if spec[EXPORT_TARGET] == spec[k]]
 
         if matched:
             raise RJSRuntimeError(
-                "'bundle_export_path' must not be same as '%s'" % matched[0])
+                "'%s' must not be same as '%s'" % (EXPORT_TARGET, matched[0]))
 
         plugin_source_map = spec['plugin_source_map'] = {}
         raw_plugins = spec.get(_RJS_PLUGIN_KEY, {})
@@ -328,7 +332,7 @@ class RJSToolchain(Toolchain):
         # Set up the statically defined settings.
         update_base_requirejs_config(build_config)
         build_config['shim'].update(spec.get('shim', {}))
-        build_config['out'] = spec['bundle_export_path']
+        build_config['out'] = spec[EXPORT_TARGET]
 
         # Update paths with names pointing to built files in build_dir
         # and generate the list of included files into the final bundle.

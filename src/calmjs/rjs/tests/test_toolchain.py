@@ -10,6 +10,7 @@ from os.path import join
 from io import StringIO
 
 from calmjs.toolchain import Spec
+from calmjs.toolchain import CONFIG_JS_FILES
 from calmjs.npm import get_npm_version
 
 from calmjs.rjs import toolchain
@@ -421,7 +422,7 @@ class ToolchainUnitTestCase(unittest.TestCase):
             rjs.rjs_bin
         ))
 
-    def test_prepare_failure_bundle_export_path(self):
+    def test_prepare_failure_export_target(self):
         tmpdir = utils.mkdtemp(self)
         rjs = toolchain.RJSToolchain()
 
@@ -435,22 +436,22 @@ class ToolchainUnitTestCase(unittest.TestCase):
         with self.assertRaises(RuntimeError) as e:
             rjs.prepare(spec)
         self.assertEqual(
-            str(e.exception), "'bundle_export_path' not found in spec")
+            str(e.exception), "'export_target' not found in spec")
 
         # what can possibly go wrong?
-        spec['bundle_export_path'] = join(spec[rjs.rjs_bin_key], 'build.js')
+        spec['export_target'] = join(spec[rjs.rjs_bin_key], 'build.js')
 
         with self.assertRaises(RuntimeError) as e:
             rjs.prepare(spec)
         self.assertEqual(
-            str(e.exception), "'bundle_export_path' will not be writable")
+            str(e.exception), "'export_target' will not be writable")
 
-        spec['bundle_export_path'] = join(tmpdir, 'build.js')
+        spec['export_target'] = join(tmpdir, 'build.js')
 
         with self.assertRaises(RuntimeError) as e:
             rjs.prepare(spec)
         self.assertEqual(
-            str(e.exception), "'bundle_export_path' must not be same as "
+            str(e.exception), "'export_target' must not be same as "
             "'build_manifest_path'")
 
     def test_assemble_null(self):
@@ -462,7 +463,7 @@ class ToolchainUnitTestCase(unittest.TestCase):
 
         spec = Spec(
             # this is not written
-            bundle_export_path=join(tmpdir, 'bundle.js'),
+            export_target=join(tmpdir, 'bundle.js'),
             build_dir=tmpdir,
             transpiled_modpaths={},
             bundled_modpaths={},
@@ -477,6 +478,7 @@ class ToolchainUnitTestCase(unittest.TestCase):
 
         self.assertTrue(exists(join(tmpdir, 'build.js')))
         self.assertTrue(exists(join(tmpdir, 'config.js')))
+        self.assertEqual(spec[CONFIG_JS_FILES], [join(tmpdir, 'config.js')])
 
         with open(join(tmpdir, 'build.js')) as fd:
             # strip off the header and footer
@@ -501,7 +503,7 @@ class ToolchainUnitTestCase(unittest.TestCase):
 
         spec = Spec(
             # this is not written
-            bundle_export_path=join(tmpdir, 'bundle.js'),
+            export_target=join(tmpdir, 'bundle.js'),
             build_dir=tmpdir,
             transpiled_modpaths={
                 'example/module': '/path/to/src/example/module'
@@ -568,7 +570,7 @@ class ToolchainUnitTestCase(unittest.TestCase):
 
         spec = Spec(
             # this is not written
-            bundle_export_path=join(tmpdir, 'bundle.js'),
+            export_target=join(tmpdir, 'bundle.js'),
             build_dir=tmpdir,
             transpiled_modpaths={},
             bundled_modpaths={},

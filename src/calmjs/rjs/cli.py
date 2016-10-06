@@ -6,6 +6,9 @@ CalmJS RequireJS cli tools.
 import logging
 
 from calmjs.toolchain import Spec
+from calmjs.toolchain import BUILD_DIR
+from calmjs.toolchain import CALMJS_MODULE_REGISTRY_NAMES
+from calmjs.toolchain import EXPORT_TARGET
 from calmjs.rjs.toolchain import RJSToolchain
 from calmjs.rjs.toolchain import spec_update_source_map
 
@@ -116,8 +119,6 @@ def create_spec(
             export_filename = 'calmjs.rjs.export.js'
 
     spec = Spec(
-        bundle_export_path=export_filename,
-        build_dir=build_dir,
         transpile_no_indent=transpile_no_indent,
     )
 
@@ -135,6 +136,10 @@ def create_spec(
                 "using acquisition method '%s'",
                 package_names, source_registry_method,
             )
+
+    spec[BUILD_DIR] = build_dir
+    spec[CALMJS_MODULE_REGISTRY_NAMES] = source_registries
+    spec[EXPORT_TARGET] = export_target
 
     spec_update_source_map(spec, generate_transpile_source_maps(
         package_names=package_names,

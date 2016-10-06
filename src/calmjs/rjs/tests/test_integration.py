@@ -225,18 +225,18 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         transpile_source_map = {}
         transpile_source_map.update(self._example_package_map)
         bundle_source_map = {}
-        bundle_export_path = join(bundle_dir, 'example.package.js')
+        export_target = join(bundle_dir, 'example.package.js')
 
         rjs = toolchain.RJSToolchain()
         spec = Spec(
             transpile_source_map=transpile_source_map,
             bundle_source_map=bundle_source_map,
-            bundle_export_path=bundle_export_path,
+            export_target=export_target,
             build_dir=build_dir,
         )
         rjs(spec)
 
-        self.assertTrue(exists(bundle_export_path))
+        self.assertTrue(exists(export_target))
 
         # verify that the bundle works with node
         stdout, stderr = run_node(
@@ -245,7 +245,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
             '%s\n'
             'var main = requirejs("example/package/main");\n'
             'main.main();\n',
-            bundle_export_path,
+            export_target,
         )
 
         self.assertEqual(stderr, '')
@@ -257,19 +257,19 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         transpile_source_map = {}
         transpile_source_map.update(self._example_package_map)
         bundle_source_map = {}
-        bundle_export_path = join(bundle_dir, 'example.package.js')
+        export_target = join(bundle_dir, 'example.package.js')
 
         rjs = toolchain.RJSToolchain()
         spec = Spec(
             transpile_source_map=transpile_source_map,
             bundle_source_map=bundle_source_map,
-            bundle_export_path=bundle_export_path,
+            export_target=export_target,
             build_dir=build_dir,
             transpile_no_indent=True,
         )
         rjs(spec)
 
-        self.assertTrue(exists(bundle_export_path))
+        self.assertTrue(exists(export_target))
 
         stdout, stderr = run_node(
             'var requirejs = require("requirejs");\n'
@@ -294,7 +294,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         # include custom loader and data
         transpile_source_map.update(self._example_package_loader)
         bundle_source_map = {}
-        bundle_export_path = join(bundle_dir, 'example.package.js')
+        export_target = join(bundle_dir, 'example.package.js')
         requirejs_plugins = {
             'example/package/loader': self._example_package_data
         }
@@ -308,12 +308,12 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
             transpile_source_map=transpile_source_map,
             bundle_source_map=bundle_source_map,
             requirejs_plugins=requirejs_plugins,
-            bundle_export_path=bundle_export_path,
+            export_target=export_target,
             build_dir=build_dir,
         )
         rjs(spec)
 
-        self.assertTrue(exists(bundle_export_path))
+        self.assertTrue(exists(export_target))
 
         # verify that the bundle works with node
         stdout, stderr = run_node(
@@ -323,7 +323,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
             'var result = requirejs(\n'
             '    "example/package/loader!example/package/data.js");\n'
             'process.stdout.write("" + result.results.item_count);\n',
-            bundle_export_path,
+            export_target,
         )
 
         self.assertEqual(stderr, '')
@@ -333,7 +333,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         with pretty_logging(stream=StringIO()):
             spec = cli.create_spec(
                 ['site'], source_registries=(self.registry_name,))
-        self.assertEqual(spec['bundle_export_path'], 'site.js')
+        self.assertEqual(spec['export_target'], 'site.js')
 
     def test_cli_compile_all_site(self):
         # create a new working directory to install our current site
@@ -358,7 +358,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         spec = cli.compile_all(
             ['site'], source_registries=(self.registry_name,))
         self.assertEqual(
-            spec['bundle_export_path'], join(working_dir, 'site.js'))
+            spec['export_target'], join(working_dir, 'site.js'))
 
         # verify that the bundle works with node.  First change back to
         # directory with requirejs library installed.
@@ -372,7 +372,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
             '%s\n'
             'var datepicker = requirejs("widget/datepicker");\n'
             'console.log(datepicker.DatePickerWidget);\n',
-            spec['bundle_export_path'],
+            spec['export_target'],
         )
 
         self.assertEqual(stderr, '')
@@ -391,7 +391,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
             bundle_map_method='none',
         )
         self.assertEqual(
-            spec['bundle_export_path'], join(working_dir, 'service.js'))
+            spec['export_target'], join(working_dir, 'service.js'))
 
         # verify that the bundle works with node.  First change back to
         # directory with requirejs library installed.
@@ -405,7 +405,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
             '%s\n'
             'var rpclib = requirejs("service/rpc/lib");\n'
             'console.log(rpclib.Library);\n',
-            spec['bundle_export_path'],
+            spec['export_target'],
         )
 
         self.assertEqual(stderr, '')
@@ -423,7 +423,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
             bundle_map_method='none', source_map_method='explicit',
         )
         service_js = join(working_dir, 'service.js')
-        self.assertEqual(spec['bundle_export_path'], service_js)
+        self.assertEqual(spec['export_target'], service_js)
 
         with open(service_js) as fd:
             self.assertIn('service/rpc/lib', fd.read())
@@ -434,7 +434,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
             bundle_map_method='none', source_map_method='explicit',
         )
         framework_js = join(working_dir, 'framework.js')
-        self.assertEqual(spec['bundle_export_path'], framework_js)
+        self.assertEqual(spec['export_target'], framework_js)
 
         # verify that the bundle works with node.  First change back to
         # directory with requirejs library installed.

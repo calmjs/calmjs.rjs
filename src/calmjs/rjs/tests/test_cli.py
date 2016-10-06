@@ -16,13 +16,21 @@ class CliTestCase(unittest.TestCase):
     def test_create_spec_empty(self):
         spec = create_spec([])
         self.assertTrue(isinstance(spec, Spec))
-        self.assertEqual(spec['bundle_export_path'], 'calmjs.rjs.export.js')
+        self.assertEqual(spec['export_target'], 'calmjs.rjs.export.js')
+        self.assertEqual(spec['calmjs_module_registry_names'], [])
+
+    def test_create_spec_with_calmjs_rjs(self):
+        spec = create_spec(['calmjs.rjs'])
+        self.assertTrue(isinstance(spec, Spec))
+        self.assertEqual(spec['export_target'], 'calmjs.rjs.js')
+        self.assertEqual(
+            spec['calmjs_module_registry_names'], ['calmjs.module'])
 
     def test_toolchain_empty(self):
         # dict works well enough as a null toolchain
         spec = compile_all([], toolchain=dict)
         self.assertTrue(isinstance(spec, Spec))
-        self.assertEqual(spec['bundle_export_path'], 'calmjs.rjs.export.js')
+        self.assertEqual(spec['export_target'], 'calmjs.rjs.export.js')
 
     def test_toolchain_transpile_empty(self):
         # dict works well enough as a null toolchain
