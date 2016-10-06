@@ -12,8 +12,10 @@ from os.path import isdir
 from calmjs.registry import get
 from calmjs.dist import get_extras_calmjs
 from calmjs.dist import get_module_registry_dependencies
+from calmjs.dist import get_module_registry_names
 from calmjs.dist import flatten_extras_calmjs
 from calmjs.dist import flatten_module_registry_dependencies
+from calmjs.dist import flatten_module_registry_names
 
 logger = logging.getLogger(__name__)
 EMPTY = 'empty:'
@@ -53,6 +55,12 @@ source_map_methods_list = {
     ),
 }
 
+calmjs_module_registry_methods = {
+    'all': flatten_module_registry_names,
+    'explicit': get_module_registry_names,
+    'none': list_none,
+}
+
 extras_calmjs_methods = {
     # function, joiner
     'all': (flatten_extras_calmjs, join),
@@ -67,7 +75,8 @@ def acquire_method(methods, key, default=_default):
 
 
 def generate_transpile_source_maps(
-        package_names, registries=('calmjs.module',), method=_default):
+        package_names, registries=None, method=NotImplemented,
+        source_method=_default, registry_method=_default):
     """
     Invoke the module_registry_dependencies family of dist functions,
     with the specified registries, to produce the required source maps.
@@ -77,11 +86,12 @@ def generate_transpile_source_maps(
     package_names
         The names of the Python package to generate the source maps for.
     registries
-        The names of the registries to source the packages from.
-    method
+        The names of the registries to source the packages from.  If
+        unspecified, pick the options declared by the provided packages.
+    source_method, registry_method
         The method to acquire the dependencies for the given module
         across all the registries specified.  Choices are between 'all',
-        'explicit' or None.  Defaults to 'all'.
+        'explicit' or 'none'.  Defaults to 'all'.
 
         'all'
             Traverse the dependency graph for the specified package to
@@ -94,9 +104,28 @@ def generate_transpile_source_maps(
             Produce an empty source map.
 
         Defaults to 'all'.
+    method
+        Sets both the *_method arguments at the same time
     """
 
-    source_map_methods = acquire_method(source_map_methods_list, method)
+    if method is not NotImplemented:
+        source_method = registry_method = method
+
+    source_map_methods = acquire_method(source_map_methods_list, source_method)
+
+    if registries is None:
+        registries = acquire_method(
+            calmjs_module_registry_methods, registry_method)(package_names)
+        if registries:
+            logger.info(
+                "automatically picked registries %r for building source map",
+                registries,
+            )
+        else:
+            logger.warning(
+                "no calmjs module registry declarations found for packages %r "
+                "for source map", package_names,
+            )
 
     transpile_source_map = {}
 
@@ -108,10 +137,10 @@ def generate_transpile_source_maps(
     # last across all registeries, if needed.
 
     for source_f, n_filter in source_map_methods:
-        for registry_key in registries:
+        for registry_name in registries:
             transpile_source_map.update(
                 (k, n_filter(v)) for k, v in source_f(
-                    package_names, registry_key=registry_key
+                    package_names, registry_name=registry_name
                 ).items()
             )
 
@@ -131,7 +160,7 @@ def generate_bundle_source_maps(
         The working directory.  Defaults to current working directory.
     method
         The method to acquire the bundle sources for the given module.
-        Choices are between 'all', 'explicit', 'none, or 'empty'.
+        Choices are between 'all', 'explicit', 'none', or 'empty'.
 
         'all'
             Traverse the dependency graph for the specified package and

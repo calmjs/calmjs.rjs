@@ -15,7 +15,7 @@ default_toolchain = RJSToolchain()
 
 def create_spec(
         package_names, export_filename=None, working_dir=None, build_dir=None,
-        source_registries=('calmjs.module',),
+        source_registry_method='all', source_registries=None,
         source_map_method='all', bundle_map_method='all',
         transpile_no_indent=False):
     """
@@ -40,10 +40,26 @@ def create_spec(
         The build directory.  Defaults to a temporary directory that is
         automatically removed when done.
 
+    source_registry_method
+        The acqusition method for the list of calmjs module registries
+        declared for the provided package names.
+
+        'all'
+            Traverse the dependency graph for the specified package to
+            acquire the declared calmjs module registries to use.
+        'explicit'
+            Only use the calmjs module registries declared for specified
+            packages.
+        'none'
+            Do not acquire sources.  Useful for creating bundles of just
+            the bundle sources.
+
     source_registries
-        The calmjs registries to use for gathering sources.  Defaults to
-        tuple ('calmjs.module',), i.e. the default module registry.
-        Naturally, multiple registries can be specified.
+        If the provided packages did not specify all registries or have
+        declared modules in alternative but not explicitly specified
+        calmjs module registries, this option can be used to pass an
+        explicit list of calmjs module registries to use.  Typical use
+        case is to generate tests.
 
     source_map_method
         The acquisition method for the source mapping for the given
@@ -104,7 +120,8 @@ def create_spec(
     spec_update_source_map(spec, generate_transpile_source_maps(
         package_names=package_names,
         registries=source_registries,
-        method=source_map_method,
+        source_method=source_map_method,
+        registry_method=source_registry_method,
     ), 'transpile_source_map')
 
     spec_update_source_map(spec, generate_bundle_source_maps(
@@ -118,7 +135,7 @@ def create_spec(
 
 def compile_all(
         package_names, export_filename=None, working_dir=None, build_dir=None,
-        source_registries=('calmjs.module',),
+        source_registry_method='all', source_registries=None,
         source_map_method='all', bundle_map_method='all',
         transpile_no_indent=False,
         toolchain=default_toolchain):
@@ -146,6 +163,7 @@ def compile_all(
         export_filename=export_filename,
         working_dir=working_dir,
         build_dir=build_dir,
+        source_registry_method=source_registry_method,
         source_registries=source_registries,
         source_map_method=source_map_method,
         bundle_map_method=bundle_map_method,

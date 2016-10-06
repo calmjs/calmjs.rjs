@@ -3,10 +3,12 @@
 The calmjs runtime collection
 """
 
+from calmjs.argparse import StoreDelimitedList
 from calmjs.runtime import ToolchainRuntime
 
 from calmjs.rjs.dist import extras_calmjs_methods
 from calmjs.rjs.dist import source_map_methods_list
+from calmjs.rjs.dist import calmjs_module_registry_methods
 from calmjs.rjs.cli import create_spec
 from calmjs.rjs.cli import default_toolchain
 
@@ -50,18 +52,28 @@ class RJSRuntime(ToolchainRuntime):
         )
 
         argparser.add_argument(
-            '--source-registry', default=('calmjs.module',),
-            dest='source_registries', nargs='+',
-            help='the registries to use for gathering JavaScript sources from '
-                 'Python packages; default: calmjs.module',
-        )
-
-        argparser.add_argument(
             '--source-map-method', default='all',
             dest='source_map_method',
             choices=sorted(source_map_methods_list.keys()),
             help='the acquisition method for getting the source mappings from '
-                 'the source registry for the given packages',
+                 'the source registry for the given packages; default: all',
+        )
+
+        argparser.add_argument(
+            '--source-registry', default=None,
+            dest='source_registries', action=StoreDelimitedList,
+            help='comma separated list of registries to use for gathering '
+                 'JavaScript sources from the given Python packages; default '
+                 'behavior is to auto-select, enable verbose output to check '
+                 'to see which ones were selected',
+        )
+
+        argparser.add_argument(
+            '--source-registry-method', default='all',
+            dest='source_registry_method',
+            choices=sorted(calmjs_module_registry_methods.keys()),
+            help='the acquisition method for getting the list of source '
+                 'registries to use for the given packages; default: all',
         )
 
         argparser.add_argument(
@@ -85,7 +97,8 @@ class RJSRuntime(ToolchainRuntime):
 
     def create_spec(
             self, package_names=(), export_filename=None, working_dir=None,
-            build_dir=None, source_registries=('calmjs.module',),
+            build_dir=None,
+            source_registry_method='all', source_registries=None,
             source_map_method='all', bundle_map_method='all',
             transpile_no_indent=False,
             toolchain=None, **kwargs):
@@ -97,7 +110,9 @@ class RJSRuntime(ToolchainRuntime):
         return create_spec(
             package_names=package_names,
             export_filename=export_filename, working_dir=working_dir,
-            build_dir=build_dir, source_registries=source_registries,
+            build_dir=build_dir,
+            source_registry_method=source_registry_method,
+            source_registries=source_registries,
             source_map_method=source_map_method,
             bundle_map_method=bundle_map_method,
             transpile_no_indent=transpile_no_indent,

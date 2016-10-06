@@ -516,6 +516,39 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
             'underscore/underscore.js\n'
         ))
 
+    def test_runtime_cli_compile_framework_simple_invocation(self):
+        target_dir, target_file = self.setup_runtime_main_env()
+
+        # Invoke the thing through the main runtime
+        with self.assertRaises(SystemExit) as e:
+            runtime.main([
+                'rjs', 'framework',
+                '--export-filename=' + target_file,
+            ])
+        self.assertEqual(e.exception.args[0], 0)
+        self.assertTrue(exists(target_file))
+
+        # verify that the bundle works with node.  First change back to
+        # directory with requirejs library installed.
+        os.chdir(self._node_root)
+
+        # The execution should then work as expected on the bundle we
+        # have.
+        stdout, stderr = run_node(
+            'var requirejs = require("requirejs");\n'
+            'var define = requirejs.define;\n'
+            '%s\n'
+            'var lib = requirejs("framework/lib");\n'
+            'console.log(lib.Core);\n'
+            '',
+            target_file
+        )
+
+        self.assertEqual(stderr, '')
+        self.assertEqual(stdout, (
+            'framework.lib.Core\n'
+        ))
+
     def test_runtime_cli_compile_explicit_site(self):
         target_dir, target_file = self.setup_runtime_main_env()
 
@@ -537,6 +570,65 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         # sources (none works here because no code to automatically get
         # r.js to look for them), it should generate an empty bundle.
         self.assertEqual(contents, '(function () {}());')
+
+    def test_runtime_cli_compile_explicit_registry_site(self):
+        utils.stub_stdouts(self)
+        target_dir, target_file = self.setup_runtime_main_env()
+
+        # Invoke the thing through the main runtime
+        with self.assertRaises(SystemExit) as e:
+            runtime.main([
+                'rjs', 'site',
+                '--source-registry-method=explicit',
+                '--export-filename=' + target_file,
+            ])
+        self.assertEqual(e.exception.args[0], 0)
+
+        with open(target_file) as fd:
+            contents = fd.read()
+
+        # As the registry is NOT declared for that package, it should
+        # result in nothing.
+        self.assertNotIn('framework/lib', contents)
+
+    def test_runtime_cli_bundle_method_empty(self):
+        utils.stub_stdouts(self)
+        target_dir, target_file = self.setup_runtime_main_env()
+        build_dir = utils.mkdtemp(self)
+        widget_slim_js = join(target_dir, 'widget_slim.js')
+        os.chdir(target_dir)
+        with self.assertRaises(SystemExit) as e:
+            runtime.main([
+                'rjs', 'widget',
+                '--build-dir=' + build_dir,
+                '--source-map-method=all',
+                '--bundle-map-method=empty',
+                '--export-filename=' + widget_slim_js,
+            ])
+        self.assertEqual(e.exception.args[0], 0)
+        # ensure that the bundled files are not copied
+        self.assertFalse(exists(join(build_dir, 'underscore.js')))
+        self.assertFalse(exists(join(build_dir, 'jquery.js')))
+
+    def test_runtime_cli_bundle_method_standard(self):
+        target_dir, target_file = self.setup_runtime_main_env()
+        build_dir = utils.mkdtemp(self)
+        widget_js = join(target_dir, 'widget_standard.js')
+        os.chdir(target_dir)
+        with self.assertRaises(SystemExit) as e:
+            runtime.main([
+                'rjs', 'widget',
+                '--build-dir=' + build_dir,
+                '--source-map-method=all',
+                '--bundle-map-method=all',
+                '--export-filename=' + widget_js,
+            ])
+        self.assertEqual(e.exception.args[0], 0)
+        # ensure that the bundled files are copied
+        self.assertTrue(exists(join(build_dir, 'underscore.js')))
+        # even jquery.min.js is used, it's copied like this due to how
+        # modules are renamed.
+        self.assertTrue(exists(join(build_dir, 'jquery.js')))
 
     def test_runtime_cli_compile_explicit_service_framework_widget(self):
         def run_node_with_require(*requires):

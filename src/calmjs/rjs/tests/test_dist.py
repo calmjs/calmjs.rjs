@@ -41,7 +41,7 @@ class DistIntegrationTestCase(unittest.TestCase):
             ['site'], registries=(self.registry_name,), method='none')
         self.assertEqual(sorted(mapping.keys()), [])
 
-    def test_generate_transpile_source_maps_site_default(self):
+    def test_generate_transpile_source_maps_explicit_registry(self):
         mapping = dist.generate_transpile_source_maps(
             ['site'], registries=(self.registry_name,))
         self.assertEqual(sorted(mapping.keys()), [
@@ -49,7 +49,58 @@ class DistIntegrationTestCase(unittest.TestCase):
             'widget/richedit',
         ])
 
-    def test_generate_transpile_source_maps_site_explicit(self):
+    def test_generate_transpile_source_maps_auto(self):
+        # since site depends ultimately on a package that has the
+        # registry defined
+        mapping = dist.generate_transpile_source_maps(['forms'])
+        self.assertEqual(sorted(mapping.keys()), [
+            'forms/ui', 'framework/lib', 'widget/core', 'widget/datepicker',
+            'widget/richedit',
+        ])
+
+    def test_generate_transpile_source_maps_explicit_registry_auto(self):
+        # explicitly use the package only for source
+        mapping = dist.generate_transpile_source_maps(
+            ['site'], source_method='explicit')
+        # all keys should be present.
+        self.assertEqual(sorted(mapping.keys()), [
+            'forms/ui', 'framework/lib', 'widget/core', 'widget/datepicker',
+            'widget/richedit',
+        ])
+        self.assertEqual(
+            sorted(k for k in mapping.keys() if mapping[k] != dist.EMPTY),
+            [],
+        )
+
+        mapping = dist.generate_transpile_source_maps(
+            ['forms'], source_method='explicit')
+        self.assertEqual(
+            sorted(k for k in mapping.keys() if mapping[k] != dist.EMPTY),
+            ['forms/ui']
+        )
+
+    def test_generate_transpile_source_auto_registry_explicit(self):
+        # since site doesn't actually define an explicit registry that
+        # it needs.
+        mapping = dist.generate_transpile_source_maps(
+            ['site'], registry_method='explicit')
+        self.assertEqual(sorted(mapping.keys()), [])
+
+        mapping = dist.generate_transpile_source_maps(
+            ['forms'], registry_method='explicit')
+        self.assertEqual(sorted(mapping.keys()), [])
+
+    def test_generate_transpile_source_maps_registry_none(self):
+        # of course, nothing
+        mapping = dist.generate_transpile_source_maps(
+            ['site'], registry_method='none')
+        self.assertEqual(sorted(mapping.keys()), [])
+
+        mapping = dist.generate_transpile_source_maps(
+            ['forms'], registry_method='none')
+        self.assertEqual(sorted(mapping.keys()), [])
+
+    def test_generate_transpile_source_maps_site_explicit_method(self):
         mapping = dist.generate_transpile_source_maps(
             ['site'], registries=(self.registry_name,), method='explicit')
         # it doesn't remove this, but only mark it as empty as the

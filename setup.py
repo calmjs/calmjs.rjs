@@ -78,5 +78,6 @@ setup(
         ],
     },
     package_json=package_json,
+    calmjs_module_registry=['calmjs.module'],
     test_suite="calmjs.rjs.tests.make_suite",
 )
