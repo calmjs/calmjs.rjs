@@ -630,6 +630,27 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         # modules are renamed.
         self.assertTrue(exists(join(build_dir, 'jquery.js')))
 
+    def test_runtime_cli_bundle_method_explicit(self):
+        utils.stub_stdouts(self)
+        target_dir, target_file = self.setup_runtime_main_env()
+        build_dir = utils.mkdtemp(self)
+        widget_js = join(target_dir, 'widget_explicit.js')
+        os.chdir(target_dir)
+        with self.assertRaises(SystemExit) as e:
+            runtime.main([
+                'rjs', 'widget',
+                '--build-dir=' + build_dir,
+                '--source-map-method=all',
+                '--bundle-map-method=explicit',
+                '--export-filename=' + widget_js,
+            ])
+        # as the explicit option only pulled dependencies from just
+        # this file, the process does not actually complete
+        self.assertNotEqual(e.exception.args[0], 0)
+        # ensure that the explicitly defined bundled files are copied
+        self.assertFalse(exists(join(build_dir, 'underscore.js')))
+        self.assertTrue(exists(join(build_dir, 'jquery.js')))
+
     def test_runtime_cli_compile_explicit_service_framework_widget(self):
         def run_node_with_require(*requires):
             os.chdir(self._node_root)

@@ -43,6 +43,7 @@ from calmjs.registry import get
 from calmjs.toolchain import Toolchain
 
 from .exc import RJSRuntimeError
+from .exc import RJSExitError
 from .umdjs import UMD_NODE_AMD_HEADER
 from .umdjs import UMD_NODE_AMD_FOOTER
 from .umdjs import UMD_NODE_AMD_INDENT
@@ -359,4 +360,11 @@ class RJSToolchain(Toolchain):
         linking everything into "binary" file.
         """
 
-        call([spec[self.rjs_bin_key], '-o', spec['build_manifest_path']])
+        rc = call([spec[self.rjs_bin_key], '-o', spec['build_manifest_path']])
+        if rc != 0:
+            logger.error(
+                "the spec may have contained insufficient information "
+                "required for r.js to locate all dependencies it needs for "
+                "the final build process."
+            )
+            raise RJSExitError(rc, spec[self.rjs_bin_key])
