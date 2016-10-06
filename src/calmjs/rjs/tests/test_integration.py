@@ -507,6 +507,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         )
 
         self.assertEqual(stderr, '')
+        # note the names of the bundled files
         self.assertEqual(stdout, (
             'framework.lib.Core\n'
             'widget.datepicker.DatePickerWidget\n'
@@ -593,6 +594,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         # first, and output should be as expected.
         stdout, stderr = run_node_with_require(widget_js, target_file)
         self.assertEqual(stderr, '')
+        # note the names of the bundled files
         self.assertEqual(stdout, (
             'framework.lib.Core\n'
             'widget.datepicker.DatePickerWidget\n'

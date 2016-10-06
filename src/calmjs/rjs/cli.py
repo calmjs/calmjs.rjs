@@ -48,12 +48,12 @@ def create_spec(
     source_map_method
         The acquisition method for the source mapping for the given
         package from the source_registries specified.  Choices are
-        between 'all', 'top' or None.  Defaults to 'all'.
+        between 'all', 'explicit' or 'none'.  Defaults to 'all'.
 
         'all'
             Traverse the dependency graph for the specified package to
             acquire the sources declared for each of those modules.
-        'top'
+        'explicit'
             Only acquire the sources for the specified package.
         'none'
             Do not acquire sources.  Useful for creating bundles of just
@@ -61,19 +61,23 @@ def create_spec(
 
     bundle_map_method
         The acquisition method for the bundle sources for the given
-        module.  Choices are between 'all', 'top' or None.  Defaults to
-        'all'.
+        module.  Choices are between 'all', 'explicit' or 'none'.
+        Defaults to 'all'.
 
         'all'
             Traverse the dependency graph for the specified package and
             acquire the declarations.
-        'top'
+        'explicit'
             Only acquire the bundle sources declared for the specified
             package.
+        'empty'
+            Include all entries in a way that ensure that requirejs does
+            not include them.  Useful for cases where these may be
+            provided by other bundles, or for cases where only the
+            declared sources are desired.
         'none'
-            Do not bundle the declared bundles.  Useful for cases where
-            these may be provided by other bundles, or for cases where
-            only the declared sources are desired.
+            Do not specify any bundle files.  This only works for
+            packages that have declared these as optional
 
         Defaults to 'all'.
 

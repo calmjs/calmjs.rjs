@@ -20,12 +20,23 @@ EMPTY = 'empty:'
 _default = 'all'
 
 
+# due to usage of values specific to requirejs, upstream cannot accept
+# any of the following.
+
 def identity(v):
     return v
 
 
 def empty(*a, **kw):
     return EMPTY
+
+
+def map_none(*a, **kw):
+    return {}
+
+
+def list_none(*a, **kw):
+    return []
 
 
 source_map_methods_list = {
@@ -37,7 +48,9 @@ source_map_methods_list = {
         (flatten_module_registry_dependencies, empty),
         (get_module_registry_dependencies, identity),
     ),
-    'none': None,
+    'none': (
+        (map_none, empty),
+    ),
 }
 
 extras_calmjs_methods = {
@@ -45,7 +58,7 @@ extras_calmjs_methods = {
     'all': (flatten_extras_calmjs, join),
     'explicit': (get_extras_calmjs, join),
     'empty': (flatten_extras_calmjs, empty),
-    'none': None,
+    'none':  (map_none, empty),
 }
 
 
@@ -84,9 +97,6 @@ def generate_transpile_source_maps(
     """
 
     source_map_methods = acquire_method(source_map_methods_list, method)
-
-    if source_map_methods is None:
-        return {}
 
     transpile_source_map = {}
 
@@ -147,9 +157,6 @@ def generate_bundle_source_maps(
 
     working_dir = working_dir if working_dir else getcwd()
     methods = acquire_method(extras_calmjs_methods, method)
-
-    if methods is None:
-        return {}
 
     acquire_extras_calmjs, joiner = methods
 

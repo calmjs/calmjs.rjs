@@ -69,7 +69,7 @@ class RJSRuntime(ToolchainRuntime):
             dest='bundle_map_method',
             choices=sorted(extras_calmjs_methods.keys()),
             help='the acquisition method for the bundle sources for the given '
-                 'packages',
+                 'packages; default: all',
         )
 
         argparser.add_argument(
