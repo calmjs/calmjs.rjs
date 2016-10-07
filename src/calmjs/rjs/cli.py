@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 def create_spec(
-        package_names, export_filename=None, working_dir=None, build_dir=None,
+        package_names, export_target=None, working_dir=None, build_dir=None,
         source_registry_method='all', source_registries=None,
         source_map_method='all', bundle_map_method='all',
         transpile_no_indent=False):
@@ -33,7 +33,7 @@ def create_spec(
     package_names
         The name of the Python package to source the dependencies from.
 
-    export_filename
+    export_target
         The filename for the output, can be an absolute path to a file.
         Defaults to the package_name with a '.js' suffix added in the
         working_dir.
@@ -111,12 +111,12 @@ def create_spec(
 
     working_dir = working_dir if working_dir else default_toolchain.join_cwd()
 
-    if export_filename is None:
+    if export_target is None:
         # Take the final package name for now...
         if package_names:
-            export_filename = package_names[-1] + '.js'
+            export_target = package_names[-1] + '.js'
         else:
-            export_filename = 'calmjs.rjs.export.js'
+            export_target = 'calmjs.rjs.export.js'
 
     spec = Spec(
         transpile_no_indent=transpile_no_indent,
@@ -157,7 +157,7 @@ def create_spec(
 
 
 def compile_all(
-        package_names, export_filename=None, working_dir=None, build_dir=None,
+        package_names, export_target=None, working_dir=None, build_dir=None,
         source_registry_method='all', source_registries=None,
         source_map_method='all', bundle_map_method='all',
         transpile_no_indent=False,
@@ -183,7 +183,7 @@ def compile_all(
 
     spec = create_spec(
         package_names=package_names,
-        export_filename=export_filename,
+        export_target=export_target,
         working_dir=working_dir,
         build_dir=build_dir,
         source_registry_method=source_registry_method,

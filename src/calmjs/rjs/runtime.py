@@ -37,9 +37,9 @@ class RJSRuntime(ToolchainRuntime):
         super(RJSRuntime, self).init_argparser(argparser)
 
         argparser.add_argument(
-            '--export-filename', default=None,
-            dest='export_filename',
-            help='output filename; defaults to last ${package_name}.js',
+            '--export-target', default=None,
+            dest='export_target',
+            help='output target; defaults to last ${package_name}.js',
         )
 
         cwd = self.cli_driver.join_cwd()
@@ -96,7 +96,7 @@ class RJSRuntime(ToolchainRuntime):
         )
 
     def create_spec(
-            self, package_names=(), export_filename=None, working_dir=None,
+            self, package_names=(), export_target=None, working_dir=None,
             build_dir=None,
             source_registry_method='all', source_registries=None,
             source_map_method='all', bundle_map_method='all',
@@ -109,7 +109,8 @@ class RJSRuntime(ToolchainRuntime):
 
         return create_spec(
             package_names=package_names,
-            export_filename=export_filename, working_dir=working_dir,
+            export_target=export_target,
+            working_dir=working_dir,
             build_dir=build_dir,
             source_registry_method=source_registry_method,
             source_registries=source_registries,

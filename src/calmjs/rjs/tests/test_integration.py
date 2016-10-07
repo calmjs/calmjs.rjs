@@ -477,7 +477,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         with self.assertRaises(SystemExit) as e:
             runtime.main([
                 'rjs', 'service', 'site',
-                '--export-filename=' + target_file,
+                '--export-target=' + target_file,
                 '--source-registry=' + self.registry_name,
             ])
         self.assertEqual(e.exception.args[0], 0)
@@ -524,7 +524,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         with self.assertRaises(SystemExit) as e:
             runtime.main([
                 'rjs', 'site',
-                '--export-filename=' + target_file,
+                '--export-target=' + target_file,
                 '--working-dir=' + current_dir,
             ])
         self.assertEqual(e.exception.args[0], 0)
@@ -569,7 +569,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         with self.assertRaises(SystemExit) as e:
             runtime.main([
                 'rjs', 'framework',
-                '--export-filename=' + target_file,
+                '--export-target=' + target_file,
             ])
         self.assertEqual(e.exception.args[0], 0)
         self.assertTrue(exists(target_file))
@@ -605,7 +605,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
                 'rjs', 'site',
                 '--source-map-method=explicit',
                 '--bundle-map-method=none',
-                '--export-filename=' + target_file,
+                '--export-target=' + target_file,
                 '--source-registry=' + self.registry_name,
             ])
         self.assertEqual(e.exception.args[0], 0)
@@ -628,7 +628,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
             runtime.main([
                 'rjs', 'site',
                 '--source-registry-method=explicit',
-                '--export-filename=' + target_file,
+                '--export-target=' + target_file,
             ])
         self.assertEqual(e.exception.args[0], 0)
 
@@ -658,7 +658,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
                 '--build-dir=' + build_dir,
                 '--source-map-method=all',
                 '--bundle-map-method=empty',
-                '--export-filename=' + widget_slim_js,
+                '--export-target=' + widget_slim_js,
             ])
         self.assertEqual(e.exception.args[0], 0)
         # ensure that the bundled files are not copied
@@ -676,7 +676,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
                 '--build-dir=' + build_dir,
                 '--source-map-method=all',
                 '--bundle-map-method=all',
-                '--export-filename=' + widget_js,
+                '--export-target=' + widget_js,
             ])
         self.assertEqual(e.exception.args[0], 0)
         # ensure that the bundled files are copied
@@ -697,7 +697,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
                 '--build-dir=' + build_dir,
                 '--source-map-method=all',
                 '--bundle-map-method=explicit',
-                '--export-filename=' + widget_js,
+                '--export-target=' + widget_js,
             ])
         # as the explicit option only pulled dependencies from just
         # this file, the process does not actually complete
@@ -738,7 +738,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         runtime_main([
             'rjs', 'framework', 'forms', 'service',
             '--source-map-method=explicit',
-            '--export-filename=' + target_file,
+            '--export-target=' + target_file,
             '--source-registry=' + self.registry_name,
         ])
         self.assertTrue(exists(target_file))
@@ -754,7 +754,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         runtime_main([
             'rjs', 'widget',
             '--source-map-method=explicit',
-            '--export-filename=' + widget_js,
+            '--export-target=' + widget_js,
             '--source-registry=' + self.registry_name,
         ])
 
@@ -782,7 +782,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
             'rjs', 'widget',
             '--source-map-method=all',  # using all
             '--bundle-map-method=empty',
-            '--export-filename=' + widget_slim_js,
+            '--export-target=' + widget_slim_js,
             '--source-registry=' + self.registry_name,
         ])
 
@@ -812,7 +812,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
             runtime.main([
                 'rjs', 'example.package',
                 '--transpile-no-indent',
-                '--export-filename=' + target_file,
+                '--export-target=' + target_file,
                 '--source-registry=' + self.registry_name,
             ])
         self.assertEqual(e.exception.args[0], 0)
