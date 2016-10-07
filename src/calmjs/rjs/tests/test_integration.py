@@ -458,20 +458,20 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
     def setup_runtime_main_env(self):
         # create a new working directory to install our current site
         utils.remember_cwd(self)
-        target_dir = utils.mkdtemp(self)
-        target_file = join(target_dir, 'bundle.js')
+        current_dir = utils.mkdtemp(self)
+        target_file = join(current_dir, 'bundle.js')
 
         # invoke installation of "fake_modules"
-        os.chdir(target_dir)
         copytree(
             join(self.dist_dir, 'fake_modules'),
-            join(target_dir, 'fake_modules'),
+            join(current_dir, 'fake_modules'),
         )
 
-        return target_dir, target_file
+        return current_dir, target_file
 
     def test_runtime_cli_compile_all_service(self):
-        target_dir, target_file = self.setup_runtime_main_env()
+        current_dir, target_file = self.setup_runtime_main_env()
+        os.chdir(current_dir)
 
         # Invoke the thing through the main runtime
         with self.assertRaises(SystemExit) as e:
@@ -517,8 +517,53 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
             'underscore/underscore.js\n'
         ))
 
+    def test_runtime_cli_compile_all_service_cwd(self):
+        current_dir, target_file = self.setup_runtime_main_env()
+
+        # Invoke the thing through the main runtime
+        with self.assertRaises(SystemExit) as e:
+            runtime.main([
+                'rjs', 'site',
+                '--export-filename=' + target_file,
+                '--working-dir=' + current_dir,
+            ])
+        self.assertEqual(e.exception.args[0], 0)
+        self.assertTrue(exists(target_file))
+
+        # verify that the bundle works with node.  First change back to
+        # directory with requirejs library installed.
+        os.chdir(self._node_root)
+
+        # The execution should then work as expected on the bundle we
+        # have.
+        stdout, stderr = run_node(
+            'var requirejs = require("requirejs");\n'
+            'var define = requirejs.define;\n'
+            '%s\n'
+            'var lib = requirejs("framework/lib");\n'
+            'console.log(lib.Core);\n'
+            'var datepicker = requirejs("widget/datepicker");\n'
+            'console.log(datepicker.DatePickerWidget);\n'
+            'var jquery = requirejs("jquery");\n'
+            'console.log(jquery);\n'
+            'var underscore = requirejs("underscore");\n'
+            'console.log(underscore);\n'
+            '',
+            target_file
+        )
+
+        self.assertEqual(stderr, '')
+        # note the names of the bundled files
+        self.assertEqual(stdout, (
+            'framework.lib.Core\n'
+            'widget.datepicker.DatePickerWidget\n'
+            'jquery/dist/jquery.js\n'
+            'underscore/underscore.js\n'
+        ))
+
     def test_runtime_cli_compile_framework_simple_invocation(self):
-        target_dir, target_file = self.setup_runtime_main_env()
+        current_dir, target_file = self.setup_runtime_main_env()
+        os.chdir(current_dir)
 
         # Invoke the thing through the main runtime
         with self.assertRaises(SystemExit) as e:
@@ -551,7 +596,8 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         ))
 
     def test_runtime_cli_compile_explicit_site(self):
-        target_dir, target_file = self.setup_runtime_main_env()
+        current_dir, target_file = self.setup_runtime_main_env()
+        os.chdir(current_dir)
 
         # Invoke the thing through the main runtime
         with self.assertRaises(SystemExit) as e:
@@ -574,7 +620,8 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
 
     def test_runtime_cli_compile_explicit_registry_site(self):
         utils.stub_stdouts(self)
-        target_dir, target_file = self.setup_runtime_main_env()
+        current_dir, target_file = self.setup_runtime_main_env()
+        os.chdir(current_dir)
 
         # Invoke the thing through the main runtime
         with self.assertRaises(SystemExit) as e:
@@ -601,10 +648,10 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
 
     def test_runtime_cli_bundle_method_empty(self):
         utils.stub_stdouts(self)
-        target_dir, target_file = self.setup_runtime_main_env()
+        current_dir, target_file = self.setup_runtime_main_env()
+        os.chdir(current_dir)
         build_dir = utils.mkdtemp(self)
-        widget_slim_js = join(target_dir, 'widget_slim.js')
-        os.chdir(target_dir)
+        widget_slim_js = join(current_dir, 'widget_slim.js')
         with self.assertRaises(SystemExit) as e:
             runtime.main([
                 'rjs', 'widget',
@@ -619,10 +666,10 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         self.assertFalse(exists(join(build_dir, 'jquery.js')))
 
     def test_runtime_cli_bundle_method_standard(self):
-        target_dir, target_file = self.setup_runtime_main_env()
+        current_dir, target_file = self.setup_runtime_main_env()
+        os.chdir(current_dir)
         build_dir = utils.mkdtemp(self)
-        widget_js = join(target_dir, 'widget_standard.js')
-        os.chdir(target_dir)
+        widget_js = join(current_dir, 'widget_standard.js')
         with self.assertRaises(SystemExit) as e:
             runtime.main([
                 'rjs', 'widget',
@@ -640,10 +687,10 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
 
     def test_runtime_cli_bundle_method_explicit(self):
         utils.stub_stdouts(self)
-        target_dir, target_file = self.setup_runtime_main_env()
+        current_dir, target_file = self.setup_runtime_main_env()
+        os.chdir(current_dir)
         build_dir = utils.mkdtemp(self)
-        widget_js = join(target_dir, 'widget_explicit.js')
-        os.chdir(target_dir)
+        widget_js = join(current_dir, 'widget_explicit.js')
         with self.assertRaises(SystemExit) as e:
             runtime.main([
                 'rjs', 'widget',
@@ -679,12 +726,13 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
 
         def runtime_main(args, error_code=0):
             # Invoke the thing through the main runtime
-            os.chdir(target_dir)
+            os.chdir(current_dir)
             with self.assertRaises(SystemExit) as e:
                 runtime.main(args)
             self.assertEqual(e.exception.args[0], error_code)
 
-        target_dir, target_file = self.setup_runtime_main_env()
+        current_dir, target_file = self.setup_runtime_main_env()
+        os.chdir(current_dir)
 
         # Invoke the thing through the main runtime
         runtime_main([
@@ -702,8 +750,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         self.assertIn('widget', stderr)
 
         # try again, after building the missing widget bundle.
-        os.chdir(target_dir)
-        widget_js = join(target_dir, 'widget.js')
+        widget_js = join(current_dir, 'widget.js')
         runtime_main([
             'rjs', 'widget',
             '--source-map-method=explicit',
@@ -730,7 +777,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         # information in framework as the 'widget' package did NOT
         # declare the extras_calmjs for underscore so compilation will
         # fail otherwise.
-        widget_slim_js = join(target_dir, 'widget_slim.js')
+        widget_slim_js = join(current_dir, 'widget_slim.js')
         runtime_main([
             'rjs', 'widget',
             '--source-map-method=all',  # using all
