@@ -9,6 +9,7 @@ from calmjs.toolchain import Spec
 from calmjs.toolchain import BUILD_DIR
 from calmjs.toolchain import CALMJS_MODULE_REGISTRY_NAMES
 from calmjs.toolchain import EXPORT_TARGET
+from calmjs.toolchain import SOURCE_PACKAGE_NAMES
 from calmjs.rjs.toolchain import RJSToolchain
 from calmjs.rjs.toolchain import spec_update_source_map
 
@@ -140,6 +141,7 @@ def create_spec(
     spec[BUILD_DIR] = build_dir
     spec[CALMJS_MODULE_REGISTRY_NAMES] = source_registries
     spec[EXPORT_TARGET] = export_target
+    spec[SOURCE_PACKAGE_NAMES] = package_names
 
     spec_update_source_map(spec, generate_transpile_source_maps(
         package_names=package_names,

@@ -368,7 +368,7 @@ triggered like so:
 
 .. code:: sh
 
-    $ calmjs rjs --source-registry myreg1 myreg2 -- example
+    $ calmjs rjs --source-registry=myreg1,myreg2 -- example
 
 Note the ``--`` after the registry lists and before the package to
 denote the end of the ``--source-registry`` section.

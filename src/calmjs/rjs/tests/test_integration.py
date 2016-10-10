@@ -455,6 +455,21 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         self.assertEqual(stderr, '')
         self.assertEqual(stdout, 'service.rpc.lib.Library\n')
 
+    def test_runtime_cli_help_text(self):
+        utils.stub_stdouts(self)
+        with self.assertRaises(SystemExit) as e:
+            runtime.main(['rjs', '-h'])
+        self.assertEqual(e.exception.args[0], 0)
+        out = ' '.join(i.strip() for i in sys.stdout.getvalue().splitlines())
+        self.assertIn(
+            '--export-target EXPORT_TARGET output filename; '
+            'defaults to last ${package_name}.js ', out)
+        self.assertIn(
+            '--working-dir WORKING_DIR the working directory; '
+            'for this tool it will be used as the base directory to '
+            'find source files declared for bundling; ', out)
+        self.assertIn('default is current working directory', out)
+
     def setup_runtime_main_env(self):
         # create a new working directory to install our current site
         utils.remember_cwd(self)

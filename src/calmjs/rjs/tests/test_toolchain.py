@@ -468,7 +468,7 @@ class ToolchainUnitTestCase(unittest.TestCase):
             transpiled_modpaths={},
             bundled_modpaths={},
             plugins_modpaths={},
-            module_names=[],
+            export_module_names=[],
         )
 
         rjs = toolchain.RJSToolchain()
@@ -514,7 +514,7 @@ class ToolchainUnitTestCase(unittest.TestCase):
             plugins_modpaths={
                 'loader/plugin!resource/name': '/resource/name'
             },
-            module_names=[
+            export_module_names=[
                 'example/module',
                 'bundled_pkg',
                 'loader/plugin!resource/name',
@@ -574,7 +574,7 @@ class ToolchainUnitTestCase(unittest.TestCase):
             build_dir=tmpdir,
             transpiled_modpaths={},
             bundled_modpaths={},
-            module_names=[],
+            export_module_names=[],
         )
         spec[rjs.rjs_bin_key] = join(tmpdir, 'r.js')
         spec[toolchain._RJS_PLUGIN_KEY] = {

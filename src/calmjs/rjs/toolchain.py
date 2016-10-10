@@ -43,6 +43,8 @@ from calmjs.registry import get
 from calmjs.toolchain import Toolchain
 from calmjs.toolchain import CONFIG_JS_FILES
 from calmjs.toolchain import EXPORT_TARGET
+from calmjs.toolchain import BUILD_DIR
+from calmjs.toolchain import EXPORT_MODULE_NAMES
 
 from .exc import RJSRuntimeError
 from .exc import RJSExitError
@@ -221,7 +223,7 @@ class RJSToolchain(Toolchain):
 
         plugin_modpaths = {}
         plugin_targets = {}
-        module_names = []
+        export_module_names = []
 
         for modname, source, target, modpath in entries:
             plugin_name, arguments = modname.split('!', 1)
@@ -230,8 +232,8 @@ class RJSToolchain(Toolchain):
                 self, spec, modname, source, target, modpath)
             plugin_modpaths.update(p_ps)
             plugin_targets.update(p_pt)
-            module_names.extend(m_ns)
-        return plugin_modpaths, plugin_targets, module_names
+            export_module_names.extend(m_ns)
+        return plugin_modpaths, plugin_targets, export_module_names
 
     def modname_source_target_to_modpath(self, spec, modname, source, target):
         """
@@ -281,7 +283,7 @@ class RJSToolchain(Toolchain):
         spec['requirejs_config_js'] = join(
             spec['build_dir'], self.requirejs_config_name)
         spec['build_manifest_path'] = join(
-            spec['build_dir'], self.build_manifest_name)
+            spec[BUILD_DIR], self.build_manifest_name)
 
         if EXPORT_TARGET not in spec:
             raise RJSRuntimeError(
@@ -324,7 +326,7 @@ class RJSToolchain(Toolchain):
         transpiled_modpaths = spec['transpiled_modpaths']
         bundled_modpaths = spec['bundled_modpaths']
         plugins_modpaths = spec['plugins_modpaths']
-        module_names = spec['module_names']
+        export_module_names = spec[EXPORT_MODULE_NAMES]
 
         # the build config is the file that will be passed to r.js for
         # building the final bundle.
@@ -339,7 +341,7 @@ class RJSToolchain(Toolchain):
         build_config['paths'].update(transpiled_modpaths)
         build_config['paths'].update(bundled_modpaths)
         build_config['paths'].update(plugins_modpaths)
-        build_config['include'] = module_names
+        build_config['include'] = export_module_names
 
         with open(spec['build_manifest_path'], 'w') as fd:
             fd.write('(\n')

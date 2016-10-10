@@ -15,17 +15,31 @@ from calmjs.rjs.cli import default_toolchain
 
 class RJSRuntime(ToolchainRuntime):
     """
-    A calmjs runtime
+    Runtime for the RJSToolchain
 
-    e.g
+    Example: generate a require.js artifact
 
-    $ calmjs npm --init example.package
-    $ calmjs npm --install example.package
+    $ calmjs rjs example.package
     """
 
     def __init__(self, toolchain, description='r.js bundler tool', *a, **kw):
         super(RJSRuntime, self).__init__(
-            toolchain, description=description, *a, **kw)
+            cli_driver=toolchain, description=description, *a, **kw)
+
+    def init_argparser_export_target(self, argparser):
+        super(RJSRuntime, self).init_argparser_export_target(
+            argparser,
+            help='output filename; defaults to last ${package_name}.js',
+        )
+
+    def init_argparser_working_dir(self, argparser):
+        super(RJSRuntime, self).init_argparser_working_dir(
+            argparser,
+            explanation=(
+                'for this tool it will be used as the base directory to '
+                'find source files declared for bundling; '
+            ),
+        )
 
     def init_argparser(self, argparser):
         """
@@ -35,21 +49,6 @@ class RJSRuntime(ToolchainRuntime):
         """
 
         super(RJSRuntime, self).init_argparser(argparser)
-
-        argparser.add_argument(
-            '--export-target', default=None,
-            dest='export_target',
-            help='output target; defaults to last ${package_name}.js',
-        )
-
-        cwd = self.cli_driver.join_cwd()
-        argparser.add_argument(
-            '--working-dir', default=cwd,
-            dest='working_dir',
-            help='the working directory; for this tool it will be used as the '
-                 'base directory to find source files declared for bundling; '
-                 'default is current working directory (%s)' % cwd,
-        )
 
         argparser.add_argument(
             '--source-map-method', default='all',
@@ -96,7 +95,8 @@ class RJSRuntime(ToolchainRuntime):
         )
 
     def create_spec(
-            self, package_names=(), export_target=None, working_dir=None,
+            self, package_names=(), export_target=None,
+            working_dir=None,
             build_dir=None,
             source_registry_method='all', source_registries=None,
             source_map_method='all', bundle_map_method='all',

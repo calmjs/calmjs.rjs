@@ -28,7 +28,7 @@ from os.path import join
 def text(toolchain, spec, modname, source, target, modpath):
     """
     Each of these should return this bundled_modpaths, bundled_targets,
-    and the exported module_name.
+    and the export_module_name.
     """
 
     plugin_name, resource_name = modname.split('!', 1)
@@ -39,5 +39,5 @@ def text(toolchain, spec, modname, source, target, modpath):
     shutil.copy(source, copy_target)
     bundled_modpaths = {modname: target}
     bundled_targets = {modname: target}
-    module_names = [modname]
-    return bundled_modpaths, bundled_targets, module_names
+    export_module_names = [modname]
+    return bundled_modpaths, bundled_targets, export_module_names

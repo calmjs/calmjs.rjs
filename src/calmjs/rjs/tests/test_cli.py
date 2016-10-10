@@ -25,6 +25,8 @@ class CliTestCase(unittest.TestCase):
         self.assertEqual(spec['export_target'], 'calmjs.rjs.js')
         self.assertEqual(
             spec['calmjs_module_registry_names'], ['calmjs.module'])
+        self.assertEqual(
+            spec['source_package_names'], ['calmjs.rjs'])
 
     def test_toolchain_empty(self):
         # dict works well enough as a null toolchain
