@@ -276,7 +276,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
             '%s\n'
             'var main = requirejs("example/package/main");\n'
             'main.main(true);\n',
-            spec['requirejs_config_js'],
+            spec['node_config_js'],
         )
         self.assertIn(
             join('example', 'package', 'bad.js') + ':%d:%d' % (

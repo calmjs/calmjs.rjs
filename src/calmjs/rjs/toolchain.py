@@ -197,6 +197,7 @@ class RJSToolchain(Toolchain):
     rjs_bin = get_rjs_runtime_name(sys.platform)
     build_manifest_name = 'build.js'
     requirejs_config_name = 'config.js'
+    node_config_name = 'node.js'
 
     def __init__(
             self,
@@ -282,6 +283,8 @@ class RJSToolchain(Toolchain):
         # reason.
         spec['requirejs_config_js'] = join(
             spec['build_dir'], self.requirejs_config_name)
+        spec['node_config_js'] = join(
+            spec['build_dir'], self.node_config_name)
         spec['build_manifest_path'] = join(
             spec[BUILD_DIR], self.build_manifest_name)
 
@@ -292,6 +295,8 @@ class RJSToolchain(Toolchain):
         # no effect if EXPORT_TARGET already absolute.
         spec[EXPORT_TARGET] = spec[EXPORT_TARGET] = self.join_cwd(
             spec[EXPORT_TARGET])
+        # Only providing the standard web one, as the node version is
+        # for internal testing
         spec[CONFIG_JS_FILES] = [spec['requirejs_config_js']]
 
         if not isdir(dirname(spec[EXPORT_TARGET])):
@@ -323,9 +328,6 @@ class RJSToolchain(Toolchain):
         required files for the final bundling.
         """
 
-        transpiled_modpaths = spec['transpiled_modpaths']
-        bundled_modpaths = spec['bundled_modpaths']
-        plugins_modpaths = spec['plugins_modpaths']
         export_module_names = spec[EXPORT_MODULE_NAMES]
 
         # the build config is the file that will be passed to r.js for
@@ -335,25 +337,56 @@ class RJSToolchain(Toolchain):
         update_base_requirejs_config(build_config)
         build_config['shim'].update(spec.get('shim', {}))
         build_config['out'] = spec[EXPORT_TARGET]
-
-        # Update paths with names pointing to built files in build_dir
-        # and generate the list of included files into the final bundle.
-        build_config['paths'].update(transpiled_modpaths)
-        build_config['paths'].update(bundled_modpaths)
-        build_config['paths'].update(plugins_modpaths)
         build_config['include'] = export_module_names
 
+        # the requirejs config is for usage of the "built" (in this
+        # case, transpiled) files, so that the import names are mapped
+        # to the right location within the build_dir.  Doing this here
+        # because the path handling becomes different here.
+        requirejs_config = {}
+        requirejs_config.update(build_config)
+
+        # Back the the build config.  Grab only paths that have been
+        # made empty:
+        prefixes = ('transpiled', 'bundled', 'plugins')
+        for prefix in prefixes:
+            key = prefix + '_modpaths'
+            build_config['paths'].update(
+                {k: v for k, v in spec[key].items() if v == EMPTY})
+
+        # write it out.
         with open(spec['build_manifest_path'], 'w') as fd:
             fd.write('(\n')
             json.dump(build_config, fd, indent=4)
             fd.write('\n)')
 
-        # the requirejs config is for usage of the "built" (in this
-        # case, transpiled) files, so that the import names are mapped
-        # to the right location within the build_dir.
-        requirejs_config = {}
-        requirejs_config.update(build_config)
+        # build a configuration for usage directly from nodejs (which
+        # may or may not work, but a test can find out).
+        nodejs_config = {}
+        nodejs_config.update(build_config)
+        nodejs_config['baseUrl'] = spec['build_dir']
+
+        with open(spec['node_config_js'], 'w') as fd:
+            # XXX in this config, write out the tests from the test
+            # registry???
+            fd.write(UMD_REQUIREJS_JSON_EXPORT_HEADER)
+            json.dump(nodejs_config, fd, indent=4)
+            fd.write(UMD_REQUIREJS_JSON_EXPORT_FOOTER)
+
+        # Update paths with names pointing to built files in build_dir
+        # for the configuration for serving.
         requirejs_config['baseUrl'] = spec['build_dir']
+        requirejs_config['paths'] = {}
+        requirejs_config['include'] = []
+        for prefix in prefixes:
+            key = prefix + '_targets'
+            for k, v in spec[key].items():
+                if v != EMPTY:
+                    # XXX the key/value pair actually need to be
+                    # processed # together as loader plugins need their
+                    # own handling method
+                    requirejs_config['paths'][k] = v + '?'
+                    requirejs_config['include'].append(k)
 
         with open(spec['requirejs_config_js'], 'w') as fd:
             fd.write(UMD_REQUIREJS_JSON_EXPORT_HEADER)

@@ -37,7 +37,13 @@ def text(toolchain, spec, modname, source, target, modpath):
     if not exists(dirname(copy_target)):
         makedirs(dirname(copy_target))
     shutil.copy(source, copy_target)
-    bundled_modpaths = {modname: target}
+    # XXX need to factor this out
+    # XXX requirejs and its plugins actually rely on the underlying url
+    # parser and not the raw module name for resolving of the underlying
+    # paths; this means the resource_name MUST be the key for the target
+    # for the direct path level reference.
+    # to resolve
+    bundled_modpaths = {modname: modpath}
     bundled_targets = {modname: target}
     export_module_names = [modname]
     return bundled_modpaths, bundled_targets, export_module_names

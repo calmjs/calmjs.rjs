@@ -31,7 +31,7 @@ class TextTestCase(unittest.TestCase):
         bundled_modpaths, bundled_targets, module_name = result
 
         self.assertEqual(bundled_modpaths, {
-            'text!text_file.txt': 'text_file.txt',
+            'text!text_file.txt': 'text!text_file.txt',
         })
         self.assertEqual(bundled_targets, {
             'text!text_file.txt': 'text_file.txt',
@@ -58,7 +58,7 @@ class TextTestCase(unittest.TestCase):
         self.assertTrue(exists(join(build_dir, 'namespace', 'text_file.txt')))
         bundled_modpaths, bundled_targets, module_name = result
         self.assertEqual(bundled_modpaths, {
-            'text!namespace/text_file.txt': 'namespace/text_file.txt',
+            'text!namespace/text_file.txt': 'text!namespace/text_file.txt',
         })
         self.assertEqual(bundled_targets, {
             'text!namespace/text_file.txt': 'namespace/text_file.txt',

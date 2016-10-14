@@ -468,6 +468,9 @@ class ToolchainUnitTestCase(unittest.TestCase):
             transpiled_modpaths={},
             bundled_modpaths={},
             plugins_modpaths={},
+            transpiled_targets={},
+            bundled_targets={},
+            plugins_targets={},
             export_module_names=[],
         )
 
@@ -509,14 +512,25 @@ class ToolchainUnitTestCase(unittest.TestCase):
                 'example/module': '/path/to/src/example/module'
             },
             bundled_modpaths={
-                'bundled_pkg': '/path/to/bundled/index'
+                'bundled_pkg': '/path/to/bundled/index',
+                'bundled_empty': 'empty:',
             },
             plugins_modpaths={
                 'loader/plugin!resource/name': '/resource/name'
             },
+            transpiled_targets={
+                'example/module': '/path/to/src/example/module.js',
+            },
+            bundled_targets={
+                'bundled_pkg': '/path/to/bundled/index.js',
+            },
+            plugins_targets={
+                'loader/plugin!resource/name': '/resource/name',
+            },
             export_module_names=[
                 'example/module',
                 'bundled_pkg',
+                'bundled_empty',
                 'loader/plugin!resource/name',
             ],
         )
@@ -539,20 +553,20 @@ class ToolchainUnitTestCase(unittest.TestCase):
             config_js = json.loads(''.join(fd.readlines()[4:-10]))
 
         self.assertEqual(build_js['paths'], {
-            'example/module': '/path/to/src/example/module',
-            'bundled_pkg': '/path/to/bundled/index',
-            'loader/plugin!resource/name': '/resource/name',
+            'bundled_empty': 'empty:',
         })
         self.assertEqual(build_js['include'], [
             'example/module',
             'bundled_pkg',
+            'bundled_empty',
             'loader/plugin!resource/name',
         ])
 
         self.assertEqual(config_js['paths'], {
-            'example/module': '/path/to/src/example/module',
-            'bundled_pkg': '/path/to/bundled/index',
-            'loader/plugin!resource/name': '/resource/name',
+            'example/module': '/path/to/src/example/module.js?',
+            'bundled_pkg': '/path/to/bundled/index.js?',
+            # XXX TODO need to be handled by loader plugin handler
+            'loader/plugin!resource/name': '/resource/name?',
         })
         self.assertEqual(config_js['include'], [
             'example/module',
