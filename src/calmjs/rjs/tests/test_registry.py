@@ -3,7 +3,7 @@ import unittest
 
 from calmjs.registry import get
 
-from calmjs.rjs.registry import LoaderPlugin
+from calmjs.rjs.registry import LoaderPluginRegistry
 from calmjs.rjs.plugin import text
 
 from calmjs.utils import pretty_logging
@@ -11,14 +11,14 @@ from calmjs.testing.mocks import StringIO
 from calmjs.testing.mocks import WorkingSet
 
 
-class LoaderPluginTestCase(unittest.TestCase):
+class LoaderPluginRegistryTestCase(unittest.TestCase):
 
     def test_initialize_standard(self):
         # ensure that we have a proper working registry
         working_set = WorkingSet({'calmjs.rjs.loader_plugin': [
             'text = calmjs.rjs.plugin:text',
         ]})
-        registry = LoaderPlugin(
+        registry = LoaderPluginRegistry(
             'calmjs.rjs.loader_plugin', _working_set=working_set)
         self.assertIs(registry.get('text'), text)
 
@@ -29,7 +29,7 @@ class LoaderPluginTestCase(unittest.TestCase):
         ]})
         # should not trigger import failure
         with pretty_logging(stream=StringIO()) as stream:
-            registry = LoaderPlugin(
+            registry = LoaderPluginRegistry(
                 'calmjs.rjs.loader_plugin', _working_set=working_set)
         self.assertIsNone(registry.get('not_plugin'))
         self.assertIn(

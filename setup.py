@@ -68,7 +68,8 @@ setup(
         #     'rjs = calmjs.rjs.runtime:default',
         # ],
         'calmjs.registry': [
-            'calmjs.rjs.loader_plugin = calmjs.rjs.registry:LoaderPlugin',
+            'calmjs.rjs.loader_plugin'
+            ' = calmjs.rjs.registry:LoaderPluginRegistry',
         ],
         'calmjs.rjs.loader_plugin': [
             'text = calmjs.rjs.plugin:text',

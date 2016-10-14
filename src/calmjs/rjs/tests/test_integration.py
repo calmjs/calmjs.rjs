@@ -24,7 +24,7 @@ from calmjs.utils import pretty_logging
 
 from calmjs.rjs import toolchain
 from calmjs.rjs import cli
-from calmjs.rjs.registry import LoaderPlugin
+from calmjs.rjs.registry import LoaderPluginRegistry
 
 from calmjs.testing import utils
 from calmjs.testing.mocks import StringIO
@@ -299,9 +299,10 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
             'example/package/loader': self._example_package_data
         }
 
-        custom_registry = LoaderPlugin('custom', _working_set=WorkingSet({
-            'custom': ['example/package/loader = calmjs.rjs.plugin:text']
-        }))
+        custom_registry = LoaderPluginRegistry(
+            'custom', _working_set=WorkingSet({
+                'custom': ['example/package/loader = calmjs.rjs.plugin:text']})
+        )
         rjs = toolchain.RJSToolchain()
         rjs.loader_plugin_registry = custom_registry
         spec = Spec(

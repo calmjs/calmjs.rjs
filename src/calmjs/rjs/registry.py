@@ -6,7 +6,7 @@ from calmjs.base import BaseRegistry
 logger = getLogger(__name__)
 
 
-class LoaderPlugin(BaseRegistry):
+class LoaderPluginRegistry(BaseRegistry):
 
     def _init(self):
         for entry_point in self.raw_entry_points:
