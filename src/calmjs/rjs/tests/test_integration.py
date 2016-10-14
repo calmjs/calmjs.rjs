@@ -180,7 +180,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
                 '(function() { define({"results": {"item_count": 0}})}());')
 
         cls._example_package_data = {
-            'example/package/loader!example/package/data.js': data_js,
+            'example/package/loader!example/package/data': data_js,
         }
 
         # also add a proper mock distribution for this.
@@ -294,7 +294,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         # include custom loader and data
         transpile_source_map.update(self._example_package_loader)
         bundle_source_map = {}
-        export_target = join(bundle_dir, 'example.package.js')
+        export_target = join(bundle_dir, 'example.package')
         requirejs_plugins = {
             'example/package/loader': self._example_package_data
         }
@@ -322,7 +322,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
             'var define = requirejs.define;\n'
             '%s\n'
             'var result = requirejs(\n'
-            '    "example/package/loader!example/package/data.js");\n'
+            '    "example/package/loader!example/package/data");\n'
             'process.stdout.write("" + result.results.item_count);\n',
             export_target,
         )

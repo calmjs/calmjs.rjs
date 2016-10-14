@@ -78,20 +78,25 @@ class LoaderPluginHandler(object):
 
 
 class TextPlugin(LoaderPluginHandler):
+    """
+    A basic text loader plugin handler; does not handle further chained
+    loader plugins that have been specified in the modname, as it
+    assumes everything between the first and second '!' is the target.
+    """
+
+    def strip_plugin(self, value):
+        result = value.split('!', 1)
+        return result[-1].split('!', 1)[0]
 
     def __call__(self, toolchain, spec, modname, source, target, modpath):
-        plugin_name, resource_name = modname.split('!', 1)
-        target = resource_name
+        # need to keep existing modname intact, call the modname to be
+        # served as the keys for the bundled_* values as ththis
+        config_modname = self.strip_plugin(modname)
+        target = self.strip_plugin(target)
         copy_target = join(spec['build_dir'], target)
         if not exists(dirname(copy_target)):
             makedirs(dirname(copy_target))
         shutil.copy(source, copy_target)
-        # XXX need to factor this out
-        # XXX requirejs and its plugins actually rely on the underlying url
-        # parser and not the raw module name for resolving of the underlying
-        # paths; this means the resource_name MUST be the key for the target
-        # for the direct path level reference.
-        # to resolve
         bundled_modpaths = {modname: modpath}
         bundled_targets = {modname: target}
         export_module_names = [modname]
