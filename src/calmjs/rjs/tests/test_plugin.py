@@ -9,6 +9,27 @@ from calmjs.rjs import plugin
 from calmjs.testing.utils import mkdtemp
 
 
+class LoaderPluginHandlerTestCase(unittest.TestCase):
+
+    def test_config_paths(self):
+        handler = plugin.LoaderPluginHandler()
+        modname, target = handler.modname_target_to_config_paths(
+            'example/path', 'example/path.js')
+
+        self.assertEqual(modname, 'example/path')
+        self.assertEqual(target, 'example/path.js?')
+
+    def test_others(self):
+        handler = plugin.LoaderPluginHandler()
+        modname_modpath = ('example/path', 'example/path')
+        self.assertEqual(
+            handler.modname_modpath_to_config_paths(*modname_modpath),
+            modname_modpath,
+        )
+        with self.assertRaises(NotImplementedError):
+            handler(None, None, None, None, None, None)
+
+
 class TextTestCase(unittest.TestCase):
 
     def test_basic(self):
