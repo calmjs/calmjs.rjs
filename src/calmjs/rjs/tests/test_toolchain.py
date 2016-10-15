@@ -312,7 +312,6 @@ class ToolchainCompilePluginTestCase(unittest.TestCase):
         build_dir = utils.mkdtemp(self)
         src_dir = utils.mkdtemp(self)
         src = join(src_dir, 'mod.js')
-        spec = {'build_dir': build_dir}
 
         with open(src, 'w') as fd:
             fd.write('hello world')
@@ -324,6 +323,10 @@ class ToolchainCompilePluginTestCase(unittest.TestCase):
         target4 = 'namespace.mod4.txt'
 
         rjs = toolchain.RJSToolchain()
+        spec = {
+            'build_dir': build_dir,
+            toolchain.RJS_LOADER_PLUGIN_REGISTRY: rjs.loader_plugin_registry,
+        }
         rjs.compile_plugin(spec, [
             ('text!mod1.txt', src, target1, 'mod1'),
             ('text!namespace/mod2.txt', src, target2, 'mod2'),
@@ -340,7 +343,6 @@ class ToolchainCompilePluginTestCase(unittest.TestCase):
         build_dir = utils.mkdtemp(self)
         src_dir = utils.mkdtemp(self)
         src = join(src_dir, 'mod.js')
-        spec = {'build_dir': build_dir}
 
         with open(src, 'w') as fd:
             fd.write('hello world')
@@ -349,6 +351,10 @@ class ToolchainCompilePluginTestCase(unittest.TestCase):
         target = 'target.txt'
 
         rjs = toolchain.RJSToolchain()
+        spec = {
+            'build_dir': build_dir,
+            toolchain.RJS_LOADER_PLUGIN_REGISTRY: rjs.loader_plugin_registry,
+        }
         with self.assertRaises(TypeError):
             # This normally shouldn't happen, and for now the method
             # will not trap exceptions.

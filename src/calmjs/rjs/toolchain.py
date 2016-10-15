@@ -64,6 +64,9 @@ _PLATFORM_SPECIFIC_RUNTIME = {
 _DEFAULT_RUNTIME = 'r.js'
 _RJS_PLUGIN_KEY = 'requirejs_plugins'
 
+RJS_LOADER_PLUGIN_REGISTRY_KEY = 'rjs_loader_plugin_registry_key'
+RJS_LOADER_PLUGIN_REGISTRY = 'rjs_loader_plugin_registry'
+
 
 def _dict_get(d, key):
     value = d[key] = d.get(key, {})
@@ -228,7 +231,7 @@ class RJSToolchain(Toolchain):
 
         for modname, source, target, modpath in entries:
             plugin_name, arguments = modname.split('!', 1)
-            handler = self.loader_plugin_registry.get_record(plugin_name)
+            handler = spec[RJS_LOADER_PLUGIN_REGISTRY].get_record(plugin_name)
             p_ps, p_pt, m_ns = handler(
                 self, spec, modname, source, target, modpath)
             plugin_modpaths.update(p_ps)
@@ -261,6 +264,10 @@ class RJSToolchain(Toolchain):
         Attempts to locate the r.js binary if not already specified.  If
         the binary file was not found, RJSRuntimeError will be raised.
         """
+
+        loader_plugin_registry = get(spec.get(RJS_LOADER_PLUGIN_REGISTRY_KEY))
+        loader_plugin_registry = spec[RJS_LOADER_PLUGIN_REGISTRY] = (
+            loader_plugin_registry or self.loader_plugin_registry)
 
         if self.rjs_bin_key not in spec:
             which_bin = spec[self.rjs_bin_key] = self.which()
@@ -317,7 +324,7 @@ class RJSToolchain(Toolchain):
         plugin_source_map = spec['plugin_source_map'] = {}
         raw_plugins = spec.get(_RJS_PLUGIN_KEY, {})
         for key, value in raw_plugins.items():
-            handler = self.loader_plugin_registry.get_record(key)
+            handler = loader_plugin_registry.get_record(key)
             if handler:
                 # assume handler will do the job.
                 plugin_source_map.update(value)
