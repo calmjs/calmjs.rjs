@@ -529,17 +529,26 @@ class ToolchainUnitTestCase(unittest.TestCase):
             },
             bundled_targets={
                 'bundled_pkg': '/path/to/bundled/index.js',
+                'bundled_txt': '/path/to/bundled/txt',
+                'bundled_dir': '/path/to/bundled/dir.js',
+                'bundled_empty': 'empty:',
             },
             plugins_targets={
-                'loader/plugin!resource/name': '/resource/name',
+                'resource/name': '/resource/name',
             },
             export_module_names=[
                 'example/module',
+                'bundled_dir',
                 'bundled_pkg',
+                'bundled_txt',
                 'bundled_empty',
                 'loader/plugin!resource/name',
             ],
         )
+
+        # we are going to fake the is_file checks
+        utils.stub_item_attr_value(
+            self, toolchain, 'isfile', lambda x: not x.endswith('dir.js'))
 
         rjs = toolchain.RJSToolchain()
         spec[rjs.rjs_bin_key] = join(tmpdir, 'r.js')
@@ -563,7 +572,9 @@ class ToolchainUnitTestCase(unittest.TestCase):
         })
         self.assertEqual(build_js['include'], [
             'example/module',
+            'bundled_dir',
             'bundled_pkg',
+            'bundled_txt',
             'bundled_empty',
             'loader/plugin!resource/name',
         ])
@@ -571,14 +582,11 @@ class ToolchainUnitTestCase(unittest.TestCase):
         self.assertEqual(config_js['paths'], {
             'example/module': '/path/to/src/example/module.js?',
             'bundled_pkg': '/path/to/bundled/index.js?',
-            # XXX TODO need to be handled by loader plugin handler
-            'loader/plugin!resource/name': '/resource/name?',
+            'bundled_txt': '/path/to/bundled/txt',
+            'bundled_dir': '/path/to/bundled/dir.js',
+            'resource/name': '/resource/name',
         })
-        self.assertEqual(config_js['include'], [
-            'example/module',
-            'bundled_pkg',
-            'loader/plugin!resource/name',
-        ])
+        self.assertEqual(config_js['include'], [])
 
     def test_prepare_rjs_plugin_key(self):
         tmpdir = utils.mkdtemp(self)

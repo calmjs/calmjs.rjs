@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 
 import unittest
+import json
 import os
 import re
 import sys
@@ -680,6 +681,33 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         # ensure that the bundled files are not copied
         self.assertFalse(exists(join(build_dir, 'underscore.js')))
         self.assertFalse(exists(join(build_dir, 'jquery.js')))
+
+        with open(join(build_dir, 'build.js')) as fd:
+            # strip off the header and footer
+            build_js = json.loads(''.join(fd.readlines()[1:-1]))
+
+        with open(join(build_dir, 'config.js')) as fd:
+            # strip off the header and footer
+            config_js = json.loads(''.join(fd.readlines()[4:-10]))
+
+        self.assertEqual(build_js['paths'], {
+            'jquery': 'empty:',
+            'underscore': 'empty:',
+        })
+        self.assertEqual(sorted(build_js['include']), [
+            'framework/lib',
+            'widget/core',
+            'widget/datepicker',
+            'widget/richedit',
+        ])
+
+        self.assertEqual(config_js['paths'], {
+            'framework/lib': 'framework/lib.js?',
+            'widget/core': 'widget/core.js?',
+            'widget/datepicker': 'widget/datepicker.js?',
+            'widget/richedit': 'widget/richedit.js?',
+        })
+        self.assertEqual(config_js['include'], [])
 
     def test_runtime_cli_bundle_method_standard(self):
         current_dir, target_file = self.setup_runtime_main_env()

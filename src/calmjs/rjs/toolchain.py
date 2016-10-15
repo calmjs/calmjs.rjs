@@ -37,6 +37,7 @@ from os.path import dirname
 from os.path import join
 from os.path import exists
 from os.path import isdir
+from os.path import isfile
 from subprocess import call
 
 from calmjs.registry import get
@@ -384,16 +385,31 @@ class RJSToolchain(Toolchain):
         # for the configuration for serving.
         requirejs_config['baseUrl'] = spec['build_dir']
         requirejs_config['paths'] = {}
+        # leave as empty as this is only applicable to build
         requirejs_config['include'] = []
-        for prefix in prefixes:
+
+        # correct the targets by appending a ? for the affected targets
+        source_prefixes = ('transpiled', 'bundled')
+        for prefix in source_prefixes:
             key = prefix + '_targets'
+            modpaths = prefix + '_modpaths'
             for k, v in spec[key].items():
-                if v != EMPTY:
-                    # XXX the key/value pair actually need to be
-                    # processed # together as loader plugins need their
-                    # own handling method
+                if spec[modpaths].get(k) == EMPTY:
+                    # simply omit empty exported modpaths.
+                    continue
+                if v.endswith('.js') and isfile(
+                        join(spec[BUILD_DIR], *v.split('/'))):
+                    # requirejs loader will automatically append another
+                    # .js filename extension as it doesn't know anything
+                    # about the path, so to avoid this append a '?', the
+                    # canonical way to tell it not to do this.
                     requirejs_config['paths'][k] = v + '?'
-                    requirejs_config['include'].append(k)
+                else:
+                    requirejs_config['paths'][k] = v
+
+        # finally, update the config with the plugin targets, which
+        # should have been correctly processed by the plugin handlers.
+        requirejs_config['paths'].update(spec['plugins_targets'])
 
         with open(spec['requirejs_config_js'], 'w') as fd:
             fd.write(UMD_REQUIREJS_JSON_EXPORT_HEADER)
