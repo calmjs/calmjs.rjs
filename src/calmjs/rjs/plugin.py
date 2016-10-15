@@ -84,21 +84,83 @@ class TextPlugin(LoaderPluginHandler):
     assumes everything between the first and second '!' is the target.
     """
 
+    def requirejs_text_issue123(self, value):
+        """
+        Basically, it appears a dot (``.``) character occuring anywhere
+        inside that string is treated as a filename extension, and if
+        the same identical path (with the ``.``) is later requested, the
+        lookup from the requirejs config will NOT be triggered.  If the
+        dot character is omitted, it will work.
+
+        For further information and the test data that support the above
+        observation, please refer to the issue reported at:
+
+        https://github.com/requirejs/text/issues/123
+
+        Specifically note the interactions of::
+
+            var requirejsOptions = ({"paths": {
+                'nodot/target': '/srv/tmp/nodot/target',
+            }});
+
+        and
+
+            require([
+                // /srv/tmp/nodot/target.d/file
+                'text!nodot/target.d/file',
+            ], function() {});
+
+        even though the filename "extension" is applied to the directory
+        one level down.
+        """
+
+        return value.rsplit('.', 1)[0]
+
     def strip_plugin(self, value):
+        """
+        Strip the first plugin fragment and return just the value.
+        """
+
         result = value.split('!', 1)
         return result[-1].split('!', 1)[0]
 
-    def __call__(self, toolchain, spec, modname, source, target, modpath):
-        # need to keep existing modname intact, call the modname to be
-        # served as the keys for the bundled_* values as ththis
-        config_modname = self.strip_plugin(modname)
+    def modname_target_to_config_paths(self, modname, target):
+        """
+        A text loader plugin will need to have its modname stripped of
+        all loader plugin specific bits, and the target be either
+        stripped of its filename extension OR take the dirname as it
+        just does NOT understand explicit complete filenames.
+        """
+
+        # the values provided _will_ include the `text!` portion as the
+        # default toolchain generation provides this.  Here strip them
+        # off from both modname and target.
+        modname = self.strip_plugin(modname)
         target = self.strip_plugin(target)
-        copy_target = join(spec['build_dir'], target)
+        # if the requirejs-text plugin works correctly, stripping the
+        # loader plugin related strings should allow the underlying
+        # loader for requirejs be able to lookup the actual path from
+        # the ``paths`` configured.  However, this is not the case, due
+        # to its special treatment of dots.  See the method for reason
+        # and the actual issue.
+        modname = self.requirejs_text_issue123(modname)
+        target = self.requirejs_text_issue123(target)
+        return modname, target
+
+    def __call__(self, toolchain, spec, modname, source, target, modpath):
+        config_modname, config_target = self.modname_target_to_config_paths(
+            modname, target)
+
+        # the write target, however, is very different from the config
+        # target given the issue #123 workaround applied.
+        stripped_target = self.strip_plugin(target)
+        copy_target = join(spec['build_dir'], stripped_target)
         if not exists(dirname(copy_target)):
             makedirs(dirname(copy_target))
         shutil.copy(source, copy_target)
+
         bundled_modpaths = {modname: modpath}
-        bundled_targets = {modname: target}
+        bundled_targets = {config_modname: config_target}
         export_module_names = [modname]
         return bundled_modpaths, bundled_targets, export_module_names
 
