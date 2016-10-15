@@ -26,11 +26,14 @@ are defaults provided, which the RJSToolchain will make use of in its
 standard workflow.
 """
 
+import logging
 import shutil
 from os import makedirs
 from os.path import dirname
 from os.path import exists
 from os.path import join
+
+logger = logging.getLogger(__name__)
 
 
 class LoaderPluginHandler(object):
@@ -114,7 +117,17 @@ class TextPlugin(LoaderPluginHandler):
         one level down.
         """
 
-        return value.rsplit('.', 1)[0]
+        if value.endswith('.'):
+            logger.warning(
+                "trailing '.' character for config.paths is unsupported by "
+                "requirejs-text; please refer to "
+                "<https://github.com/requirejs/text/issues/123>"
+            )
+
+        result = value.rsplit('.', 1)
+        if len(result) < 2:
+            result.append('')
+        return result
 
     def strip_plugin(self, value):
         """
@@ -143,9 +156,36 @@ class TextPlugin(LoaderPluginHandler):
         # the ``paths`` configured.  However, this is not the case, due
         # to its special treatment of dots.  See the method for reason
         # and the actual issue.
-        modname = self.requirejs_text_issue123(modname)
-        target = self.requirejs_text_issue123(target)
-        return modname, target
+        modname_result, modname_x = self.requirejs_text_issue123(modname)
+        target_result, target_x = self.requirejs_text_issue123(target)
+
+        if modname_x.endswith(target_x) != target_x.endswith(modname_x):
+            # BUG this is NOT a supported outcome due to how requirejs
+            # does not correctly handle directories anyway.
+            logger.warning(
+                'unsupported values provided for configuration for requirejs '
+                'paths in the context of the text plugin; provided values '
+                'result in paths mapping that will malfunction in requirejs '
+                'and its text loader plugin'
+            )
+            logger.warning(
+                'provided values: {"%s": "%s"}, '
+                'generated values: {"%s": "%s"}',
+                modname, target, modname_result, target_result
+            )
+            logger.warning(
+                'to mitigate, please ensure all final filename fragments have '
+                'a filename extension for both the modpath and the associated '
+                'mapped target url or file on filesystem; please refer to '
+                '<https://github.com/requirejs/text/issues/123> for complete '
+                'details about this issue at hand'
+            )
+        elif modname_x != target_x:
+            logger.info(
+                'provided modname and target {"%s": "%s"} do not share the '
+                'same suffix', modname, target,
+            )
+        return modname_result, target_result
 
     def __call__(self, toolchain, spec, modname, source, target, modpath):
         config_modname, config_target = self.modname_target_to_config_paths(
