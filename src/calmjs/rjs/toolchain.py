@@ -329,6 +329,15 @@ class RJSToolchain(Toolchain):
             if handler:
                 # assume handler will do the job.
                 plugin_source_map.update(value)
+                logger.debug("found handler for '%s' loader plugin", key)
+            else:
+                logger.warning(
+                    "handler for '%s' loader plugin not found in registry; "
+                    "as arguments associated with requirejs loader plugins "
+                    "are specific, processing is disabled and the following "
+                    "names will not be compiled into the target: %s",
+                    key, sorted(value.keys()),
+                )
 
     def assemble(self, spec):
         """

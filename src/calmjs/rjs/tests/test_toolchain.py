@@ -12,10 +12,12 @@ from io import StringIO
 from calmjs.toolchain import Spec
 from calmjs.toolchain import CONFIG_JS_FILES
 from calmjs.npm import get_npm_version
+from calmjs.utils import pretty_logging
 
 from calmjs.rjs import toolchain
 
 from calmjs.testing import utils
+from calmjs.testing import mocks
 
 
 class SpecUpdateSourceMapTestCase(unittest.TestCase):
@@ -609,12 +611,23 @@ class ToolchainUnitTestCase(unittest.TestCase):
             'text': {
                 'text!namespace/module/path.txt': '/namespace/module/path.txt',
             },
-            'some_unsupported_plugin/unknown': {
+            'unsupported/unknown_plugin': {
                 'also this is an invalid value': '/some/path',
             },
         }
 
-        rjs.prepare(spec)
+        with pretty_logging(logger='calmjs.rjs', stream=mocks.StringIO()) as s:
+            rjs.prepare(spec)
+
         self.assertEqual(spec['plugin_source_map'], {
             'text!namespace/module/path.txt': '/namespace/module/path.txt',
         })
+
+        logs = s.getvalue()
+        self.assertIn("DEBUG", logs)
+        self.assertIn("found handler for 'text' loader plugin", logs)
+        self.assertIn("WARNING", logs)
+        self.assertIn(
+            "handler for 'unsupported/unknown_plugin' loader plugin not found",
+            logs)
+        self.assertIn("also this is an invalid value", logs)
