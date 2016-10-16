@@ -49,7 +49,7 @@ class LoaderPluginHandler(object):
         a placeholder.
         """
 
-        return modname, modpath
+        return {modname: modpath}
 
     def modname_target_to_config_paths(self, modname, target):
         """
@@ -64,7 +64,7 @@ class LoaderPluginHandler(object):
         The default implementation simply add a '?' to the target.
         """
 
-        return modname, target + '?'
+        return {modname: target + '?'}
 
     def __call__(self, toolchain, spec, modname, source, target, modpath):
         """
@@ -185,11 +185,9 @@ class TextPlugin(LoaderPluginHandler):
                 'provided modname and target {"%s": "%s"} do not share the '
                 'same suffix', modname, target,
             )
-        return modname_result, target_result
+        return {modname_result: target_result}
 
     def __call__(self, toolchain, spec, modname, source, target, modpath):
-        config_modname, config_target = self.modname_target_to_config_paths(
-            modname, target)
 
         # the write target, however, is very different from the config
         # target given the issue #123 workaround applied.
@@ -200,7 +198,7 @@ class TextPlugin(LoaderPluginHandler):
         shutil.copy(source, copy_target)
 
         bundled_modpaths = {modname: modpath}
-        bundled_targets = {config_modname: config_target}
+        bundled_targets = self.modname_target_to_config_paths(modname, target)
         export_module_names = [modname]
         return bundled_modpaths, bundled_targets, export_module_names
 

@@ -16,18 +16,17 @@ class LoaderPluginHandlerTestCase(unittest.TestCase):
 
     def test_config_paths(self):
         handler = plugin.LoaderPluginHandler()
-        modname, target = handler.modname_target_to_config_paths(
-            'example/path', 'example/path.js')
-
-        self.assertEqual(modname, 'example/path')
-        self.assertEqual(target, 'example/path.js?')
+        self.assertEqual(handler.modname_target_to_config_paths(
+            'example/path', 'example/path.js'),
+            {'example/path': 'example/path.js?'},
+        )
 
     def test_others(self):
         handler = plugin.LoaderPluginHandler()
         modname_modpath = ('example/path', 'example/path')
         self.assertEqual(
             handler.modname_modpath_to_config_paths(*modname_modpath),
-            modname_modpath,
+            dict([modname_modpath]),
         )
         with self.assertRaises(NotImplementedError):
             handler(None, None, None, None, None, None)
@@ -70,15 +69,15 @@ class TextLoaderPluginTestCase(unittest.TestCase):
         with pretty_logging('calmjs.rjs.plugin', stream=StringIO()) as stream:
             self.assertEqual(
                 f('text!file.txt', 'text!file.txt'),
-                ('file', 'file'),
+                {'file': 'file'},
             )
             self.assertEqual(
                 f('text!dir/file.txt', 'text!dir/file.txt'),
-                ('dir/file', 'dir/file'),
+                {'dir/file': 'dir/file'},
             )
             self.assertEqual(
                 f('text!dir/file.txt', '/some/path/dir/file.txt'),
-                ('dir/file', '/some/path/dir/file'),
+                {'dir/file': '/some/path/dir/file'},
             )
 
         self.assertEqual(stream.getvalue(), '')
@@ -97,7 +96,7 @@ class TextLoaderPluginTestCase(unittest.TestCase):
                 # TODO fix this when the following is rectified.
                 # this is an undefined behavior/bugged behavior in
                 # requirejs-text regardless of the output produced here
-                ('some', '/src/some/target/file'),
+                {'some': '/src/some/target/file'},
                 # even if we manage to track the directories and produce
                 # valid examples like the following:
                 # ('some.target', '/src/some/target')
@@ -125,7 +124,7 @@ class TextLoaderPluginTestCase(unittest.TestCase):
         with pretty_logging('calmjs.rjs.plugin', stream=StringIO()) as stream:
             self.assertEqual(
                 f('text!some/file.html', '/src/some/target/file.rst'),
-                ('some/file', '/src/some/target/file'),
+                {'some/file': '/src/some/target/file'},
             )
         # above shouldn't trigger a false positive, but just a general
         # warning will suffice
@@ -142,7 +141,7 @@ class TextLoaderPluginTestCase(unittest.TestCase):
         with pretty_logging('calmjs.rjs.plugin', stream=StringIO()) as stream:
             self.assertEqual(
                 f('text!some.ns/file', '/src/some/ns/file.txt'),
-                ('some', '/src/some/ns/file'),
+                {'some': '/src/some/ns/file'},
             )
         # above shouldn't trigger a false positive, but just a general
         # warning will suffice
