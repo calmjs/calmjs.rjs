@@ -74,6 +74,20 @@ def _dict_get(d, key):
     return value
 
 
+def _dict_key_update_overwrite_check(d, target, mapping):
+    keys = set(d[target].keys()) & set(mapping.keys())
+    for key in keys:
+        if d[target][key] != mapping[key]:
+            logger.warning(
+                "%s['%s'] value of '%s' is being replaced with '%s'; "
+                "configuration may be in an invalid state.",
+                target, key, d[target][key], mapping[key],
+            )
+
+    # complaints are over, finish the job.
+    d[target].update(mapping)
+
+
 def spec_update_source_map(spec, source_map, default_source_key):
     default = _dict_get(spec, default_source_key)
     for modname, source in source_map.items():
