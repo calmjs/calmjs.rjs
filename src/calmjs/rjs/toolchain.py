@@ -240,19 +240,20 @@ class RJSToolchain(Toolchain):
         prepared through this class's prepare method.
         """
 
-        plugin_modpaths = {}
-        plugin_targets = {}
+        plugins_modpaths = {}
+        plugins_targets = {}
         export_module_names = []
 
         for modname, source, target, modpath in entries:
             plugin_name, arguments = modname.split('!', 1)
             handler = spec[RJS_LOADER_PLUGIN_REGISTRY].get_record(plugin_name)
-            p_ps, p_pt, m_ns = handler(
+            p_pm, p_pt, m_ns = handler(
                 self, spec, modname, source, target, modpath)
-            plugin_modpaths.update(p_ps)
-            plugin_targets.update(p_pt)
+            _spec = locals()
+            _dict_key_update_overwrite_check(_spec, 'plugins_modpaths', p_pm)
+            _dict_key_update_overwrite_check(_spec, 'plugins_targets', p_pt)
             export_module_names.extend(m_ns)
-        return plugin_modpaths, plugin_targets, export_module_names
+        return plugins_modpaths, plugins_targets, export_module_names
 
     def modname_source_target_to_modpath(self, spec, modname, source, target):
         """
