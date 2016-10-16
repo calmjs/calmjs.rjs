@@ -68,19 +68,77 @@ class TextLoaderPluginTestCase(unittest.TestCase):
         f = plugin.text.modname_target_to_config_paths
         with pretty_logging('calmjs.rjs.plugin', stream=StringIO()) as stream:
             self.assertEqual(
-                f('text!file.txt', 'text!file.txt'),
+                f('text!file', 'text!file'),
                 {'file': 'file'},
             )
             self.assertEqual(
+                f('text!file.txt', 'text!file.txt'),
+                {
+                    'file': 'file',
+                    'file.txt': 'file.txt',
+                },
+            )
+            self.assertEqual(
                 f('text!dir/file.txt', 'text!dir/file.txt'),
-                {'dir/file': 'dir/file'},
+                {
+                    'dir/file': 'dir/file',
+                    'dir/file.txt': 'dir/file.txt',
+                },
             )
             self.assertEqual(
                 f('text!dir/file.txt', '/some/path/dir/file.txt'),
+                {
+                    'dir/file': '/some/path/dir/file',
+                    'dir/file.txt': '/some/path/dir/file.txt',
+                },
+            )
+            self.assertEqual(
+                f('text!dir/file', '/some/path/dir/file'),
                 {'dir/file': '/some/path/dir/file'},
             )
 
         self.assertEqual(stream.getvalue(), '')
+
+    def test_modname_target_to_config_paths_mismatch_file_ext(self):
+        # this will blow up, actually, since requesting for file.htm
+        # will NOT resolve it to file.html - no configuration can be
+        # currently done to produce a working mapping.
+        f = plugin.text.modname_target_to_config_paths
+        with pretty_logging('calmjs.rjs.plugin', stream=StringIO()) as stream:
+            self.assertEqual(
+                f('text!file.htm', 'text!some.dotted/dir/file.html'),
+                {'file.htm': 'some.dotted/dir/file.html'},
+            )
+        err = stream.getvalue()
+        self.assertIn('WARNING', err)
+        self.assertIn('no possible workaround', err)
+
+    def test_modname_target_to_config_paths_mismatch_dir_ext_file_noext(self):
+        f = plugin.text.modname_target_to_config_paths
+        with pretty_logging('calmjs.rjs.plugin', stream=StringIO()) as stream:
+            self.assertEqual(
+                {
+                    'file': 'some.dotted/dir/file',
+                    'file.ns': 'some.dotted/dir/file.ns',
+                    'file.ns/html': 'some.dotted/dir/file.ns/html',
+                },
+                f('text!file.ns/html', 'text!some.dotted/dir/file.ns/html'),
+            )
+        # this one provides both the dot stripped and the underlying
+        # directory, to cover both case (unless this screws up some
+        # other thing).
+        err = stream.getvalue()
+        # though since this should work, better to warn about this.
+        self.assertIn('WARNING', err)
+        self.assertIn(
+            "warning triggered by mapping config.paths from "
+            "modpath 'text!file.ns/html' to "
+            "target 'text!some.dotted/dir/file.ns/html'", err
+        )
+        self.assertIn("unsupported values provided", err)
+        self.assertIn("potentially working mitigations applied", err)
+        self.assertIn('text!file.ns/html', err)
+        self.assertIn('text!some.dotted/dir/file.ns/html', err)
 
     def test_modname_target_to_config_paths_warning(self):
         f = plugin.text.modname_target_to_config_paths
@@ -93,66 +151,48 @@ class TextLoaderPluginTestCase(unittest.TestCase):
         with pretty_logging('calmjs.rjs.plugin', stream=StringIO()) as stream:
             self.assertEqual(
                 f('text!some.target/file', '/src/some/target/file'),
-                # TODO fix this when the following is rectified.
-                # this is an undefined behavior/bugged behavior in
-                # requirejs-text regardless of the output produced here
-                {'some': '/src/some/target/file'},
-                # even if we manage to track the directories and produce
-                # valid examples like the following:
-                # ('some.target', '/src/some/target')
-                # ('some.target/file', '/src/some/target/file')
+                {'some.target/file': '/src/some/target/file'},
+                # Do nothing as this type of conversion/mapping doesn't
+                # work no matter what, because requirejs and/or the text
+                # loader plugin fails at tracking directories if it has
+                # a '.' somewhere, so the loader gets confused and just
+                # don't see the mapping entry.
 
-                # it will not work because requirejs-text fails at
-                # tracking directories if it has a '.' somewhere.
-                # Trying to traverse to open ``text!some.target/file``,
-                # it will fail no matter what kind of configuration was
-                # used.  Ensure the provided files or paths provided
-                # have a filename extension and does not end with a
-                # ``.`` character.
+                # To mitigate, ensure the provided files or paths
+                # provided have a filename extension and does not end
+                # with a ``.`` character.
             )
 
         # ensure that is logged
         err = stream.getvalue()
         self.assertIn('WARNING', err)
-        self.assertIn(
-            'provided values: {"some.target/file": "/src/some/target/file"}, '
-            'generated values: {"some": "/src/some/target/file"}', err
-        )
+        self.assertIn('no possible workaround', err)
 
-    def test_modname_target_to_config_paths_warning_no_false_positive(self):
+    def test_modname_target_to_config_paths_info_no_false_positive(self):
+        # like the htm -> html example
         f = plugin.text.modname_target_to_config_paths
         with pretty_logging('calmjs.rjs.plugin', stream=StringIO()) as stream:
             self.assertEqual(
                 f('text!some/file.html', '/src/some/target/file.rst'),
-                {'some/file': '/src/some/target/file'},
+                {'some/file.html': '/src/some/target/file.rst'},
             )
-        # above shouldn't trigger a false positive, but just a general
-        # warning will suffice
-        # ensure that is logged
         err = stream.getvalue()
-        self.assertIn('INFO', err)
-        self.assertIn(
-            'provided modname and target '
-            '{"some/file.html": "/src/some/target/file.rst"} '
-            'do not share the same suffix', err
-        )
+        self.assertIn('WARNING', err)
+        self.assertIn('no possible workaround', err)
 
+    def test_modname_target_to_config_paths_further_insanity(self):
+        # Again, the mapping just do not work.  Mapping from 'some' to
+        # '/src/some' will not suddenly make 'contents/html' map to
+        # 'contents/rst'.
         f = plugin.text.modname_target_to_config_paths
         with pretty_logging('calmjs.rjs.plugin', stream=StringIO()) as stream:
             self.assertEqual(
-                f('text!some.ns/file', '/src/some/ns/file.txt'),
-                {'some': '/src/some/ns/file'},
+                {'some.contents/html': '/src/some.contents/rst'},
+                f('text!some.contents/html', '/src/some.contents/rst'),
             )
-        # above shouldn't trigger a false positive, but just a general
-        # warning will suffice
-        # ensure that is logged
         err = stream.getvalue()
-        self.assertIn('INFO', err)
-        self.assertIn(
-            'provided modname and target '
-            '{"some.ns/file": "/src/some/ns/file.txt"} '
-            'do not share the same suffix', err
-        )
+        self.assertIn('WARNING', err)
+        self.assertIn('no possible workaround', err)
 
     def test_basic(self):
         # the target is 'text_file.txt'
@@ -182,6 +222,7 @@ class TextLoaderPluginTestCase(unittest.TestCase):
         })
         self.assertEqual(bundled_targets, {
             'text_file': 'text_file',
+            'text_file.txt': 'text_file.txt',
         })
         self.assertEqual(module_name, ['text!text_file.txt'])
 
@@ -213,6 +254,7 @@ class TextLoaderPluginTestCase(unittest.TestCase):
         })
         self.assertEqual(bundled_targets, {
             'namespace/text_file': 'namespace/text_file',
+            'namespace/text_file.txt': 'namespace/text_file.txt',
         })
         self.assertEqual(module_name, ['text!namespace/text_file.txt'])
 
@@ -235,7 +277,9 @@ class TextLoaderPluginTestCase(unittest.TestCase):
         with pretty_logging('calmjs.rjs.plugin', stream=StringIO()) as stream:
             result = plugin.text(
                 toolchain, spec, modname, source, target, modpath)
-        self.assertEqual(stream.getvalue(), '')
+        err = stream.getvalue()
+        self.assertIn('WARNING', err)
+        self.assertIn('potentially working mitigations applied', err)
 
         self.assertTrue(exists(join(build_dir, 'dotted.ns', 'data')))
         bundled_modpaths, bundled_targets, module_name = result
@@ -249,6 +293,8 @@ class TextLoaderPluginTestCase(unittest.TestCase):
         # text.requirejs_text_issue123 method.
         self.assertEqual(bundled_targets, {
             'dotted': 'dotted',
+            'dotted.ns': 'dotted.ns',
+            'dotted.ns/data': 'dotted.ns/data',
         })
         # Oh yeah, to confirm again that this is the expected value so
         # that the underlying loader will be able to load the target
@@ -286,18 +332,19 @@ class TextLoaderPluginTestCase(unittest.TestCase):
                 toolchain, spec, modname, source, target, modpath)
         err = stream.getvalue()
         self.assertIn('WARNING', err)
+        self.assertIn("modpath 'text!dotted.ns/data'", err)
         # trimming off the ends because they are identical but the
         # actual values depend on os.sep.
-        self.assertIn('provided values: {"dotted.ns/data": "dotted', err)
-        self.assertIn('generated values: {"dotted": "dotted', err)
+        self.assertIn("target 'dotted", err)
 
         self.assertTrue(exists(join(build_dir, 'dotted', 'ns', 'data')))
         bundled_modpaths, bundled_targets, module_name = result
         self.assertEqual(bundled_modpaths, {
             'text!dotted.ns/data': 'text!dotted.ns/data',
         })
-        # yep, a terrible mismatch results.
+        # nothing was done, no mitigation applied as the generation of
+        # a working config.paths is impossible
         self.assertEqual(bundled_targets, {
-            'dotted': target,  # 'dotted/ns/data'
+            'dotted.ns/data': target,  # 'dotted/ns/data'
         })
         self.assertEqual(module_name, ['text!dotted.ns/data'])
