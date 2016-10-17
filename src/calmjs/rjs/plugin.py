@@ -47,7 +47,7 @@ class LoaderPluginHandler(object):
     up the paths for usage from within a requirejs environment.
     """
 
-    def __init__(self, registry):
+    def __init__(self, registry, name=None):
         """
         The registry itself will try to construct the instance and pass
         itself into the constructor; leaving this as the default will
@@ -56,6 +56,18 @@ class LoaderPluginHandler(object):
         """
 
         self.registry = registry
+        self.name = name
+
+    def strip_plugin(self, value):
+        """
+        Strip the first plugin fragment and return just the value.
+        """
+
+        if value.startswith(self.name + '!'):
+            result = value.split('!', 1)
+            return result[-1].split('!', 1)[0]
+        else:
+            return value
 
     def modname_modpath_to_config_paths(self, modname, modpath):
         """
@@ -112,6 +124,10 @@ class TextPlugin(LoaderPluginHandler):
     assumes everything between the first and second '!' is the target.
     """
 
+    def __init__(self, registry, name='text'):
+        # just give this a default value for ease of use.
+        super(TextPlugin, self).__init__(registry, name)
+
     def requirejs_text_issue123(self, value):
         """
         Basically, it appears a dot (``.``) character occuring anywhere
@@ -153,14 +169,6 @@ class TextPlugin(LoaderPluginHandler):
         if len(result) < 2:
             result.append('')
         return result
-
-    def strip_plugin(self, value):
-        """
-        Strip the first plugin fragment and return just the value.
-        """
-
-        result = value.split('!', 1)
-        return result[-1].split('!', 1)[0]
 
     def modname_target_to_config_paths(self, modname, target):
         """

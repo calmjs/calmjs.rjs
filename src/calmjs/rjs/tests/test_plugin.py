@@ -44,6 +44,12 @@ class TextLoaderPluginTestCase(unittest.TestCase):
         self.assertEqual(f('text!file.txt'), 'file.txt')
         self.assertEqual(f('text!file.txt!strip'), 'file.txt')
 
+    def test_strip_plugin_unstripped_values(self):
+        f = plugin.TextPlugin(None).strip_plugin
+        self.assertEqual(f('/file.txt'), '/file.txt')
+        self.assertEqual(f('/text!file.txt'), '/text!file.txt')
+        self.assertEqual(f('/text!file.txt!strip'), '/text!file.txt!strip')
+
     def test_strip_plugin_empty(self):
         f = plugin.TextPlugin(None).strip_plugin
         # this should be invalid, but we are forgiving
@@ -121,6 +127,10 @@ class TextLoaderPluginTestCase(unittest.TestCase):
             self.assertEqual(
                 f('text!dir/file', '/some/path/dir/file'),
                 {'dir/file': '/some/path/dir/file'},
+            )
+            self.assertEqual(
+                f('text!dir/file', '/some/path/dir/file!strip'),
+                {'dir/file': '/some/path/dir/file!strip'},
             )
 
         self.assertEqual(stream.getvalue(), '')

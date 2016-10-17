@@ -53,7 +53,7 @@ class LoaderPluginRegistry(BaseRegistry):
                 continue
 
             try:
-                inst = cls(self)
+                inst = cls(self, entry_point.name)
             except Exception:
                 logger.exception(
                     "the loader plugin class registered at '%s' failed "
