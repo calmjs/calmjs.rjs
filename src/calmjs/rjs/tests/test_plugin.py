@@ -15,14 +15,14 @@ from calmjs.testing.mocks import StringIO
 class LoaderPluginHandlerTestCase(unittest.TestCase):
 
     def test_config_paths(self):
-        handler = plugin.LoaderPluginHandler()
+        handler = plugin.LoaderPluginHandler(None)
         self.assertEqual(handler.modname_target_to_config_paths(
             'example/path', 'example/path.js'),
             {'example/path': 'example/path.js?'},
         )
 
     def test_others(self):
-        handler = plugin.LoaderPluginHandler()
+        handler = plugin.LoaderPluginHandler(None)
         modname_modpath = ('example/path', 'example/path')
         self.assertEqual(
             handler.modname_modpath_to_config_paths(*modname_modpath),
@@ -35,13 +35,13 @@ class LoaderPluginHandlerTestCase(unittest.TestCase):
 class TextLoaderPluginTestCase(unittest.TestCase):
 
     def test_strip_plugin(self):
-        f = plugin.text.strip_plugin
+        f = plugin.TextPlugin(None).strip_plugin
         self.assertEqual(f('file.txt'), 'file.txt')
         self.assertEqual(f('text!file.txt'), 'file.txt')
         self.assertEqual(f('text!file.txt!strip'), 'file.txt')
 
     def test_requirejs_text_issue123_handling(self):
-        f = plugin.text.requirejs_text_issue123
+        f = plugin.TextPlugin(None).requirejs_text_issue123
         with pretty_logging('calmjs.rjs.plugin', stream=StringIO()) as stream:
             self.assertEqual(f('file'), ['file', ''])
             self.assertEqual(f('dir/text'), ['dir/text', ''])
@@ -65,7 +65,7 @@ class TextLoaderPluginTestCase(unittest.TestCase):
         self.assertIn('trailing', stream.getvalue())
 
     def test_modname_target_to_config_paths(self):
-        f = plugin.text.modname_target_to_config_paths
+        f = plugin.TextPlugin(None).modname_target_to_config_paths
         with pretty_logging('calmjs.rjs.plugin', stream=StringIO()) as stream:
             self.assertEqual(
                 f('text!file', 'text!file'),
@@ -103,7 +103,7 @@ class TextLoaderPluginTestCase(unittest.TestCase):
         # this will blow up, actually, since requesting for file.htm
         # will NOT resolve it to file.html - no configuration can be
         # currently done to produce a working mapping.
-        f = plugin.text.modname_target_to_config_paths
+        f = plugin.TextPlugin(None).modname_target_to_config_paths
         with pretty_logging('calmjs.rjs.plugin', stream=StringIO()) as stream:
             self.assertEqual(
                 f('text!file.htm', 'text!some.dotted/dir/file.html'),
@@ -114,7 +114,7 @@ class TextLoaderPluginTestCase(unittest.TestCase):
         self.assertIn('no possible workaround', err)
 
     def test_modname_target_to_config_paths_mismatch_dir_ext_file_noext(self):
-        f = plugin.text.modname_target_to_config_paths
+        f = plugin.TextPlugin(None).modname_target_to_config_paths
         with pretty_logging('calmjs.rjs.plugin', stream=StringIO()) as stream:
             self.assertEqual(
                 {
@@ -141,7 +141,7 @@ class TextLoaderPluginTestCase(unittest.TestCase):
         self.assertIn('text!some.dotted/dir/file.ns/html', err)
 
     def test_modname_target_to_config_paths_warning(self):
-        f = plugin.text.modname_target_to_config_paths
+        f = plugin.TextPlugin(None).modname_target_to_config_paths
         # There are cases where if the python style namespace separator
         # is used for the generated path, and the final fragment has no
         # further '.' characters, WILL result in a complete mismatch of
@@ -170,7 +170,7 @@ class TextLoaderPluginTestCase(unittest.TestCase):
 
     def test_modname_target_to_config_paths_info_no_false_positive(self):
         # like the htm -> html example
-        f = plugin.text.modname_target_to_config_paths
+        f = plugin.TextPlugin(None).modname_target_to_config_paths
         with pretty_logging('calmjs.rjs.plugin', stream=StringIO()) as stream:
             self.assertEqual(
                 f('text!some/file.html', '/src/some/target/file.rst'),
@@ -184,7 +184,7 @@ class TextLoaderPluginTestCase(unittest.TestCase):
         # Again, the mapping just do not work.  Mapping from 'some' to
         # '/src/some' will not suddenly make 'contents/html' map to
         # 'contents/rst'.
-        f = plugin.text.modname_target_to_config_paths
+        f = plugin.TextPlugin(None).modname_target_to_config_paths
         with pretty_logging('calmjs.rjs.plugin', stream=StringIO()) as stream:
             self.assertEqual(
                 {'some.contents/html': '/src/some.contents/rst'},
@@ -210,7 +210,7 @@ class TextLoaderPluginTestCase(unittest.TestCase):
         modpath = 'text!text_file.txt'
 
         with pretty_logging('calmjs.rjs.plugin', stream=StringIO()) as stream:
-            result = plugin.text(
+            result = plugin.TextPlugin(None)(
                 toolchain, spec, modname, source, target, modpath)
         self.assertEqual(stream.getvalue(), '')
 
@@ -243,7 +243,7 @@ class TextLoaderPluginTestCase(unittest.TestCase):
         modpath = 'text!namespace/text_file.txt'
 
         with pretty_logging('calmjs.rjs.plugin', stream=StringIO()) as stream:
-            result = plugin.text(
+            result = plugin.TextPlugin(None)(
                 toolchain, spec, modname, source, target, modpath)
         self.assertEqual(stream.getvalue(), '')
 
@@ -275,7 +275,7 @@ class TextLoaderPluginTestCase(unittest.TestCase):
         modpath = 'text!dotted.ns/data'
 
         with pretty_logging('calmjs.rjs.plugin', stream=StringIO()) as stream:
-            result = plugin.text(
+            result = plugin.TextPlugin(None)(
                 toolchain, spec, modname, source, target, modpath)
         err = stream.getvalue()
         self.assertIn('WARNING', err)
@@ -328,7 +328,7 @@ class TextLoaderPluginTestCase(unittest.TestCase):
         modpath = 'text!dotted.ns/data'
 
         with pretty_logging('calmjs.rjs.plugin', stream=StringIO()) as stream:
-            result = plugin.text(
+            result = plugin.TextPlugin(None)(
                 toolchain, spec, modname, source, target, modpath)
         err = stream.getvalue()
         self.assertIn('WARNING', err)

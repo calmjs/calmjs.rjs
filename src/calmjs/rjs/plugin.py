@@ -16,17 +16,18 @@ for custom JavaScript plugins that are shipped with Python.  As custom
 registries for this can be specified, this can cater to even the most
 esoteric module setup, such as custom nested plugin configurations; this
 can be implemented by calling specific functions nested within each of
-the handlers, or the handler could invoke the registry system to get the
-required target as the call method provides both the toolchain and the
-spec.
+the handlers, or the handler could invoke the registry system (which
+under the default case is accessible through its ``self.registry``
+attribute) to get the required target as the call method provides both
+the toolchain and the spec.
 
 As mentioned, loader plugin handlers should be registered to the
 calmjs.rjs loader_plugin registry in order for them to be used.  There
 are defaults provided, which the RJSToolchain will make use of in its
-standard workflow.
+standard workflow (regsistered as ``calmjs.rjs.loader_plugin``).
 
-Lastly, this module shouldn't really need to import anything from the
-calmjs namespace.
+One final note on module layout for ``calmjs.rjs``: this module should
+not import anything from the calmjs namespace.
 """
 
 import logging
@@ -45,6 +46,16 @@ class LoaderPluginHandler(object):
     framework to deal with path mangling and/or resolution for setting
     up the paths for usage from within a requirejs environment.
     """
+
+    def __init__(self, registry):
+        """
+        The registry itself will try to construct the instance and pass
+        itself into the constructor; leaving this as the default will
+        enable specific plugins to load further plugins should the input
+        modname has more loader plugin strings.
+        """
+
+        self.registry = registry
 
     def modname_modpath_to_config_paths(self, modname, modpath):
         """
@@ -324,5 +335,3 @@ class TextPlugin(LoaderPluginHandler):
         bundled_targets = self.modname_target_to_config_paths(modname, target)
         export_module_names = [modname]
         return bundled_modpaths, bundled_targets, export_module_names
-
-text = TextPlugin()

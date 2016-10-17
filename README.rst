@@ -373,6 +373,30 @@ triggered like so:
 Note the ``--`` after the registry lists and before the package to
 denote the end of the ``--source-registry`` section.
 
+Handling of RequireJS loader plugins
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The AMD system as defined by RequireJS has the concept of loader
+plugins, where the module name provided may be suffixed with a ``!`` as
+arguments for handling by the plugin.  As the string provided after is
+opaque to the |requirejs| system as a whole and thus handled directly by
+the preceding plugin, the resources that it need will be specific to the
+plugin itself.  As it may load resources through the |requirejs| system,
+any paths that require configuration will need to be done.
+
+To account for this issue, |calmjs.rjs| introduces the concept of loader
+plugin handlers and a registry system for dealing with this.  A given
+``RJSToolchain`` will have a default loader plugin registry assigned,
+but this can be overridden by specifying a custom identifier (overriding
+the default ``'calmjs.rjs.loader_plugin'``) for the registry to be used,
+which will allow the handling of very customized loaders for a given
+project.  Please refer to the ``calmjs.rjs.registry`` module for more
+details on how this is constructed and set up for usage.
+
+By default, the ``text`` handler is registered to the default loader
+plugin registry, which should cover the most common use case encountered
+by the |calmjs| framework.
+
 
 Troubleshooting
 ---------------
