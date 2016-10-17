@@ -40,6 +40,12 @@ class TextLoaderPluginTestCase(unittest.TestCase):
         self.assertEqual(f('text!file.txt'), 'file.txt')
         self.assertEqual(f('text!file.txt!strip'), 'file.txt')
 
+    def test_strip_plugin_empty(self):
+        f = plugin.TextPlugin(None).strip_plugin
+        # this should be invalid, but we are forgiving
+        self.assertEqual(f(''), '')
+        self.assertEqual(f('text!'), '')
+
     def test_requirejs_text_issue123_handling(self):
         f = plugin.TextPlugin(None).requirejs_text_issue123
         with pretty_logging('calmjs.rjs.plugin', stream=StringIO()) as stream:
@@ -63,6 +69,15 @@ class TextLoaderPluginTestCase(unittest.TestCase):
         # ensure the complaining loudly is done.
         self.assertIn('WARNING', stream.getvalue())
         self.assertIn('trailing', stream.getvalue())
+
+    def test_empty_modname_target_to_config_paths(self):
+        f = plugin.TextPlugin(None).modname_target_to_config_paths
+        with pretty_logging('calmjs.rjs.plugin', stream=StringIO()) as stream:
+            self.assertEqual(
+                f('text!', 'text!'),
+                {'': ''},  # we are following our own rules...
+            )
+        self.assertEqual(stream.getvalue(), '')
 
     def test_modname_target_to_config_paths(self):
         f = plugin.TextPlugin(None).modname_target_to_config_paths
