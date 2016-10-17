@@ -47,6 +47,8 @@ from calmjs.toolchain import EXPORT_TARGET
 from calmjs.toolchain import BUILD_DIR
 from calmjs.toolchain import EXPORT_MODULE_NAMES
 
+from .utils import dict_get
+from .utils import dict_key_update_overwrite_check
 from .exc import RJSRuntimeError
 from .exc import RJSExitError
 from .umdjs import UMD_NODE_AMD_HEADER
@@ -69,27 +71,8 @@ RJS_LOADER_PLUGIN_REGISTRY_KEY = 'rjs_loader_plugin_registry_key'
 RJS_LOADER_PLUGIN_REGISTRY = 'rjs_loader_plugin_registry'
 
 
-def _dict_get(d, key):
-    value = d[key] = d.get(key, {})
-    return value
-
-
-def _dict_key_update_overwrite_check(d, target, mapping):
-    keys = set(d[target].keys()) & set(mapping.keys())
-    for key in keys:
-        if d[target][key] != mapping[key]:
-            logger.warning(
-                "%s['%s'] value of '%s' is being replaced with '%s'; "
-                "configuration may be in an invalid state.",
-                target, key, d[target][key], mapping[key],
-            )
-
-    # complaints are over, finish the job.
-    d[target].update(mapping)
-
-
 def spec_update_source_map(spec, source_map, default_source_key):
-    default = _dict_get(spec, default_source_key)
+    default = dict_get(spec, default_source_key)
     for modname, source in source_map.items():
         parts = modname.split('!', 1)
         if len(parts) == 1:
@@ -98,8 +81,8 @@ def spec_update_source_map(spec, source_map, default_source_key):
             continue
 
         plugin_name, arguments = parts
-        plugins = _dict_get(spec, _RJS_PLUGIN_KEY)
-        plugin = _dict_get(plugins, plugin_name)
+        plugins = dict_get(spec, _RJS_PLUGIN_KEY)
+        plugin = dict_get(plugins, plugin_name)
         plugin[modname] = source
 
 
@@ -250,8 +233,8 @@ class RJSToolchain(Toolchain):
             p_pm, p_pt, m_ns = handler(
                 self, spec, modname, source, target, modpath)
             _spec = locals()
-            _dict_key_update_overwrite_check(_spec, 'plugins_modpaths', p_pm)
-            _dict_key_update_overwrite_check(_spec, 'plugins_targets', p_pt)
+            dict_key_update_overwrite_check(_spec, 'plugins_modpaths', p_pm)
+            dict_key_update_overwrite_check(_spec, 'plugins_targets', p_pt)
             export_module_names.extend(m_ns)
         return plugins_modpaths, plugins_targets, export_module_names
 

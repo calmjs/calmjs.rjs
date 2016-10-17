@@ -26,16 +26,6 @@ class SpecUpdateSourceMapTestCase(unittest.TestCase):
     in such a way that makes it compatible with the base system.
     """
 
-    def test_dict_get(self):
-        # Primarily used here so test here.
-        items = {}
-        toolchain._dict_get(items, 'a_key')
-        self.assertEqual(items, {'a_key': {}})
-
-        a_key = items['a_key']
-        toolchain._dict_get(items, 'a_key')
-        self.assertIs(items['a_key'], a_key)
-
     def test_spec_update_source_map_standard_modules_base(self):
         source_map = {
             'standard/module': 'standard/module',
@@ -93,56 +83,6 @@ class SpecUpdateSourceMapTestCase(unittest.TestCase):
             'text!argument': 'some/text/file.txt',
             'text!argument2': 'some/text/file2.txt',
         })
-
-
-class DictKeyGetUpdateTestCase(unittest.TestCase):
-    """
-    A function for updating specific dict/spec via a key, and ensure
-    that any overwritten values are warned.
-    """
-
-    def test_dict_key_update_overwrite_check_standard(self):
-        a = {}
-        a['base_key'] = {'k1': 'v1'}
-        mapping = {'k2': 'v2'}
-        with pretty_logging(logger='calmjs.rjs', stream=mocks.StringIO()) as s:
-            toolchain._dict_key_update_overwrite_check(a, 'base_key', mapping)
-        self.assertEqual(s.getvalue(), '')
-        self.assertEqual(a['base_key'], {'k1': 'v1', 'k2': 'v2'})
-
-    def test_dict_key_update_overwrite_check_no_update(self):
-        a = {}
-        a['base_key'] = {'k1': 'v1'}
-        mapping = {'k1': 'v1'}
-        with pretty_logging(logger='calmjs.rjs', stream=mocks.StringIO()) as s:
-            toolchain._dict_key_update_overwrite_check(a, 'base_key', mapping)
-        self.assertEqual(s.getvalue(), '')
-        self.assertEqual(a['base_key'], {'k1': 'v1'})
-
-    def test_dict_key_update_overwrite_check_overwritten_single(self):
-        a = {}
-        a['base_key'] = {'k1': 'v1'}
-        mapping = {'k1': 'v2'}
-        with pretty_logging(logger='calmjs.rjs', stream=mocks.StringIO()) as s:
-            toolchain._dict_key_update_overwrite_check(a, 'base_key', mapping)
-        self.assertIn(
-            "base_key['k1'] value of 'v1' is being replaced with 'v2';",
-            s.getvalue())
-        self.assertEqual(a['base_key'], {'k1': 'v2'})
-
-    def test_dict_key_update_overwrite_check_overwritten_multi(self):
-        a = {}
-        a['base_key'] = {'k1': 'v1', 'k2': 'v2'}
-        mapping = {'k1': 'v2', 'k2': 'v4'}
-        with pretty_logging(logger='calmjs.rjs', stream=mocks.StringIO()) as s:
-            toolchain._dict_key_update_overwrite_check(a, 'base_key', mapping)
-        self.assertIn(
-            "base_key['k1'] value of 'v1' is being replaced with 'v2';",
-            s.getvalue())
-        self.assertIn(
-            "base_key['k2'] value of 'v2' is being replaced with 'v4';",
-            s.getvalue())
-        self.assertEqual(a['base_key'], {'k1': 'v2', 'k2': 'v4'})
 
 
 class ToolchainBootstrapTestCase(unittest.TestCase):
