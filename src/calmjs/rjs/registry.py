@@ -87,16 +87,10 @@ class LoaderPluginRegistry(BaseRegistry):
 
         method_name = method_prefix + '_to_config_paths'
         default_to_config_paths = getattr(_default_handler, method_name)
-        result = {'paths': {}}
-        for modname, path in mapping.items():
-            plugin_fragment = modname.split('!', 1)
-            if len(plugin_fragment) == 1:
-                # default handler will deal with this
-                dict_key_update_overwrite_check(
-                    result, 'paths', default_to_config_paths(modname, path))
-                continue
+        paths = {}
+        result = {'paths': paths}
 
-            plugin, fragment = plugin_fragment
+        def map_plugin_fragment(plugin, fragment):
             handler = self.get(plugin)
             if handler is None:
                 logger.warning(
@@ -104,9 +98,28 @@ class LoaderPluginRegistry(BaseRegistry):
                     "{'%s': '%s'} will be dropped from generated mapping; "
                     "this action may be fatal later.", plugin, modname, path,
                 )
-                continue
+                return
             dict_key_update_overwrite_check(
                 result, 'paths', getattr(handler, method_name)(modname, path))
+
+        def map_default(modname, path):
+            # only generate and the mapping if the path assigned to
+            # modname in paths is absent or incompatible
+            if paths.get(modname) != path[:-3]:
+                # this is compatible.
+                dict_key_update_overwrite_check(
+                    result, 'paths', default_to_config_paths(modname, path))
+
+        # bring ALL the plugin entries to the top to not affect the
+        # resolution of standard modules.
+        for modname, path in sorted(
+                mapping.items(), key=lambda x: ('!' not in x[0], x[0], x[1])):
+            plugin_fragment = modname.split('!', 1)
+            if len(plugin_fragment) == 1:
+                map_default(modname, path)
+            else:
+                map_plugin_fragment(*plugin_fragment)
+
         return result
 
     def modname_source_mapping_to_config_paths(self, mapping):

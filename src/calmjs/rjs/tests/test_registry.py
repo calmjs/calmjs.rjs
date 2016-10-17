@@ -176,8 +176,8 @@ class MappingConversionTestCase(unittest.TestCase):
         """
         A very (un)fun edge case.
 
-        Yeah, apparently no JavaScript developers know how to deal with
-        paths and separators.
+        Since the base module isn't so strict, there are situations
+        where the workaround is still valid.
         """
 
         with pretty_logging(stream=StringIO()) as stream:
@@ -186,9 +186,87 @@ class MappingConversionTestCase(unittest.TestCase):
                 'text!foo/bar.txt': '/src/foo/bar.txt',
             })
         err = stream.getvalue()
-        # yes something defniitely got overwritten, don't know, don't
-        # care what.
-        self.assertEqual(len(result), 1)
+        # The mapping created by the plugin is compatible so no warnings
+        # are issued.
+        self.assertNotIn('WARNING', err)
+        self.assertEqual({
+            'foo/bar': '/src/foo/bar',
+            # the exact text mapping is also present.
+            'foo/bar.txt': '/src/foo/bar.txt',
+        }, result['paths'])
+
+    def test_non_working_workaround(self):
+        """
+        A test to show non-working workaround
+
+        The annoyances just keeps on giving.
+        """
+
+        with pretty_logging(stream=StringIO()) as stream:
+            result = self.registry.modname_source_mapping_to_config_paths({
+                'foo/bar': '/src/foo/bar.js',
+                'text!foo/bar.txt': '/alt/src/foo/bar.txt',
+            })
+        err = stream.getvalue()
+        self.assertEqual({
+            'foo/bar': '/src/foo/bar.js?',
+            'foo/bar.txt': '/alt/src/foo/bar.txt',
+        }, result['paths'])
         self.assertIn('WARNING', err)
-        self.assertIn("value of paths['foo/bar']", err)
+        self.assertIn(
+            "the value of paths['foo/bar'] is being rewritten from "
+            "'/alt/src/foo/bar' to '/src/foo/bar.js?'; "
+            "configuration may be in an invalid state.", err)
+
+    def test_unsupported_mapping(self):
+        """
+        The unsupported mapping we have seen before with mismatched
+        filename extensions.
+        """
+
+        with pretty_logging(stream=StringIO()) as stream:
+            result = self.registry.modname_target_mapping_to_config_paths({
+                'text!foo/bar.html': 'text!/alt/src/foo/bar.txt',
+            })
+        err = stream.getvalue()
+        # mapping untouched completely, saved for removal of plugin name
+        self.assertEqual({
+            'foo/bar.html': '/alt/src/foo/bar.txt',
+        }, result['paths'])
+        self.assertIn('WARNING', err)
+        self.assertIn(
+            "warning triggered by mapping config.paths from modpath "
+            "'text!foo/bar.html' to target 'text!/alt/src/foo/bar.txt'", err)
+        self.assertIn(
+            "provided modname and target has no possible workaround", err)
+
+    def test_requirejs_is_pretty_much_completely_broken(self):
+        """
+        Showing how requirejs and/or requirejs-text is basically broken
+
+        I mean, I covered how it basically can't deal with filename
+        extensions correctly, so no amount of workaround can really fix
+        the underlying brokenness.
+        """
+
+        with pretty_logging(stream=StringIO()) as stream:
+            result = self.registry.modname_target_mapping_to_config_paths({
+                'text!foo/bar.txt': 'text!/src/foo/bar.txt',
+                'text!foo/bar.html': 'text!/alt/src/foo/bar.html',
+            })
+        err = stream.getvalue()
+        # html comes before txt, since the mapping is pre-sorted in
+        # alphabetical order, so txt will end up overwriting html's base
+        # directory.
+        self.assertEqual({
+            'foo/bar': '/src/foo/bar',
+            'foo/bar.txt': '/src/foo/bar.txt',
+            'foo/bar.html': '/alt/src/foo/bar.html',
+        }, result['paths'])
+        self.assertIn('WARNING', err)
+        self.assertIn("value of paths['foo/bar'] is being rewritten", err)
         self.assertIn("configuration may be in an invalid state", err)
+        self.assertIn(
+            "the value of paths['foo/bar'] is being rewritten from "
+            "'/alt/src/foo/bar' to '/src/foo/bar'; "
+            "configuration may be in an invalid state.", err)
