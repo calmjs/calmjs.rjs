@@ -20,6 +20,10 @@ class LoaderPluginHandlerTestCase(unittest.TestCase):
             'example/path', 'example/path.js'),
             {'example/path': 'example/path.js?'},
         )
+        self.assertEqual(handler.modname_source_to_config_paths(
+            'example/path', 'example/path.js'),
+            {'example/path': 'example/path.js?'},
+        )
 
     def test_others(self):
         handler = plugin.LoaderPluginHandler(None)
@@ -81,6 +85,13 @@ class TextLoaderPluginTestCase(unittest.TestCase):
 
     def test_modname_target_to_config_paths(self):
         f = plugin.TextPlugin(None).modname_target_to_config_paths
+        self.modname_x_to_config_paths(f)
+
+    def test_modname_source_to_config_paths(self):
+        f = plugin.TextPlugin(None).modname_source_to_config_paths
+        self.modname_x_to_config_paths(f)
+
+    def modname_x_to_config_paths(self, f):
         with pretty_logging('calmjs.rjs.plugin', stream=StringIO()) as stream:
             self.assertEqual(
                 f('text!file', 'text!file'),

@@ -80,6 +80,17 @@ class LoaderPluginHandler(object):
 
         return {modname: target + '?'}
 
+    def modname_source_to_config_paths(self, modname, source):
+        """
+        In general, there shouldn't be a difference, however in practice
+        subclasses may choose to make handling of source files somewhat
+        different.  This is used by the registry system for generation
+        of mapping directly from the source file provided through the
+        module registry system for calmjs.
+        """
+
+        return self.modname_target_to_config_paths(modname, source)
+
     def __call__(self, toolchain, spec, modname, source, target, modpath):
         """
         These need to provide the actual implementation required for the
