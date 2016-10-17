@@ -110,3 +110,85 @@ class LoaderPluginRegistryTestCase(unittest.TestCase):
         # should return the identity as they should all be the same.
         self.assertIs(text.registry, registry)
         self.assertIs(text.registry.get('text'), text)
+
+
+class MappingConversionTestCase(unittest.TestCase):
+
+    def setUp(self):
+        working_set = WorkingSet({'calmjs.rjs.loader_plugin': [
+            'text = calmjs.rjs.plugin:TextPlugin',
+        ]})
+        self.registry = LoaderPluginRegistry(
+            'calmjs.rjs.loader_plugin', _working_set=working_set)
+
+    def test_standard_modpath_source(self):
+        result = self.registry.modname_source_mapping_to_config_paths({
+            'foo/bar': '/src/foo/bar.js',
+            'foo/baz': '/src/foo/baz.js',
+        })
+        self.assertEqual({
+            'foo/bar': '/src/foo/bar.js?',
+            'foo/baz': '/src/foo/baz.js?',
+        }, result['paths'])
+        self.assertEqual(sorted(result.keys()), ['paths'])
+
+    def test_standard_modpath_target(self):
+        result = self.registry.modname_target_mapping_to_config_paths({
+            'bar/bar': '/src/bar/baz.js',
+            'foo/baz': '/src/foo/baz.js',
+        })
+        self.assertEqual({
+            'bar/bar': '/src/bar/baz.js?',
+            'foo/baz': '/src/foo/baz.js?',
+        }, result['paths'])
+
+    def test_standard_modpath_plugins(self):
+        result = self.registry.modname_source_mapping_to_config_paths({
+            'text!foo/bar': 'text!/src/foo/bar',
+            'text!example.ns/baz.txt': 'text!/src/example/ns/baz.txt',
+        })
+        self.assertEqual({
+            'foo/bar': '/src/foo/bar',
+            'example.ns/baz': '/src/example/ns/baz',
+            'example.ns/baz.txt': '/src/example/ns/baz.txt',
+        }, result['paths'])
+
+    def test_standard_modpath_plugin_not_found(self):
+        with pretty_logging(stream=StringIO()) as stream:
+            result = self.registry.modname_source_mapping_to_config_paths({
+                'nosuchplugin!foo/bar': 'nosuchplugin!/src/foo/bar',
+                'text!example.ns/baz.txt': 'text!/src/example/ns/baz.txt',
+            })
+        err = stream.getvalue()
+        self.assertEqual({
+            'example.ns/baz': '/src/example/ns/baz',
+            'example.ns/baz.txt': '/src/example/ns/baz.txt',
+        }, result['paths'])
+        self.assertIn('WARNING', err)
+        self.assertIn("no handler found for loader plugin 'nosuchplugin'", err)
+        self.assertIn(
+            "{'nosuchplugin!foo/bar': 'nosuchplugin!/src/foo/bar'} will be "
+            "dropped", err,
+        )
+        self.assertIn("this action may be fatal later", err)
+
+    def test_fun_edge_case(self):
+        """
+        A very (un)fun edge case.
+
+        Yeah, apparently no JavaScript developers know how to deal with
+        paths and separators.
+        """
+
+        with pretty_logging(stream=StringIO()) as stream:
+            result = self.registry.modname_source_mapping_to_config_paths({
+                'foo/bar': '/src/foo/bar.js',
+                'text!foo/bar.txt': '/src/foo/bar.txt',
+            })
+        err = stream.getvalue()
+        # yes something defniitely got overwritten, don't know, don't
+        # care what.
+        self.assertEqual(len(result), 1)
+        self.assertIn('WARNING', err)
+        self.assertIn("value of paths['foo/bar']", err)
+        self.assertIn("configuration may be in an invalid state", err)

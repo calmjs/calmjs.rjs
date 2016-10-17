@@ -23,8 +23,10 @@ from logging import getLogger
 
 from calmjs.base import BaseRegistry
 from calmjs.rjs.plugin import LoaderPluginHandler
+from calmjs.rjs.utils import dict_key_update_overwrite_check
 
 logger = getLogger(__name__)
+_default_handler = LoaderPluginHandler(None)
 
 
 class LoaderPluginRegistry(BaseRegistry):
@@ -72,3 +74,73 @@ class LoaderPluginRegistry(BaseRegistry):
 
     def get_record(self, name):
         return self.records.get(name)
+
+    def _mapping_to_config_paths(self, mapping, method_prefix):
+        """
+        Private implementation, please use the public version.
+
+        Additional Arguments:
+        method_prefix
+            The prefix will be combined with '_to_config_paths' to get
+            the actual resolution method from the plugin handlers.
+        """
+
+        method_name = method_prefix + '_to_config_paths'
+        default_to_config_paths = getattr(_default_handler, method_name)
+        result = {'paths': {}}
+        for modname, path in mapping.items():
+            plugin_fragment = modname.split('!', 1)
+            if len(plugin_fragment) == 1:
+                # default handler will deal with this
+                dict_key_update_overwrite_check(
+                    result, 'paths', default_to_config_paths(modname, path))
+                continue
+
+            plugin, fragment = plugin_fragment
+            handler = self.get(plugin)
+            if handler is None:
+                logger.warning(
+                    "no handler found for loader plugin '%s', the entry "
+                    "{'%s': '%s'} will be dropped from generated mapping; "
+                    "this action may be fatal later.", plugin, modname, path,
+                )
+                continue
+            dict_key_update_overwrite_check(
+                result, 'paths', getattr(handler, method_name)(modname, path))
+        return result
+
+    def modname_source_mapping_to_config_paths(self, mapping):
+        """
+        For a mapping of exported module names and the specified source
+        locations, produce a mapping that is compatible for usage with
+        the ``requirejs.config`` function, using the plugin loaders
+        available in this module.
+
+        Returns a dictionary with a single key ``paths`` with the value
+        being the new dictionary of the mapping produced.
+
+        Arguments:
+
+        mapping
+            A source mapping, from modname to source.
+        """
+
+        return self._mapping_to_config_paths(mapping, 'modname_source')
+
+    def modname_target_mapping_to_config_paths(self, mapping):
+        """
+        For a mapping of exported module names and the specified target
+        locations, produce a mapping that is compatible for usage with
+        the ``requirejs.config`` function, using the plugin loaders
+        available in this module.
+
+        Returns a dictionary with a single key ``paths`` with the value
+        being the new dictionary of the mapping produced.
+
+        Arguments:
+
+        mapping
+            A target mapping, from modname to target.
+        """
+
+        return self._mapping_to_config_paths(mapping, 'modname_target')
