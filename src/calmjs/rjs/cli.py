@@ -137,6 +137,11 @@ def create_spec(
                 "using acquisition method '%s'",
                 package_names, source_registry_method,
             )
+    else:
+        logger.info(
+            "using manually specified registries %r for building source map",
+            source_registries,
+        )
 
     spec[BUILD_DIR] = build_dir
     spec[CALMJS_MODULE_REGISTRY_NAMES] = source_registries
