@@ -51,6 +51,8 @@ from .utils import dict_get
 from .utils import dict_key_update_overwrite_check
 from .exc import RJSRuntimeError
 from .exc import RJSExitError
+from .registry import RJS_LOADER_PLUGIN_REGISTRY_KEY
+from .registry import RJS_LOADER_PLUGIN_REGISTRY
 from .umdjs import UMD_NODE_AMD_HEADER
 from .umdjs import UMD_NODE_AMD_FOOTER
 from .umdjs import UMD_NODE_AMD_INDENT
@@ -66,9 +68,6 @@ _PLATFORM_SPECIFIC_RUNTIME = {
 }
 _DEFAULT_RUNTIME = 'r.js'
 _RJS_PLUGIN_KEY = 'requirejs_plugins'
-
-RJS_LOADER_PLUGIN_REGISTRY_KEY = 'rjs_loader_plugin_registry_key'
-RJS_LOADER_PLUGIN_REGISTRY = 'rjs_loader_plugin_registry'
 
 
 def spec_update_source_map(spec, source_map, default_source_key):
