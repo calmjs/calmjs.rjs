@@ -24,7 +24,6 @@ package_json = {
         # "requirejs-text": "~2.0.12",
     },
     "devDependencies": {
-        "grunt-contrib-requirejs": "~0.4.4",
         "karma-requirejs": "~0.2.2",
     },
 }
