@@ -47,12 +47,20 @@ from calmjs.toolchain import EXPORT_TARGET
 from calmjs.toolchain import BUILD_DIR
 from calmjs.toolchain import EXPORT_MODULE_NAMES
 
+try:
+    from calmjs.dev.karma import BEFORE_KARMA
+except ImportError:  # pragma: no cover
+    # Package not available; None is the advice blackhole
+    BEFORE_KARMA = None
+
 from .utils import dict_get
 from .utils import dict_key_update_overwrite_check
+from .dev import karma_requirejs
 from .exc import RJSRuntimeError
 from .exc import RJSExitError
-from .registry import RJS_LOADER_PLUGIN_REGISTRY_KEY
 from .registry import RJS_LOADER_PLUGIN_REGISTRY
+from .registry import RJS_LOADER_PLUGIN_REGISTRY_KEY
+from .registry import RJS_LOADER_PLUGIN_REGISTRY_NAME
 from .umdjs import UMD_NODE_AMD_HEADER
 from .umdjs import UMD_NODE_AMD_FOOTER
 from .umdjs import UMD_NODE_AMD_INDENT
@@ -201,7 +209,7 @@ class RJSToolchain(Toolchain):
 
     def __init__(
             self,
-            loader_plugin_registry='calmjs.rjs.loader_plugin',
+            loader_plugin_registry=RJS_LOADER_PLUGIN_REGISTRY_NAME,
             *a, **kw):
         super(RJSToolchain, self).__init__(*a, **kw)
         self.loader_plugin_registry = get(loader_plugin_registry)
@@ -335,6 +343,12 @@ class RJSToolchain(Toolchain):
                     "names will not be compiled into the target: %s",
                     key, sorted(value.keys()),
                 )
+
+        # As requirejs has specific integration requirements with karma,
+        # a test runner the calmjs.dev package provides, advise that
+        # runner that before its execution, special handling needs to be
+        # done to correct the generated configuration file.
+        spec.advise(BEFORE_KARMA, karma_requirejs, spec)
 
     def assemble(self, spec):
         """
