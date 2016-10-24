@@ -442,7 +442,9 @@ class RJSToolchain(Toolchain):
         linking everything into "binary" file.
         """
 
-        rc = call([spec[self.rjs_bin_key], '-o', spec['build_manifest_path']])
+        args = (spec[self.rjs_bin_key], '-o', spec['build_manifest_path'])
+        logger.info('invoking %s %s %s', *args)
+        rc = call(args)
         if rc != 0:
             logger.error(
                 "the spec may have contained insufficient information "
