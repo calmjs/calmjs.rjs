@@ -112,10 +112,11 @@ def karma_requirejs(spec):
 
     # build test script
     deps = []
-    # Ensure keys from the test registries are added as deps
-    deps.extend(mapping.keys())
-    # along with all the module dependencies
+    # Export all the module dependencies first so they get pre-loaded
+    # and thus be able to be loaded synchronously by test modules.
     deps.extend(spec.get('export_module_names', []))
+    # Now add the tests to the deps.
+    deps.extend(mapping.keys())
 
     test_script_path = spec['karma_requirejs_test_script'] = join(
         build_dir, 'karma_test_init.js')
