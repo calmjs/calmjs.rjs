@@ -13,7 +13,6 @@ from calmjs.toolchain import BUILD_DIR
 from calmjs.toolchain import CALMJS_MODULE_REGISTRY_NAMES
 from calmjs.toolchain import CONFIG_JS_FILES
 from calmjs.toolchain import SOURCE_PACKAGE_NAMES
-from calmjs.toolchain import TEST_MODULE_PATHS
 
 from calmjs.rjs.registry import RJS_LOADER_PLUGIN_REGISTRY
 from calmjs.rjs.registry import RJS_LOADER_PLUGIN_REGISTRY_NAME
@@ -99,6 +98,11 @@ def karma_requirejs(spec):
     mapping = dist.get_module_default_test_registries_dependencies(pkg, reg)
 
     test_conf = plugin_registry.modname_target_mapping_to_config_paths(mapping)
+    # remap all to absolute path
+    # XXX need platform specific joiner?
+    # XXX figure out correct way to apply absolute paths
+    new_paths = {k: '/absolute' + v for k, v in test_conf['paths'].items()}
+    test_conf['paths'] = new_paths
     test_config_path = spec['karma_requirejs_test_config'] = join(
         build_dir, 'requirejs_test_config.js')
     with open(test_config_path, 'w') as fd:
@@ -107,9 +111,11 @@ def karma_requirejs(spec):
         fd.write(UMD_REQUIREJS_JSON_EXPORT_FOOTER)
 
     # build test script
-    test_module_paths = spec.get(TEST_MODULE_PATHS, [])
-    # TODO consider using path joiner??
-    deps = ['/absolute' + p for p in test_module_paths if p.endswith('.js')]
+    deps = []
+    # Ensure keys from the test registries are added as deps
+    deps.extend(mapping.keys())
+    # along with all the module dependencies
+    deps.extend(spec.get('export_module_names', []))
 
     test_script_path = spec['karma_requirejs_test_script'] = join(
         build_dir, 'karma_test_init.js')
