@@ -3,7 +3,6 @@
 Integration with various tools proided by the calmjs.dev package
 """
 
-import json
 import logging
 from os.path import join
 
@@ -13,6 +12,8 @@ from calmjs.toolchain import BUILD_DIR
 from calmjs.toolchain import CALMJS_MODULE_REGISTRY_NAMES
 from calmjs.toolchain import CONFIG_JS_FILES
 from calmjs.toolchain import SOURCE_PACKAGE_NAMES
+from calmjs.utils import json_dump
+from calmjs.utils import json_dumps
 
 from calmjs.rjs.registry import RJS_LOADER_PLUGIN_REGISTRY
 from calmjs.rjs.registry import RJS_LOADER_PLUGIN_REGISTRY_NAME
@@ -107,7 +108,7 @@ def karma_requirejs(spec):
         build_dir, 'requirejs_test_config.js')
     with open(test_config_path, 'w') as fd:
         fd.write(UMD_REQUIREJS_JSON_EXPORT_HEADER)
-        json.dump(test_conf, fd, indent=4)
+        json_dump(test_conf, fd)
         fd.write(UMD_REQUIREJS_JSON_EXPORT_FOOTER)
 
     # build test script
@@ -121,7 +122,7 @@ def karma_requirejs(spec):
     test_script_path = spec['karma_requirejs_test_script'] = join(
         build_dir, 'karma_test_init.js')
     with open(test_script_path, 'w') as fd:
-        fd.write(TEST_SCRIPT_TEMPLATE % json.dumps(deps, fd, indent=4))
+        fd.write(TEST_SCRIPT_TEMPLATE % json_dumps(deps))
 
     frameworks = ['requirejs']
     frameworks.extend(config['frameworks'])
