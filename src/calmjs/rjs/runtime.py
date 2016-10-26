@@ -69,6 +69,12 @@ class RJSRuntime(ToolchainRuntime):
         )
 
         argparser.add_argument(
+            '--source-registries', default=None,
+            dest='source_registries', action=StoreDelimitedList,
+            help=SUPPRESS,
+        )
+
+        argparser.add_argument(
             '--source-registry-method', default='all',
             dest='source_registry_method',
             choices=sorted(calmjs_module_registry_methods.keys()),
