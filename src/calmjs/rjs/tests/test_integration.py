@@ -227,7 +227,8 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         test_env = os.environ.get('CALMJS_RJS_TEST_ENV')
         if not test_env:
             npm = Driver(working_dir=cls._cls_tmpdir)
-            npm.npm_install('calmjs.rjs', env=finalize_env(env))
+            npm.npm_install(
+                'calmjs.rjs', production=False, env=finalize_env(env))
             # Save this as the env_path for RJSToolchain instance.  The
             # reason this is done here rather than using setup_transpiler
             # method is purely because under environments that have the
@@ -398,7 +399,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         # Finally, install dependencies for site in the new directory
         # normally this might be done
         # npm = Driver()
-        # npm.npm_install('site', env={'NODE_ENV': 'production'})
+        # npm.npm_install('site', production=True)
         # However, since we have our set of fake_modules, just install
         # by copying the fake_modules dir from dist_dir into the current
         # directory.
