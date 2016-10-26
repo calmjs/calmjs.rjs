@@ -3,6 +3,7 @@
 The calmjs runtime collection
 """
 
+from argparse import SUPPRESS
 from calmjs.argparse import StoreDelimitedList
 from calmjs.runtime import ToolchainRuntime
 

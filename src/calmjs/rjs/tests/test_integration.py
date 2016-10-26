@@ -23,6 +23,11 @@ from calmjs.registry import get as get_registry
 from calmjs.utils import finalize_env
 from calmjs.utils import pretty_logging
 
+try:
+    from calmjs.dev import karma
+except ImportError:  # pragma: no cover
+    karma = None
+
 from calmjs.rjs import toolchain
 from calmjs.rjs import cli
 from calmjs.rjs.registry import LoaderPluginRegistry
@@ -49,6 +54,157 @@ def run_node(src, *requires):
     )))
 
 
+def cls_setup_rjs_example_package(cls):
+    from calmjs import dist as calmjs_dist
+
+    # cls.dist_dir created by setup_class_integration_environment
+    cls._ep_root = join(cls.dist_dir, 'example', 'package')
+    makedirs(cls._ep_root)
+
+    test_root = join(cls._ep_root, 'tests')
+    makedirs(test_root)
+
+    math_js = join(cls._ep_root, 'math.js')
+    with open(math_js, 'w') as fd:
+        fd.write(
+            '"use strict";\n'
+            '\n'
+            'exports.add = function(x, y) {\n'
+            '    return x + y;\n'
+            '};\n'
+            '\n'
+            'exports.mul = function(x, y) {\n'
+            '    return x * y;\n'
+            '};\n'
+        )
+
+    bad_js = join(cls._ep_root, 'bad.js')
+    with open(bad_js, 'w') as fd:
+        fd.write(
+            '"use strict";\n'
+            '\n'
+            '\n'
+            '\n'
+            'var die = function() {\n'
+            '    return notdefinedsymbol;\n'
+            '};\n'
+            '\n'
+            'exports.die = die;\n'
+        )
+
+    # TODO derive this (line, col) from the above
+    cls._bad_notdefinedsymbol = (6, 12)
+
+    main_js = join(cls._ep_root, 'main.js')
+    with open(main_js, 'w') as fd:
+        fd.write(
+            '"use strict";\n'
+            '\n'
+            'var math = require("example/package/math");\n'
+            'var bad = require("example/package/bad");\n'
+            '\n'
+            'var main = function(trigger) {\n'
+            '    console.log(math.add(1, 1));\n'
+            '    console.log(math.mul(2, 2));\n'
+            '    if (trigger === true) {\n'
+            '        bad.die();\n'
+            '    }\n'
+            '};\n'
+            '\n'
+            'exports.main = main;\n'
+        )
+
+    # JavaScript import/module names to filesystem path.
+    # Normally, these are supplied through the calmjs setuptools
+    # integration framework.
+    cls._example_package_map = {
+        'example/package/math': math_js,
+        'example/package/bad': bad_js,
+        'example/package/main': main_js,
+    }
+
+    test_math_js = join(cls._ep_root, 'tests', 'test_math.js')
+    with open(test_math_js, 'w') as fd:
+        fd.write(
+            '"use strict";\n'
+            '\n'
+            'var math = require("example/package/math");\n'
+            '\n'
+            'describe("basic math functions", function() {\n'
+            '    it("addition", function() {\n'
+            '        expect(math.add(3, 4)).equal(7);\n'
+            '        expect(math.add(5, 6)).equal(11);\n'
+            '    });\n'
+            '\n'
+            '    it("multiplication", function() {\n'
+            '        expect(math.mul(3, 4)).equal(12);\n'
+            '        expect(math.mul(5, 6)).equal(30);\n'
+            '    });\n'
+            '});\n'
+        )
+
+    # map for our one and only test
+    cls._example_package_test_map = {
+        'example/package/tests/test_math': test_math_js,
+    }
+
+    # custom loader
+    loader_js = join(cls._ep_root, 'loader.js')
+    with open(loader_js, 'w') as fd:
+        fd.write(
+            # pulled from requirejs.org's plugin documentation
+            'exports.load = function (name, req, onload, config) {\n'
+            '    req([name], function (value) {\n'
+            '        onload(value);\n'
+            '    });\n'
+            '}\n'
+        )
+
+    cls._example_package_loader = {
+        'example/package/loader': loader_js,
+    }
+
+    # other data
+    data_js = join(cls._ep_root, 'data.js')
+    with open(data_js, 'w') as fd:
+        fd.write(
+            '(function() { define({"results": {"item_count": 0}})}());')
+
+    cls._example_package_data = {
+        'example/package/loader!example/package/data': data_js,
+    }
+
+    # also add a proper mock distribution for this.
+    utils.make_dummy_dist(None, (
+        ('requires.txt', ''),
+        ('calmjs_module_registry.txt', cls.registry_name),
+        ('entry_points.txt', (
+            '[%s]\n'
+            'example.package = example.package\n'
+            '[%s.tests]\n'
+            'example.package = example.package.tests\n' % (
+                cls.registry_name,
+                cls.registry_name,
+            )
+        )),
+    ), 'example.package', '1.0', working_dir=cls.dist_dir)
+    # readd it again
+    calmjs_dist.default_working_set.add_entry(cls.dist_dir)
+    # TODO produce package_module_map
+
+    registry = get_registry(cls.registry_name)
+    record = registry.records['example.package'] = {}
+    # loader note included
+    record.update(cls._example_package_map)
+    registry.package_module_map['example.package'] = ['example.package']
+
+    test_registry = get_registry(cls.registry_name + '.tests')
+    test_record = test_registry.records['example.package.tests'] = {}
+    test_record.update(cls._example_package_test_map)
+    test_registry.package_module_map['example.package'] = [
+        'example.package.tests']
+
+
 @unittest.skipIf(*skip_full_toolchain_test())
 class ToolchainIntegrationTestCase(unittest.TestCase):
     """
@@ -61,7 +217,6 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        from calmjs import dist as calmjs_dist
         # nosetest will still execute setUpClass, so the test condition
         # will need to be checked here also.
         if skip_full_toolchain_test()[0]:  # pragma: no cover
@@ -94,112 +249,8 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         # integration harness will stub out the root distribution which
         # will break the installation of real tools.
         utils.setup_class_integration_environment(cls)
-
-        # cls.dist_dir created by setup_class_integration_environment
-        cls._ep_root = join(cls.dist_dir, 'example', 'package')
-        makedirs(cls._ep_root)
-
-        math_js = join(cls._ep_root, 'math.js')
-        with open(math_js, 'w') as fd:
-            fd.write(
-                '"use strict";\n'
-                '\n'
-                'exports.add = function(x, y) {\n'
-                '    return x + y;\n'
-                '};\n'
-                '\n'
-                'exports.mul = function(x, y) {\n'
-                '    return x * y;\n'
-                '};\n'
-            )
-
-        bad_js = join(cls._ep_root, 'bad.js')
-        with open(bad_js, 'w') as fd:
-            fd.write(
-                '"use strict";\n'
-                '\n'
-                '\n'
-                '\n'
-                'var die = function() {\n'
-                '    return notdefinedsymbol;\n'
-                '};\n'
-                '\n'
-                'exports.die = die;\n'
-            )
-
-        # TODO derive this (line, col) from the above
-        cls._bad_notdefinedsymbol = (6, 12)
-
-        main_js = join(cls._ep_root, 'main.js')
-        with open(main_js, 'w') as fd:
-            fd.write(
-                '"use strict";\n'
-                '\n'
-                'var math = require("example/package/math");\n'
-                'var bad = require("example/package/bad");\n'
-                '\n'
-                'var main = function(trigger) {\n'
-                '    console.log(math.add(1, 1));\n'
-                '    console.log(math.mul(2, 2));\n'
-                '    if (trigger === true) {\n'
-                '        bad.die();\n'
-                '    }\n'
-                '};\n'
-                '\n'
-                'exports.main = main;\n'
-            )
-
-        # JavaScript import/module names to filesystem path.
-        # Normally, these are supplied through the calmjs setuptools
-        # integration framework.
-        cls._example_package_map = {
-            'example/package/math': math_js,
-            'example/package/bad': bad_js,
-            'example/package/main': main_js,
-        }
-
-        # custom loader
-        loader_js = join(cls._ep_root, 'loader.js')
-        with open(loader_js, 'w') as fd:
-            fd.write(
-                # pulled from requirejs.org's plugin documentation
-                'exports.load = function (name, req, onload, config) {\n'
-                '    req([name], function (value) {\n'
-                '        onload(value);\n'
-                '    });\n'
-                '}\n'
-            )
-
-        cls._example_package_loader = {
-            'example/package/loader': loader_js,
-        }
-
-        # other data
-        data_js = join(cls._ep_root, 'data.js')
-        with open(data_js, 'w') as fd:
-            fd.write(
-                '(function() { define({"results": {"item_count": 0}})}());')
-
-        cls._example_package_data = {
-            'example/package/loader!example/package/data': data_js,
-        }
-
-        # also add a proper mock distribution for this.
-        utils.make_dummy_dist(None, (
-            ('requires.txt', ''),
-            ('entry_points.txt', (
-                '[%s]\n'
-                'example.package = example.package' % cls.registry_name
-            )),
-        ), 'example.package', '1.0', working_dir=cls.dist_dir)
-        # readd it again
-        calmjs_dist.default_working_set.add_entry(cls.dist_dir)
-        # TODO produce package_module_map
-
-        registry = get_registry(cls.registry_name)
-        record = registry.records['example.package'] = {}
-        record.update(cls._example_package_map)
-        registry.package_module_map['example.package'] = ['example.package']
+        # also our test data.
+        cls_setup_rjs_example_package(cls)
 
     @classmethod
     def tearDownClass(cls):
@@ -883,3 +934,87 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         with open(target_file) as fd:
             bundle_source = fd.read()
         self.assertIn('\nvar die = function() {\n', bundle_source)
+
+    def test_runtime_example_package_auto_registry(self):
+        utils.stub_stdouts(self)
+        current_dir = utils.mkdtemp(self)
+        export_target = join(current_dir, 'example_package.js')
+        with self.assertRaises(SystemExit) as e:
+            runtime.main([
+                'rjs', 'example.package',
+                '--export-target=' + export_target,
+            ])
+        self.assertEqual(e.exception.args[0], 0)
+        self.assertTrue(exists(export_target))
+
+
+@unittest.skipIf(*skip_full_toolchain_test())
+class KarmaToolchainIntegrationTestCase(unittest.TestCase):
+    """
+    Test out the full toolchain, involving requirejs completely along
+    with the karma testing framework as defined by calmjs.dev
+    """
+
+    # Ensure that requirejs is properly installed through the calmjs
+    # framework and specification for this package.  This environment
+    # will be reused for the duration for this test.
+
+    @classmethod
+    def setUpClass(cls):
+        # nosetest will still execute setUpClass, so the test condition
+        # will need to be checked here also.
+        if skip_full_toolchain_test()[0]:  # pragma: no cover
+            return
+        cls._cwd = os.getcwd()
+        cls._node_root = cls._cls_tmpdir = tempfile.mkdtemp()
+
+        test_env = os.environ.get('CALMJS_RJS_TEST_ENV')
+        if not test_env:
+            npm = Driver(working_dir=cls._cls_tmpdir)
+            npm.npm_install(
+                ['calmjs.rjs', 'calmjs.dev'], production=False,
+                env=finalize_env(env))
+            # Save this as the env_path for RJSToolchain instance.  The
+            # reason this is done here rather than using setup_transpiler
+            # method is purely because under environments that have the
+            # standard node_modules/.bin part of the PATH, it never gets
+            # set, and then if the test changes the working directory, it
+            # will then not be able to find the runtime needed.
+            cls._env_path = join(cls._cls_tmpdir, 'node_modules', '.bin')
+        else:  # pragma: no cover
+            # This is for static test environment for development, not
+            # generally suitable for repeatable tests
+            cls._node_root = realpath(test_env)
+            cls._env_path = join(cls._node_root, 'node_modules', '.bin')
+
+        # For the duration of this test, operate in the tmpdir where the
+        # node_modules are available.
+        os.chdir(cls._node_root)
+
+        # This is done after the above, as the setup of the following
+        # integration harness will stub out the root distribution which
+        # will break the installation of real tools.
+        utils.setup_class_integration_environment(cls)
+        # also our test data.
+        cls_setup_rjs_example_package(cls)
+
+    @classmethod
+    def tearDownClass(cls):
+        # Ditto, as per above.
+        if skip_full_toolchain_test()[0]:  # pragma: no cover
+            return
+        utils.teardown_class_integration_environment(cls)
+        os.chdir(cls._cwd)
+        rmtree(cls._cls_tmpdir)
+
+    def test_karma_test_runner_basic(self):
+        utils.stub_stdouts(self)
+        current_dir = utils.mkdtemp(self)
+        export_target = join(current_dir, 'example_package.js')
+        with self.assertRaises(SystemExit) as e:
+            runtime.main([
+                'karma', 'rjs', 'example.package',
+                '--export-target=' + export_target,
+            ])
+        self.assertEqual(e.exception.args[0], 0)
+        self.assertTrue(exists(export_target))

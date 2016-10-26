@@ -24,13 +24,13 @@ logger = logging.getLogger(__name__)
 
 
 TEST_SCRIPT_TEMPLATE = """
-var tests = %s;
+var deps = %s;
 
 requirejs.config({
     // Karma serves files from '/base'
     baseUrl: '/base',
-    // ask Require.js to load these files (all our tests)
-    deps: tests,
+    // ask RequireJS to load all files and dependencies
+    deps: deps,
     // start test run, once Require.js is done
     callback: window.__karma__.start
 });
