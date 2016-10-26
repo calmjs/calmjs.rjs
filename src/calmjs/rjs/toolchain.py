@@ -276,7 +276,8 @@ class RJSToolchain(Toolchain):
             loader_plugin_registry or self.loader_plugin_registry)
 
         if self.rjs_bin_key not in spec:
-            which_bin = spec[self.rjs_bin_key] = self.which()
+            which_bin = spec[self.rjs_bin_key] = (
+                self.which() or self.which_with_node_modules())
             if which_bin is None:
                 raise RJSRuntimeError(
                     "unable to locate '%s'" % self.binary)
