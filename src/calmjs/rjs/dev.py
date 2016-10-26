@@ -25,14 +25,21 @@ logger = logging.getLogger(__name__)
 
 TEST_SCRIPT_TEMPLATE = """
 var deps = %s;
+var tests = %s;
+
+var start = function() {
+    // The test function will then require all the tests be available as
+    // karma starts.
+    require(tests, window.__karma__.start);
+};
 
 requirejs.config({
     // Karma serves files from '/base'
     baseUrl: '/base',
-    // ask RequireJS to load all files and dependencies
+    // ask RequireJS to load all dependencies
     deps: deps,
     // start test run, once Require.js is done
-    callback: window.__karma__.start
+    callback: start
 });
 
 window.DEBUG = true;
@@ -111,18 +118,16 @@ def karma_requirejs(spec):
         json_dump(test_conf, fd)
         fd.write(UMD_REQUIREJS_JSON_EXPORT_FOOTER)
 
-    # build test script
-    deps = []
     # Export all the module dependencies first so they get pre-loaded
     # and thus be able to be loaded synchronously by test modules.
-    deps.extend(spec.get('export_module_names', []))
-    # Now add the tests to the deps.
-    deps.extend(mapping.keys())
+    deps = sorted(spec.get('export_module_names', []))
+    # Include tests separately
+    tests = sorted(mapping.keys())
 
     test_script_path = spec['karma_requirejs_test_script'] = join(
         build_dir, 'karma_test_init.js')
     with open(test_script_path, 'w') as fd:
-        fd.write(TEST_SCRIPT_TEMPLATE % json_dumps(deps))
+        fd.write(TEST_SCRIPT_TEMPLATE % (json_dumps(deps), json_dumps(tests)))
 
     frameworks = ['requirejs']
     frameworks.extend(config['frameworks'])
