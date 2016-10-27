@@ -5,6 +5,7 @@ Integration with various tools proided by the calmjs.dev package
 
 import logging
 from os.path import join
+from os.path import sep
 
 from calmjs.exc import ToolchainAbort
 from calmjs.registry import get
@@ -106,10 +107,16 @@ def karma_requirejs(spec):
     mapping = dist.get_module_default_test_registries_dependencies(pkg, reg)
 
     test_conf = plugin_registry.modname_target_mapping_to_config_paths(mapping)
-    # remap all to absolute path
-    # XXX need platform specific joiner?
-    # XXX figure out correct way to apply absolute paths
-    new_paths = {k: '/absolute' + v for k, v in test_conf['paths'].items()}
+    # Ensure '/absolute' is prefixed like so to eliminate spurious error
+    # messages in the test runner.  This is the exact method, the karma
+    # runner will account for this correctly on Windows even as it turns
+    # out the naive way is probably more consistent.
+    new_paths = {
+        # however, the actual path fragments need to be split and joined
+        # with the web standard '/' separator.
+        k: '/absolute' + '/'.join(v.split(sep))
+        for k, v in test_conf['paths'].items()
+    }
     test_conf['paths'] = new_paths
     test_config_path = spec['karma_requirejs_test_config'] = join(
         build_dir, 'requirejs_test_config.js')
