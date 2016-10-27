@@ -11,7 +11,6 @@ from os import makedirs
 from os.path import exists
 from os.path import join
 from os.path import realpath
-from shutil import rmtree
 from shutil import copytree
 
 from calmjs.toolchain import Spec
@@ -260,7 +259,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
             return
         utils.teardown_class_integration_environment(cls)
         os.chdir(cls._cwd)
-        rmtree(cls._cls_tmpdir)
+        utils.rmtree(cls._cls_tmpdir)
 
     def setUp(self):
         # Set up the transpiler using env_path assigned in setUpClass,
@@ -1006,7 +1005,7 @@ class KarmaToolchainIntegrationTestCase(unittest.TestCase):
             return
         utils.teardown_class_integration_environment(cls)
         os.chdir(cls._cwd)
-        rmtree(cls._cls_tmpdir)
+        utils.rmtree(cls._cls_tmpdir)
 
     def test_karma_test_runner_basic(self):
         utils.stub_stdouts(self)
