@@ -6,11 +6,9 @@ import json
 import os
 import re
 import sys
-import tempfile
 from os import makedirs
 from os.path import exists
 from os.path import join
-from os.path import realpath
 from shutil import copytree
 
 from calmjs.toolchain import Spec
@@ -19,7 +17,6 @@ from calmjs.npm import get_npm_version
 from calmjs.cli import node
 from calmjs import runtime
 from calmjs.registry import get as get_registry
-from calmjs.utils import finalize_env
 from calmjs.utils import pretty_logging
 
 try:
@@ -34,7 +31,6 @@ from calmjs.rjs.registry import LoaderPluginRegistry
 from calmjs.testing import utils
 from calmjs.testing.mocks import StringIO
 from calmjs.testing.mocks import WorkingSet
-from calmjs.rjs.testing import env
 
 
 def skip_full_toolchain_test():  # pragma: no cover
@@ -221,29 +217,13 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         if skip_full_toolchain_test()[0]:  # pragma: no cover
             return
         cls._cwd = os.getcwd()
-        cls._node_root = cls._cls_tmpdir = tempfile.mkdtemp()
 
-        test_env = os.environ.get('CALMJS_RJS_TEST_ENV')
-        if not test_env:
-            npm = Driver(working_dir=cls._cls_tmpdir)
-            npm.npm_install(
-                'calmjs.rjs', production=False, env=finalize_env(env))
-            # Save this as the env_path for RJSToolchain instance.  The
-            # reason this is done here rather than using setup_transpiler
-            # method is purely because under environments that have the
-            # standard node_modules/.bin part of the PATH, it never gets
-            # set, and then if the test changes the working directory, it
-            # will then not be able to find the runtime needed.
-            cls._env_path = join(cls._cls_tmpdir, 'node_modules', '.bin')
-        else:  # pragma: no cover
-            # This is for static test environment for development, not
-            # generally suitable for repeatable tests
-            cls._node_root = realpath(test_env)
-            cls._env_path = join(cls._node_root, 'node_modules', '.bin')
+        utils.setup_class_install_environment(
+            cls, Driver, ['calmjs.rjs'], production=False)
 
         # For the duration of this test, operate in the tmpdir where the
         # node_modules are available.
-        os.chdir(cls._node_root)
+        os.chdir(cls._env_root)
 
         # This is done after the above, as the setup of the following
         # integration harness will stub out the root distribution which
@@ -416,7 +396,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
 
         # verify that the bundle works with node.  First change back to
         # directory with requirejs library installed.
-        os.chdir(self._node_root)
+        os.chdir(self._env_root)
 
         # The execution should then work as expected on the bundle we
         # have.
@@ -449,7 +429,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
 
         # verify that the bundle works with node.  First change back to
         # directory with requirejs library installed.
-        os.chdir(self._node_root)
+        os.chdir(self._env_root)
 
         # The execution should then work as expected on the bundle we
         # have.
@@ -492,7 +472,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
 
         # verify that the bundle works with node.  First change back to
         # directory with requirejs library installed.
-        os.chdir(self._node_root)
+        os.chdir(self._env_root)
 
         # The execution should then work as expected if we loaded both
         # bundles.
@@ -554,7 +534,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
 
         # verify that the bundle works with node.  First change back to
         # directory with requirejs library installed.
-        os.chdir(self._node_root)
+        os.chdir(self._env_root)
 
         # The execution should then work as expected on the bundle we
         # have.
@@ -601,7 +581,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
 
         # verify that the bundle works with node.  First change back to
         # directory with requirejs library installed.
-        os.chdir(self._node_root)
+        os.chdir(self._env_root)
 
         # The execution should then work as expected on the bundle we
         # have.
@@ -645,7 +625,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
 
         # verify that the bundle works with node.  First change back to
         # directory with requirejs library installed.
-        os.chdir(self._node_root)
+        os.chdir(self._env_root)
 
         # The execution should then work as expected on the bundle we
         # have.
@@ -804,7 +784,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
 
     def test_runtime_cli_compile_explicit_service_framework_widget(self):
         def run_node_with_require(*requires):
-            os.chdir(self._node_root)
+            os.chdir(self._env_root)
             return run_node(
                 'var requirejs = require("requirejs");\n'
                 'var define = requirejs.define;\n'
@@ -966,30 +946,12 @@ class KarmaToolchainIntegrationTestCase(unittest.TestCase):
         if skip_full_toolchain_test()[0]:  # pragma: no cover
             return
         cls._cwd = os.getcwd()
-        cls._node_root = cls._cls_tmpdir = tempfile.mkdtemp()
-
-        test_env = os.environ.get('CALMJS_RJS_TEST_ENV')
-        if not test_env:
-            npm = Driver(working_dir=cls._cls_tmpdir)
-            npm.npm_install(
-                ['calmjs.rjs', 'calmjs.dev'], production=False,
-                env=finalize_env(env))
-            # Save this as the env_path for RJSToolchain instance.  The
-            # reason this is done here rather than using setup_transpiler
-            # method is purely because under environments that have the
-            # standard node_modules/.bin part of the PATH, it never gets
-            # set, and then if the test changes the working directory, it
-            # will then not be able to find the runtime needed.
-            cls._env_path = join(cls._cls_tmpdir, 'node_modules', '.bin')
-        else:  # pragma: no cover
-            # This is for static test environment for development, not
-            # generally suitable for repeatable tests
-            cls._node_root = realpath(test_env)
-            cls._env_path = join(cls._node_root, 'node_modules', '.bin')
+        utils.setup_class_install_environment(
+            cls, Driver, ['calmjs.rjs', 'calmjs.dev'], production=False)
 
         # For the duration of this test, operate in the tmpdir where the
         # node_modules are available.
-        os.chdir(cls._node_root)
+        os.chdir(cls._env_root)
 
         # This is done after the above, as the setup of the following
         # integration harness will stub out the root distribution which
