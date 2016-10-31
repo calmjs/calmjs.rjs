@@ -10,9 +10,8 @@ from os.path import sep
 from calmjs.exc import ToolchainAbort
 from calmjs.registry import get
 from calmjs.toolchain import BUILD_DIR
-from calmjs.toolchain import CALMJS_MODULE_REGISTRY_NAMES
 from calmjs.toolchain import CONFIG_JS_FILES
-from calmjs.toolchain import SOURCE_PACKAGE_NAMES
+from calmjs.toolchain import TEST_MODULE_PATHS_MAP
 from calmjs.utils import json_dump
 from calmjs.utils import json_dumps
 
@@ -68,7 +67,6 @@ def karma_requirejs(spec):
 
     try:
         from calmjs.dev import karma
-        from calmjs.dev import dist
     except ImportError:
         logger.error(
             "package 'calmjs.dev' not available; cannot apply requirejs "
@@ -97,15 +95,7 @@ def karma_requirejs(spec):
         )
         plugin_registry = get(RJS_LOADER_PLUGIN_REGISTRY_NAME)
 
-    # TODO figure this out later
-    # though for testing, maybe the underlying files provided should be
-    # part of deps for the client side test runner startup script?
-    # export_module_names = spec[EXPORT_MODULE_NAMES]
-
-    reg = spec.get(CALMJS_MODULE_REGISTRY_NAMES, [])
-    pkg = spec.get(SOURCE_PACKAGE_NAMES, [])
-    mapping = dist.get_module_default_test_registries_dependencies(pkg, reg)
-
+    mapping = spec.get(TEST_MODULE_PATHS_MAP, {})
     test_conf = plugin_registry.modname_target_mapping_to_config_paths(mapping)
     # Ensure '/absolute' is prefixed like so to eliminate spurious error
     # messages in the test runner.  This is the exact method, the karma
