@@ -109,18 +109,23 @@ def karma_requirejs(spec):
         )
         plugin_registry = get(RJS_LOADER_PLUGIN_REGISTRY_NAME)
 
-    mapping = spec.get(TEST_MODULE_PATHS_MAP, {})
-    test_conf = plugin_registry.modname_target_mapping_to_config_paths(mapping)
+    test_module_paths_map = spec.get(TEST_MODULE_PATHS_MAP, {})
+    test_conf = plugin_registry.modname_target_mapping_to_config_paths(
+        test_module_paths_map)
+
     # Ensure '/absolute' is prefixed like so to eliminate spurious error
-    # messages in the test runner.  This is the exact method, the karma
-    # runner will account for this correctly on Windows even as it turns
-    # out the naive way is probably more consistent.
+    # messages in the test runner, simply because the requirejs plugin
+    # will try to go through this mechanism to find a timestamp and fail
+    # to find its expected path, triggering the unwanted messages.  This
+    # naive prefixing is actually consistent for all platforms including
+    # Windows...
     new_paths = {
         # however, the actual path fragments need to be split and joined
         # with the web standard '/' separator.
         k: '/absolute' + '/'.join(v.split(sep))
         for k, v in test_conf['paths'].items()
     }
+
     test_conf['paths'] = new_paths
     test_config_path = spec['karma_requirejs_test_config'] = join(
         build_dir, 'requirejs_test_config.js')
@@ -133,7 +138,7 @@ def karma_requirejs(spec):
     # and thus be able to be loaded synchronously by test modules.
     deps = sorted(spec.get('export_module_names', []))
     # Include tests separately
-    tests = sorted(mapping.keys())
+    tests = sorted(test_module_paths_map.keys())
 
     test_script_path = spec['karma_requirejs_test_script'] = join(
         build_dir, 'karma_test_init.js')
@@ -152,7 +157,7 @@ def karma_requirejs(spec):
     files.append(test_config_path)
     # then the script
     files.append(test_script_path)
-    # then extend the configuration files without included by default
+    # then extend the configured paths but do not auto-include them.
     files.extend({'pattern': f, 'included': False} for f in config_files)
     # update the file listing with modifications; this will be written
     # out as part of karma.conf.js by the KarmaRuntime.
