@@ -58,7 +58,7 @@ setup(
     ],
     extras_require={
         'dev': [
-            'calmjs.dev',
+            'calmjs.dev>=1.0.0.dev,<2',
         ],
     },
     entry_points={
@@ -75,6 +75,9 @@ setup(
         ],
         'calmjs.runtime': [
             'rjs = calmjs.rjs.runtime:default',
+        ],
+        'calmjs.toolchain.advice': [
+            'calmjs.dev.toolchain:KarmaToolchain = calmjs.rjs.dev:rjs_advice',
         ],
     },
     package_json=package_json,

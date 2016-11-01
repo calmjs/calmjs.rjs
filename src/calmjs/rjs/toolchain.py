@@ -47,15 +47,9 @@ from calmjs.toolchain import EXPORT_TARGET
 from calmjs.toolchain import BUILD_DIR
 from calmjs.toolchain import EXPORT_MODULE_NAMES
 
-try:
-    from calmjs.dev.karma import BEFORE_KARMA
-except ImportError:  # pragma: no cover
-    # Package not available; None is the advice blackhole
-    BEFORE_KARMA = None
-
 from .utils import dict_get
 from .utils import dict_key_update_overwrite_check
-from .dev import karma_requirejs
+from .dev import rjs_advice
 from .exc import RJSRuntimeError
 from .exc import RJSExitError
 from .registry import RJS_LOADER_PLUGIN_REGISTRY
@@ -345,11 +339,8 @@ class RJSToolchain(Toolchain):
                     key, sorted(value.keys()),
                 )
 
-        # As requirejs has specific integration requirements with karma,
-        # a test runner the calmjs.dev package provides, advise that
-        # runner that before its execution, special handling needs to be
-        # done to correct the generated configuration file.
-        spec.advise(BEFORE_KARMA, karma_requirejs, spec)
+        # setup own advice.
+        rjs_advice(spec)
 
     def assemble(self, spec):
         """

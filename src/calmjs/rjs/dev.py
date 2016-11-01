@@ -15,6 +15,12 @@ from calmjs.toolchain import TEST_MODULE_PATHS_MAP
 from calmjs.utils import json_dump
 from calmjs.utils import json_dumps
 
+try:
+    from calmjs.dev.karma import BEFORE_KARMA
+except ImportError:  # pragma: no cover
+    # Package not available; None is the advice blackhole
+    BEFORE_KARMA = None
+
 from calmjs.rjs.registry import RJS_LOADER_PLUGIN_REGISTRY
 from calmjs.rjs.registry import RJS_LOADER_PLUGIN_REGISTRY_NAME
 from calmjs.rjs.umdjs import UMD_REQUIREJS_JSON_EXPORT_HEADER
@@ -44,6 +50,14 @@ requirejs.config({
 
 window.DEBUG = true;
 """
+
+
+def rjs_advice(spec, extras=None):
+    # As requirejs has specific integration requirements with karma,
+    # a test runner the calmjs.dev package provides, advise that
+    # runner that before its execution, special handling needs to be
+    # done to correct the generated configuration file.
+    spec.advise(BEFORE_KARMA, karma_requirejs, spec)
 
 
 def karma_requirejs(spec):
