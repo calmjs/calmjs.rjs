@@ -9,6 +9,7 @@ from os.path import sep
 
 from calmjs.exc import ToolchainAbort
 from calmjs.registry import get
+from calmjs.toolchain import ARTIFACT_PATHS
 from calmjs.toolchain import BUILD_DIR
 from calmjs.toolchain import CONFIG_JS_FILES
 from calmjs.toolchain import TEST_MODULE_PATHS_MAP
@@ -23,6 +24,7 @@ except ImportError:  # pragma: no cover
 
 from calmjs.rjs.registry import RJS_LOADER_PLUGIN_REGISTRY
 from calmjs.rjs.registry import RJS_LOADER_PLUGIN_REGISTRY_NAME
+from calmjs.rjs.requirejs import extract_defines
 from calmjs.rjs.umdjs import UMD_REQUIREJS_JSON_EXPORT_HEADER
 from calmjs.rjs.umdjs import UMD_REQUIREJS_JSON_EXPORT_FOOTER
 
@@ -58,6 +60,29 @@ def rjs_advice(spec, extras=None):
     # runner that before its execution, special handling needs to be
     # done to correct the generated configuration file.
     spec.advise(BEFORE_KARMA, karma_requirejs, spec)
+
+
+def process_artifacts(paths):
+    """
+    If they are provided, assuming the defined modules there will not be
+    listed as a deps for loading.
+    """
+
+    # TODO figure out how to have a flag to disable this feature for use
+    # cases where this is undesirable (e.g. performance reasons).
+    deps = []
+
+    for path in paths:
+        try:
+            with open(path) as fd:
+                text = fd.read()
+        except (OSError, IOError):
+            logger.warning("specified artifact '%s' cannot be read", path)
+            continue
+
+        deps.extend(extract_defines(text))
+
+    return deps
 
 
 def karma_requirejs(spec):
@@ -137,6 +162,11 @@ def karma_requirejs(spec):
     # Export all the module dependencies first so they get pre-loaded
     # and thus be able to be loaded synchronously by test modules.
     deps = sorted(spec.get('export_module_names', []))
+
+    if spec.get(ARTIFACT_PATHS):
+        # TODO have a flag of some sort for flagging this as optional.
+        deps.extend(process_artifacts(spec.get(ARTIFACT_PATHS)))
+
     # Include tests separately
     tests = sorted(test_module_paths_map.keys())
 

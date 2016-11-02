@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import unittest
 from os.path import exists
+from os.path import join
 
 # This is for emulating absent calmjs.dev module
 try:
@@ -20,11 +21,31 @@ from calmjs.toolchain import Spec
 from calmjs.utils import pretty_logging
 
 from calmjs.rjs.dev import karma_requirejs
+from calmjs.rjs.dev import process_artifacts
 from calmjs.rjs.registry import RJS_LOADER_PLUGIN_REGISTRY_NAME
 
 from calmjs.testing.mocks import StringIO
 from calmjs.testing.utils import mkdtemp
 from calmjs.testing.utils import stub_item_attr_value
+
+
+class ProcessArtifactsTestCase(unittest.TestCase):
+
+    def test_process_paths(self):
+        build_dir = mkdtemp(self)
+        source1 = join(build_dir, 'source1.js')
+        source2 = join(build_dir, 'source2.js')
+
+        with open(source1, 'w') as fd:
+            fd.write(
+                "define('source1/mod1', ['require','exports','module'],"
+                "function (require, exports, module) {});\n"
+                "define('source1/mod2', ['require','exports','module'],"
+                "function (require, exports, module) {});\n"
+            )
+
+        result = process_artifacts([source1, source2])
+        self.assertEqual(result, ['source1/mod1', 'source1/mod2'])
 
 
 class KarmaAbsentTestCase(unittest.TestCase):

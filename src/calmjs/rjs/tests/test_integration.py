@@ -11,6 +11,8 @@ from os.path import exists
 from os.path import join
 from shutil import copytree
 
+from pkg_resources import get_distribution
+
 from calmjs.toolchain import Spec
 from calmjs.npm import Driver
 from calmjs.npm import get_npm_version
@@ -183,7 +185,16 @@ def cls_setup_rjs_example_package(cls):
             )
         )),
     ), 'example.package', '1.0', working_dir=cls.dist_dir)
-    # readd it again
+
+    # also include the entry_point information for this package
+    utils.make_dummy_dist(None, (
+        ('requires.txt', ''),
+        ('entry_points.txt', (
+            get_distribution('calmjs.rjs').get_metadata('entry_points.txt')
+        )),
+    ), 'calmjs.rjs', '0.0', working_dir=cls.dist_dir)
+
+    # re-add it again
     calmjs_dist.default_working_set.add_entry(cls.dist_dir)
     # TODO produce package_module_map
 
@@ -980,3 +991,33 @@ class KarmaToolchainIntegrationTestCase(unittest.TestCase):
             ])
         self.assertEqual(e.exception.args[0], 0)
         self.assertTrue(exists(export_target))
+
+    def test_karma_test_runner_standalone_artifact(self):
+        """
+        What's the purpose of tests if they can't be executed any time,
+        anywhere, against anything?
+        """
+
+        utils.stub_stdouts(self)
+        current_dir = utils.mkdtemp(self)
+        export_target = join(current_dir, 'example_package.js')
+        # first, generate our bundle.
+        with self.assertRaises(SystemExit) as e:
+            runtime.main([
+                'rjs', 'example.package', '--export-target', export_target])
+        self.assertTrue(exists(export_target))
+
+        # leverage the karma run command to run the tests provided by
+        # the example.package against the resulting artifact.
+        with self.assertRaises(SystemExit) as e:
+            runtime.main([
+                'karma', 'run',
+                '--test-package', 'example.package',
+                # TODO make this argument optional
+                '--test-registry', self.registry_name + '.tests',
+                '--artifact', export_target,
+                # this is critical
+                '--toolchain-package', 'calmjs.rjs',
+            ])
+        # tests should pass against the resultant bundle
+        self.assertEqual(e.exception.args[0], 0)
