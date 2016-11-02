@@ -55,6 +55,7 @@ setup(
     zip_safe=False,
     install_requires=[
         'calmjs>=2.0.0.dev,<3',
+        'slimit',
     ],
     extras_require={
         'dev': [
