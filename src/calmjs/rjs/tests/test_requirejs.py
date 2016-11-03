@@ -73,6 +73,26 @@ class RequireJSHelperTestCase(unittest.TestCase):
         """, 'trial', 2)
         self.assertEqual(results, ['hello'])
 
+    def test_extract_function_not_sub(self):
+        results = requirejs.extract_function_argument("""
+        (function() {
+            log('hello');
+            log('');
+            console.log('goodbye');
+        })();
+        """, 'log', 0)
+        self.assertEqual(results, ['hello', ''])
+
+    def test_extract_on_syntax_error(self):
+        with self.assertRaises(SyntaxError):
+            requirejs.extract_function_argument("""
+            (function() {
+                console.log('hello!');
+                report('');
+                missing_rparen(1, 2, 'hello';
+            })();
+            """, 'report', 0)
+
     def test_extract_defines(self):
         self.assertEqual(['lib1', 'lib2'], requirejs.extract_defines(artifact))
 
