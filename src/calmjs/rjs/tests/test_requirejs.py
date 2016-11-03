@@ -38,10 +38,24 @@ artifact = """
 commonjs_require = """
 var mod1 = require('mod1');
 var mod2 = require("name/mod/mod2");
+var invalid = require();
+"""
 
-require(['some/dummy/module'], function(){});
+requirejs_require = """
+require(['some/dummy/module1', 'some/dummy/module2'], function(mod1, mod2) {
+    var mod1_alt = require('some/dummy/module1');
+    var mod3_alt = require('some/dummy/module3');
+});
 
-describe('some test', function() {});
+define(['defined/alternate/module', 'some.weird.module'], function(a, b) {
+});
+
+// this is a weird one
+define('some test', ['require', 'module'], function(require, module) {});
+
+// invalid code shouldn't choke the walker.
+require();
+define();
 """
 
 
@@ -101,3 +115,18 @@ class RequireJSHelperTestCase(unittest.TestCase):
             ['mod1', 'name/mod/mod2'],
             requirejs.extract_requires(commonjs_require),
         )
+        self.assertEqual(
+            ['mod1', 'name/mod/mod2'],
+            requirejs.extract_requires(commonjs_require + requirejs_require),
+        )
+
+    def test_extract_all_amd_requires(self):
+        self.assertEqual([
+            'defined/alternate/module',
+            'module',
+            'require',
+            'some.weird.module',
+            'some/dummy/module1',
+            'some/dummy/module2',
+            'some/dummy/module3',
+        ], sorted(set(requirejs.extract_all_amd_requires(requirejs_require))))

@@ -73,3 +73,57 @@ def extract_requires(text):
     """
 
     return extract_function_argument(text, 'require', 0)
+
+
+def extract_all_amd_requires(text):
+    """
+    Extract all require and define calls from unbundled JavaScript
+    source files in both AMD and CommonJS syntax.
+    """
+
+    f_names = ('require', 'define',)
+
+    def visit(node):
+        for child in node:
+            if isinstance(child, ast.FunctionCall) and isinstance(
+                    child.identifier, ast.Identifier):
+                if not child.args:
+                    continue
+
+                args = child.args
+                # either require or define
+                standard_amd = ((
+                    len(child.args) >= 2 and
+                    isinstance(args[0], ast.Array) and
+                    isinstance(args[1], ast.FuncExpr) and
+                    child.identifier.value in f_names
+                ), 0)
+                # only for define
+                named_define = ((
+                    len(child.args) >= 3 and
+                    isinstance(args[0], ast.String) and
+                    isinstance(args[1], ast.Array) and
+                    isinstance(args[2], ast.FuncExpr) and
+                    child.identifier.value == 'define'
+                ), 1)
+
+                if (isinstance(args[0], ast.String) and
+                        child.identifier.value == 'require'):
+                    # only yield names just from require
+                    yield to_str(args[0].value)
+                    continue
+
+                for checks in (standard_amd, named_define):
+                    cond, pos = checks
+                    if not cond:
+                        continue
+
+                    for node in child.args[pos]:
+                        yield to_str(node.value)
+
+            # yield from visit(child)
+            for value in visit(child):
+                yield value
+
+    tree = parser.parse(text)
+    return visit(tree)
