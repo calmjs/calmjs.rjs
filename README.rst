@@ -401,12 +401,27 @@ by the |calmjs| framework.
 Troubleshooting
 ---------------
 
+The following are some known issues with regards to this package and its
+integration with other Python/Node.js packages.
+
 When calling ``calmjs rjs`` on a package, got ``ENOENT``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Typically this is caused by the package being used not declaring the
 needed ``extras_calmjs`` for the appropriate packages within the correct
 section.
+
+WARNING: Couldn't write lextab module <module 'slimit.lextab' ...>
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This is due to the ``slimit`` module shipping outdated table files.  Try
+removing the ``lextab.py`` file from that module (the path indicated)
+which should permit the ``ply`` library to regenerate the relevant files
+to remove the exception, and to speed up execution as generating the
+JavaScript parser without these precompiled tables in place for
+operations that involve working with the JavaScript source tree has
+significant performance penalties.  This information also applies for
+the ``slimit.yacctab`` module.
 
 
 Contribute
