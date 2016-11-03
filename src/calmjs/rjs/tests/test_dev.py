@@ -47,6 +47,39 @@ class ProcessArtifactsTestCase(unittest.TestCase):
         result = process_artifacts([source1, source2])
         self.assertEqual(result, ['source1/mod1', 'source1/mod2'])
 
+    def test_process_path_error(self):
+        build_dir = mkdtemp(self)
+        source1 = join(build_dir, 'source1.js')
+        source2 = join(build_dir, 'source2.js')
+        source3 = join(build_dir, 'source3.js')
+
+        with open(source1, 'w') as fd:
+            fd.write(
+                "define('source1/mod1', ['require','exports','module'],"
+                "function (require, exports, module) {});\n"
+                "define('source1/mod2', ['require','exports','module'],"
+                "function (require, exports, module) {});\n"
+            )
+
+        with open(source2, 'w') as fd:
+            fd.write(
+                "define('source2/mod1', ['require','exports','module']"
+                "function (require, exports, module) {});\n"
+            )
+
+        with open(source3, 'w') as fd:
+            fd.write(
+                "define('source3/mod1', ['require','exports','module'],"
+                "function (require, exports, module) {});\n"
+            )
+
+        with pretty_logging(stream=StringIO()) as s:
+            result = process_artifacts([source1, source2, source3])
+        self.assertEqual(result, [
+            'source1/mod1', 'source1/mod2', 'source3/mod1'])
+        self.assertIn('syntax error in', s.getvalue())
+        self.assertIn(source2, s.getvalue())
+
 
 class KarmaAbsentTestCase(unittest.TestCase):
     """

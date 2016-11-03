@@ -80,7 +80,10 @@ def process_artifacts(paths):
             logger.warning("specified artifact '%s' cannot be read", path)
             continue
 
-        deps.extend(extract_defines(text))
+        try:
+            deps.extend(extract_defines(text))
+        except SyntaxError as e:
+            logger.error("syntax error in '%s': %s", path, e)
 
     return deps
 
