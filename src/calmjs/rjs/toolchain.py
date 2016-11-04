@@ -391,29 +391,29 @@ class RJSToolchain(Toolchain):
         source_prefixes = ('transpiled', 'bundled')
         for prefix in source_prefixes:
             key = prefix + '_targets'
-            modpaths = prefix + '_modpaths'
-            for k, v in spec[key].items():
-                if spec[modpaths].get(k) == EMPTY:
-                    # simply omit empty exported modpaths.
+            modpaths_group = prefix + '_modpaths'
+            for modname, target in spec[key].items():
+                if spec[modpaths_group].get(modname) == EMPTY:
+                    # simply omit empty exported modpaths_group.
                     continue
-                if v.endswith('.js'):
-                    full_target = join(spec[BUILD_DIR], *v.split('/'))
+                if target.endswith('.js'):
+                    full_target = join(spec[BUILD_DIR], *target.split('/'))
                     # requirejs loader will automatically append another
                     # .js filename extension as it doesn't know anything
                     # about the path, so to avoid this append a '?', the
                     # canonical way to tell it not to do this.
                     if isfile(full_target):
-                        configured_paths[k] = v + '?'
+                        configured_paths[modname] = target + '?'
                         # also, do the parsing for the parsed paths
                         # this should also preemptively report potential
                         # syntax error.
                         parsed_required_paths.update({
-                            k: EMPTY for k in (process_path(
+                            modname: EMPTY for modname in (process_path(
                                 full_target, extract_all_amd_requires) or [])
                         })
                         continue
 
-                configured_paths[k] = v
+                configured_paths[modname] = target
 
         # finally, update the config with the plugin targets, which
         # should have been correctly processed by the plugin handlers.
