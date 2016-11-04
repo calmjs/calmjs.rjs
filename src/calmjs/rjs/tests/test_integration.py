@@ -356,7 +356,11 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
             export_target=export_target,
             build_dir=build_dir,
         )
-        rjs(spec)
+
+        with pretty_logging(stream=StringIO()):
+            # to avoid logging the issue of mismatch map to extension
+            # to stderr.
+            rjs(spec)
 
         self.assertTrue(exists(export_target))
 
