@@ -441,7 +441,8 @@ class RJSToolchain(Toolchain):
         if missing_modname:
             missing_logger(
                 'source file(s) referenced modules that are missing in the '
-                'build directory: %s', sorted(missing_modname)
+                'build directory: %s', ', '.join(
+                    sorted(repr(m) for m in missing_modname))
             )
 
         prefixes = ('transpiled', 'bundled', 'plugins')

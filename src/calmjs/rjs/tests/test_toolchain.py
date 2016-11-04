@@ -719,7 +719,7 @@ class ToolchainUnitTestCase(unittest.TestCase):
         self.assertIn('ERROR', s.getvalue())
         self.assertIn(
             "source file(s) referenced modules that are missing in the "
-            "build directory: ['jquery', 'some.pylike.module', 'underscore']",
+            "build directory: 'jquery', 'some.pylike.module', 'underscore'",
             s.getvalue()
         )
 
@@ -739,7 +739,7 @@ class ToolchainUnitTestCase(unittest.TestCase):
         self.assertNotIn('ERROR', s.getvalue())
         self.assertIn(
             "source file(s) referenced modules that are missing in the "
-            "build directory: ['jquery', 'some.pylike.module', 'underscore']",
+            "build directory: 'jquery', 'some.pylike.module', 'underscore'",
             s.getvalue()
         )
 
