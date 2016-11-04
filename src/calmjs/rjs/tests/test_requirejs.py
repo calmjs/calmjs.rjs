@@ -1,7 +1,12 @@
 # -*- coding: utf-8 -*-
 import unittest
+from os.path import join
 
 from calmjs.rjs import requirejs
+from calmjs.utils import pretty_logging
+
+from calmjs.testing.mocks import StringIO
+from calmjs.testing.utils import mkdtemp
 
 # an example bundle including webpack blobs and requirejs AMD blobs
 artifact = """
@@ -130,3 +135,49 @@ class RequireJSHelperTestCase(unittest.TestCase):
             'some/dummy/module2',
             'some/dummy/module3',
         ], sorted(set(requirejs.extract_all_amd_requires(requirejs_require))))
+
+    def test_extract_read_from_file(self):
+        tmpdir = mkdtemp(self)
+        src_file = join(tmpdir, 'source.js')
+
+        with open(src_file, 'w') as fd:
+            fd.write(requirejs_require)
+
+        result = requirejs.process_path(
+            src_file, requirejs.extract_all_amd_requires)
+
+        self.assertEqual([
+            'defined/alternate/module',
+            'module',
+            'require',
+            'some.weird.module',
+            'some/dummy/module1',
+            'some/dummy/module2',
+            'some/dummy/module3',
+        ], sorted(set(result)))
+
+    def test_extract_read_from_file_syntax_error(self):
+        tmpdir = mkdtemp(self)
+        src_file = join(tmpdir, 'source.js')
+
+        with open(src_file, 'w') as fd:
+            fd.write("define([], function () { return 'blah' }")
+
+        with pretty_logging(stream=StringIO()) as stream:
+            result = requirejs.process_path(
+                src_file, requirejs.extract_requires)
+
+        self.assertIsNone(result)
+        self.assertIn('syntax error', stream.getvalue())
+
+    def test_extract_read_from_file_error(self):
+        tmpdir = mkdtemp(self)
+        src_file = join(tmpdir, 'source.js')
+
+        with pretty_logging(stream=StringIO()) as stream:
+            result = requirejs.process_path(
+                src_file, requirejs.extract_requires)
+
+        self.assertIsNone(result)
+        self.assertIn('No such file or directory:', stream.getvalue())
+        self.assertIn(src_file, stream.getvalue())

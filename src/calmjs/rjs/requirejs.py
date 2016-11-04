@@ -127,3 +127,18 @@ def extract_all_amd_requires(text):
 
     tree = parser.parse(text)
     return visit(tree)
+
+
+def process_path(path, f):
+    """
+    Take the path and process it through one of the above functions
+    """
+
+    try:
+        with open(path) as fd:
+            text = fd.read()
+        return f(text)
+    except (OSError, IOError) as e:
+        logger.error("failed to read '%s': %s: %s", path, type(e).__name__, e)
+    except SyntaxError as e:
+        logger.error("syntax error in '%s': %s", path, e)
