@@ -11,11 +11,11 @@ import re
 from functools import partial
 
 from slimit import ast
-from slimit.parser import Parser
+
+from calmjs.rjs.ecma import parse
 
 logger = logging.getLogger(__name__)
 # TODO figure out what's the deal with the warnings this spew.
-parser = Parser()
 to_str = partial(re.compile('([\"\'])(.*)(\\1)').sub, '\\2')
 
 
@@ -48,7 +48,7 @@ def extract_function_argument(text, f_name, f_argn, f_argt=ast.String):
                 for value in visit(child):
                     yield value
 
-    tree = parser.parse(text)
+    tree = parse(text)
     return list(visit(tree))
 
 
@@ -125,7 +125,7 @@ def extract_all_amd_requires(text):
             for value in visit(child):
                 yield value
 
-    tree = parser.parse(text)
+    tree = parse(text)
     return visit(tree)
 
 
