@@ -48,7 +48,7 @@ UMD_REQUIREJS_JSON_EXPORT_HEADER = """\
 """
 
 UMD_REQUIREJS_JSON_EXPORT_FOOTER = """
-    )
+    );
 
     if (typeof exports !== 'undefined' && typeof module !== 'undefined') {
         module.exports = requirejsOptions;

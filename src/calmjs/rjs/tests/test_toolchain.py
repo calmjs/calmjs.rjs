@@ -14,6 +14,7 @@ from calmjs.toolchain import CONFIG_JS_FILES
 from calmjs.npm import get_npm_version
 from calmjs.utils import pretty_logging
 
+from calmjs.rjs.ecma import parse
 from calmjs.rjs import toolchain
 
 from calmjs.testing import utils
@@ -621,3 +622,137 @@ class ToolchainUnitTestCase(unittest.TestCase):
             "handler for 'unsupported/unknown_plugin' loader plugin not found",
             logs)
         self.assertIn("also this is an invalid value", logs)
+
+    def assemble_spec_config(self, **kw):
+        # for the assemble related tests.
+        tmpdir = utils.mkdtemp(self)
+        build_dir = utils.mkdtemp(self)
+        rjs = toolchain.RJSToolchain()
+
+        export_target = join(build_dir, 'export.js')
+        build_manifest_path = join(build_dir, 'build.js')
+        node_config_js = join(build_dir, 'node_config.js')
+        requirejs_config_js = join(build_dir, 'requirejs_config.js')
+
+        with open(join(tmpdir, 'r.js'), 'w'):
+            pass
+
+        with open(join(build_dir, 'module1.js'), 'w') as fd:
+            fd.write(
+                "define(['jquery', 'underscore', 'some.pylike.module'], "
+                "function(jquery, underscore, module) {"
+                "});"
+            )
+
+        with open(join(build_dir, 'module2.js'), 'w') as fd:
+            fd.write(
+                "define(['module1', 'underscore'], "
+                "function(module1, underscore) {"
+                "});"
+            )
+
+        with open(join(build_dir, 'module3.js'), 'w') as fd:
+            fd.write(
+                "'use strict';\n"
+                "var $ = require('jquery');\n"
+                "var _ = require('underscore');\n"
+                "var module2 = require('module2');\n"
+            )
+
+        spec = Spec(
+            build_dir=build_dir,
+            export_target=export_target,
+            build_manifest_path=build_manifest_path,
+            node_config_js=node_config_js,
+            requirejs_config_js=requirejs_config_js,
+            transpiled_modpaths={
+                'module1': 'module1',
+                'module2': 'module2',
+                'module3': 'module3',
+            },
+            # these are not actually transpiled sources, but will fit
+            # with the purposes of this test.
+            transpiled_targets={
+                'module1': 'module1.js',
+                'module2': 'module2.js',
+                'module3': 'module3.js',
+            },
+            # the "bundled" names were specified to be omitted.
+            bundled_modpaths={},
+            bundled_targets={},
+            plugins_modpaths={},
+            plugins_targets={},
+            export_module_names=['module1', 'module2', 'module3'],
+            **kw
+        )
+        spec[rjs.rjs_bin_key] = join(tmpdir, 'r.js')
+        rjs.assemble(spec)
+
+        # the main config file
+        # check that they all exists
+        self.assertTrue(exists(build_manifest_path))
+        self.assertTrue(exists(node_config_js))
+        self.assertTrue(exists(requirejs_config_js))
+
+        # only checking the build_manifest version, as the node config
+        # version is not that much different.
+        with open(build_manifest_path) as fd:
+            build_tree = parse(fd.read())
+
+        # this is the node for the json in the build file
+        build_js = json.loads(build_tree.children()[0].children()[0].to_ecma())
+
+        with open(requirejs_config_js) as fd:
+            config_tree = parse(fd.read())
+
+        # this is the node for json in the config file
+        config_js = json.loads(
+            config_tree.children()[0].children()[0].children()[0].children(
+                )[2].children()[0].children()[1].to_ecma())
+
+        return build_js, config_js
+
+    def test_assemble_standard(self):
+        with pretty_logging(logger='calmjs.rjs', stream=mocks.StringIO()) as s:
+            build_js, config_js = self.assemble_spec_config()
+
+        self.assertIn('ERROR', s.getvalue())
+        self.assertIn(
+            "source file(s) referenced modules that are missing in the "
+            "build directory: ['jquery', 'some.pylike.module', 'underscore']",
+            s.getvalue()
+        )
+
+        self.assertEqual(build_js['paths'], {})
+        self.assertEqual(config_js['paths'], {
+            'module1': 'module1.js?',
+            'module2': 'module2.js?',
+            'module3': 'module3.js?',
+        })
+
+    def test_assemble_standard_emptied(self):
+        with pretty_logging(logger='calmjs.rjs', stream=mocks.StringIO()) as s:
+            build_js, config_js = self.assemble_spec_config(
+                stub_missing_with_empty=1
+            )
+
+        self.assertNotIn('ERROR', s.getvalue())
+        self.assertIn(
+            "source file(s) referenced modules that are missing in the "
+            "build directory: ['jquery', 'some.pylike.module', 'underscore']",
+            s.getvalue()
+        )
+
+        self.assertEqual(build_js['paths'], {
+            'jquery': 'empty:',
+            'some.pylike.module': 'empty:',
+            'underscore': 'empty:',
+        })
+        self.assertEqual(config_js['paths'], {
+            'module1': 'module1.js?',
+            'module2': 'module2.js?',
+            'module3': 'module3.js?',
+            'jquery': 'empty:',
+            'some.pylike.module': 'empty:',
+            'underscore': 'empty:',
+        })

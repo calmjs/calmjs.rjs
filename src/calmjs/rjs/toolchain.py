@@ -55,6 +55,8 @@ from .exc import RJSExitError
 from .registry import RJS_LOADER_PLUGIN_REGISTRY
 from .registry import RJS_LOADER_PLUGIN_REGISTRY_KEY
 from .registry import RJS_LOADER_PLUGIN_REGISTRY_NAME
+from .requirejs import extract_all_amd_requires
+from .requirejs import process_path
 from .umdjs import UMD_NODE_AMD_HEADER
 from .umdjs import UMD_NODE_AMD_FOOTER
 from .umdjs import UMD_NODE_AMD_INDENT
@@ -72,6 +74,7 @@ _DEFAULT_RUNTIME = 'r.js'
 
 # reserved spec keys for this package
 REQUIREJS_PLUGINS = 'requirejs_plugins'
+STUB_MISSING_WITH_EMPTY = 'stub_missing_with_empty'
 
 
 def spec_update_source_map(spec, source_map, default_source_key):
@@ -368,39 +371,21 @@ class RJSToolchain(Toolchain):
         requirejs_config = {}
         requirejs_config.update(build_config)
 
-        # Back the the build config.  Grab only paths that have been
-        # made empty:
-        prefixes = ('transpiled', 'bundled', 'plugins')
-        for prefix in prefixes:
-            key = prefix + '_modpaths'
-            build_config['paths'].update(
-                {k: v for k, v in spec[key].items() if v == EMPTY})
-
-        # write it out.
-        with open(spec['build_manifest_path'], 'w') as fd:
-            fd.write('(\n')
-            json.dump(build_config, fd, indent=4)
-            fd.write('\n)')
-
-        # build a configuration for usage directly from nodejs (which
-        # may or may not work, but a test can find out).
-        nodejs_config = {}
-        nodejs_config.update(build_config)
-        nodejs_config['baseUrl'] = spec['build_dir']
-
-        with open(spec['node_config_js'], 'w') as fd:
-            # XXX in this config, write out the tests from the test
-            # registry???
-            fd.write(UMD_REQUIREJS_JSON_EXPORT_HEADER)
-            json.dump(nodejs_config, fd, indent=4)
-            fd.write(UMD_REQUIREJS_JSON_EXPORT_FOOTER)
-
         # Update paths with names pointing to built files in build_dir
         # for the configuration for serving.
         requirejs_config['baseUrl'] = spec['build_dir']
-        requirejs_config['paths'] = {}
         # leave as empty as this is only applicable to build
         requirejs_config['include'] = []
+
+        # These are the configured paths
+        configured_paths = {}
+        # as a last resort, all targets loaded will have their soruce
+        # tree inspected for module names they need; this is done so
+        # that the r.js bundler will not choke when it finds missing
+        # paths.
+        parsed_required_paths = {}
+        # the final result will be merged here.
+        requirejs_config['paths'] = {}
 
         # correct the targets by appending a ? for the affected targets
         source_prefixes = ('transpiled', 'bundled')
@@ -411,23 +396,80 @@ class RJSToolchain(Toolchain):
                 if spec[modpaths].get(k) == EMPTY:
                     # simply omit empty exported modpaths.
                     continue
-                if v.endswith('.js') and isfile(
-                        join(spec[BUILD_DIR], *v.split('/'))):
+                if v.endswith('.js'):
+                    full_target = join(spec[BUILD_DIR], *v.split('/'))
                     # requirejs loader will automatically append another
                     # .js filename extension as it doesn't know anything
                     # about the path, so to avoid this append a '?', the
                     # canonical way to tell it not to do this.
-                    requirejs_config['paths'][k] = v + '?'
-                else:
-                    requirejs_config['paths'][k] = v
+                    if isfile(full_target):
+                        configured_paths[k] = v + '?'
+                        # also, do the parsing for the parsed paths
+                        # this should also preemptively report potential
+                        # syntax error.
+                        parsed_required_paths.update({
+                            k: EMPTY for k in (process_path(
+                                full_target, extract_all_amd_requires) or [])
+                        })
+                        continue
+
+                configured_paths[k] = v
 
         # finally, update the config with the plugin targets, which
         # should have been correctly processed by the plugin handlers.
-        requirejs_config['paths'].update(spec['plugins_targets'])
+        configured_paths.update(spec['plugins_targets'])
+
+        missing_modname = set(parsed_required_paths) - set(configured_paths)
+
+        # now merge the results together and figure out the logger.
+        if spec.get(STUB_MISSING_WITH_EMPTY):
+            missing_logger = logger.info
+            requirejs_config['paths'].update(parsed_required_paths)
+            build_config['paths'].update({
+                modname: parsed_required_paths[modname]
+                for modname in missing_modname
+            })
+        else:
+            # TODO adjust the message somewhat for the error case
+            missing_logger = logger.error
+
+        requirejs_config['paths'].update(configured_paths)
+
+        # Back to the build config.  Grab only paths that have been
+        # made empty and apply it to the build configuration, plus log
+        # the modules.
+        if missing_modname:
+            missing_logger(
+                'source file(s) referenced modules that are missing in the '
+                'build directory: %s', sorted(missing_modname)
+            )
+
+        prefixes = ('transpiled', 'bundled', 'plugins')
+        for prefix in prefixes:
+            key = prefix + '_modpaths'
+            build_config['paths'].update(
+                {k: v for k, v in spec[key].items() if v == EMPTY})
+
+        # build a configuration for usage directly from nodejs (which
+        # may or may not work, but a test can find out).
+        nodejs_config = {}
+        nodejs_config.update(build_config)
+        nodejs_config['baseUrl'] = spec['build_dir']
+
+        # write out the configuration files
+        with open(spec['build_manifest_path'], 'w') as fd:
+            fd.write('(\n')
+            json.dump(build_config, fd, indent=4)
+            fd.write('\n)')
 
         with open(spec['requirejs_config_js'], 'w') as fd:
             fd.write(UMD_REQUIREJS_JSON_EXPORT_HEADER)
             json.dump(requirejs_config, fd, indent=4)
+            fd.write(UMD_REQUIREJS_JSON_EXPORT_FOOTER)
+
+        with open(spec['node_config_js'], 'w') as fd:
+            fd.write(UMD_REQUIREJS_JSON_EXPORT_HEADER)
+            json.dump(nodejs_config, fd, indent=4)
             fd.write(UMD_REQUIREJS_JSON_EXPORT_FOOTER)
 
     def link(self, spec):
