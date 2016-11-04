@@ -597,7 +597,7 @@ class ToolchainUnitTestCase(unittest.TestCase):
             export_module_names=[],
         )
         spec[rjs.rjs_bin_key] = join(tmpdir, 'r.js')
-        spec[toolchain._RJS_PLUGIN_KEY] = {
+        spec[toolchain.REQUIREJS_PLUGINS] = {
             'text': {
                 'text!namespace/module/path.txt': '/namespace/module/path.txt',
             },

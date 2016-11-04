@@ -69,7 +69,9 @@ _PLATFORM_SPECIFIC_RUNTIME = {
     'win32': 'r.js.cmd',
 }
 _DEFAULT_RUNTIME = 'r.js'
-_RJS_PLUGIN_KEY = 'requirejs_plugins'
+
+# reserved spec keys for this package
+REQUIREJS_PLUGINS = 'requirejs_plugins'
 
 
 def spec_update_source_map(spec, source_map, default_source_key):
@@ -82,7 +84,7 @@ def spec_update_source_map(spec, source_map, default_source_key):
             continue
 
         plugin_name, arguments = parts
-        plugins = dict_get(spec, _RJS_PLUGIN_KEY)
+        plugins = dict_get(spec, REQUIREJS_PLUGINS)
         plugin = dict_get(plugins, plugin_name)
         plugin[modname] = source
 
@@ -323,7 +325,7 @@ class RJSToolchain(Toolchain):
                 "'%s' must not be same as '%s'" % (EXPORT_TARGET, matched[0]))
 
         plugin_source_map = spec['plugin_source_map'] = {}
-        raw_plugins = spec.get(_RJS_PLUGIN_KEY, {})
+        raw_plugins = spec.get(REQUIREJS_PLUGINS, {})
         for key, value in raw_plugins.items():
             handler = loader_plugin_registry.get_record(key)
             if handler:
