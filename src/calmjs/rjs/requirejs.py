@@ -15,8 +15,12 @@ from slimit import ast
 from calmjs.rjs.ecma import parse
 
 logger = logging.getLogger(__name__)
-# TODO figure out what's the deal with the warnings this spew.
-to_str = partial(re.compile('([\"\'])(.*)(\\1)').sub, '\\2')
+strip_quotes = partial(re.compile('([\"\'])(.*)(\\1)').sub, '\\2')
+strip_slashes = partial(re.compile(r'\\(.)').sub, '\\1')
+
+
+def to_str(ast_string):
+    return strip_slashes(strip_quotes(ast_string.value))
 
 
 def extract_function_argument(text, f_name, f_argn, f_argt=ast.String):
@@ -42,7 +46,7 @@ def extract_function_argument(text, f_name, f_argn, f_argt=ast.String):
                     child.identifier, ast.Identifier):
                 if child.identifier.value == f_name and f_argn < len(
                         child.args) and isinstance(child.args[f_argn], f_argt):
-                    yield to_str(child.args[f_argn].value)
+                    yield to_str(child.args[f_argn])
             else:
                 # yield from visit(child)
                 for value in visit(child):
@@ -110,7 +114,7 @@ def extract_all_amd_requires(text):
                 if (isinstance(args[0], ast.String) and
                         child.identifier.value == 'require'):
                     # only yield names just from require
-                    yield to_str(args[0].value)
+                    yield to_str(args[0])
                     continue
 
                 for checks in (standard_amd, named_define):
@@ -119,7 +123,7 @@ def extract_all_amd_requires(text):
                         continue
 
                     for node in child.args[pos]:
-                        yield to_str(node.value)
+                        yield to_str(node)
 
             # yield from visit(child)
             for value in visit(child):

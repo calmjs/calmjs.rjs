@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import unittest
 from os.path import join
+from slimit.ast import String
 
 from calmjs.rjs import requirejs
 from calmjs.utils import pretty_logging
@@ -62,6 +63,32 @@ define('some test', ['require', 'module'], function(require, module) {});
 require();
 define();
 """
+
+
+class ToStrTestCase(unittest.TestCase):
+    """
+    Test that the to_str function does operate correctly on edge cases.
+
+    Note that the LHS (encapsulated in a String) is the raw data, while
+    the RHS the quote style is similar to what JavaScript also supports,
+    which is also similar to what Python does.
+    """
+
+    def test_basic(self):
+        self.assertEqual(requirejs.to_str(String("'hello'")), 'hello')
+        self.assertEqual(requirejs.to_str(String('"hello"')), 'hello')
+        # Python escaped
+        self.assertEqual(requirejs.to_str(String("'hell\"o'")), 'hell"o')
+        self.assertEqual(requirejs.to_str(String('"hell\'o"')), "hell'o")
+
+    def test_backslash(self):
+        # JavaScript escaped
+        self.assertEqual(requirejs.to_str(String(r"'he\'llo'")), 'he\'llo')
+        self.assertEqual(requirejs.to_str(String(r"'he\"llo'")), 'he\"llo')
+        self.assertEqual(requirejs.to_str(String(r"'he\\llo'")), 'he\\llo')
+
+        self.assertEqual(requirejs.to_str(String(r'"he\'llo"')), "he\'llo")
+        self.assertEqual(requirejs.to_str(String(r'"he\"llo"')), "he\"llo")
 
 
 class RequireJSHelperTestCase(unittest.TestCase):
