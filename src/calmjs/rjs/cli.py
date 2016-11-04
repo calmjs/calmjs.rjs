@@ -10,6 +10,8 @@ from calmjs.toolchain import BUILD_DIR
 from calmjs.toolchain import CALMJS_MODULE_REGISTRY_NAMES
 from calmjs.toolchain import EXPORT_TARGET
 from calmjs.toolchain import SOURCE_PACKAGE_NAMES
+from calmjs.rjs.toolchain import STUB_MISSING_WITH_EMPTY
+
 from calmjs.rjs.toolchain import RJSToolchain
 from calmjs.rjs.toolchain import spec_update_source_map
 
@@ -25,6 +27,7 @@ def create_spec(
         package_names, export_target=None, working_dir=None, build_dir=None,
         source_registry_method='all', source_registries=None,
         source_map_method='all', bundle_map_method='all',
+        stub_missing_with_empty=False,
         transpile_no_indent=False):
     """
     Produce a spec for the compilation through the RJSToolchain.
@@ -105,6 +108,16 @@ def create_spec(
 
         Defaults to 'all'.
 
+    stub_missing_with_empty
+        If r.js/requirejs encounters a module that it cannot find, it
+        will flat out kill itself and this feature cannot be disabled
+        using a simple command line level flag.  The only known way to
+        get around this is sto stub every single missing file using the
+        'empty:' url.  Set this to True to enable the module names found
+        by the toolchain that do not lead to a valid location be stubbed
+        with this value in the configuration files generated for
+        consumption by RequireJS or r.js.
+
     transpile_no_indent
         Ensure that the transpile targets have no indents.
 
@@ -147,6 +160,7 @@ def create_spec(
     spec[CALMJS_MODULE_REGISTRY_NAMES] = source_registries
     spec[EXPORT_TARGET] = export_target
     spec[SOURCE_PACKAGE_NAMES] = package_names
+    spec[STUB_MISSING_WITH_EMPTY] = stub_missing_with_empty
 
     spec_update_source_map(spec, generate_transpile_source_maps(
         package_names=package_names,
@@ -167,6 +181,7 @@ def compile_all(
         package_names, export_target=None, working_dir=None, build_dir=None,
         source_registry_method='all', source_registries=None,
         source_map_method='all', bundle_map_method='all',
+        stub_missing_with_empty=False,
         transpile_no_indent=False,
         toolchain=default_toolchain):
     """
@@ -197,6 +212,7 @@ def compile_all(
         source_registries=source_registries,
         source_map_method=source_map_method,
         bundle_map_method=bundle_map_method,
+        stub_missing_with_empty=stub_missing_with_empty,
         transpile_no_indent=transpile_no_indent,
     )
     toolchain(spec)

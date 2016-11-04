@@ -752,6 +752,58 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         })
         self.assertEqual(config_js['include'], [])
 
+    def test_runtime_cli_bundle_method_force_empty(self):
+        utils.stub_stdouts(self)
+        current_dir, target_file = self.setup_runtime_main_env()
+        os.chdir(current_dir)
+        build_dir = utils.mkdtemp(self)
+        widget_slim_js = join(current_dir, 'widget_slim.js')
+        with self.assertRaises(SystemExit) as e:
+            runtime.main([
+                'rjs', 'widget',
+                '--build-dir=' + build_dir,
+                '--empty',
+                '--source-map-method=all',
+                '--bundle-map-method=none',
+                '--export-target=' + widget_slim_js,
+            ])
+        self.assertEqual(e.exception.args[0], 0)
+        # ensure that the bundled files are not copied
+        self.assertFalse(exists(join(build_dir, 'underscore.js')))
+        self.assertFalse(exists(join(build_dir, 'jquery.js')))
+
+        with open(join(build_dir, 'build.js')) as fd:
+            # strip off the header and footer
+            build_js = json.loads(''.join(fd.readlines()[1:-1]))
+
+        with open(join(build_dir, 'config.js')) as fd:
+            # strip off the header and footer
+            config_js = json.loads(''.join(fd.readlines()[4:-10]))
+
+        self.assertEqual(build_js['paths'], {
+            # this is missing because no sources actually poke into it,
+            # whereas the previous test it showed up as extras_calmjs
+            # 'jquery': 'empty:',
+            'underscore': 'empty:',
+        })
+        self.assertEqual(sorted(build_js['include']), [
+            'framework/lib',
+            'widget/core',
+            'widget/datepicker',
+            'widget/richedit',
+        ])
+
+        self.assertEqual(config_js['paths'], {
+            'framework/lib': 'framework/lib.js?',
+            'widget/core': 'widget/core.js?',
+            'widget/datepicker': 'widget/datepicker.js?',
+            'widget/richedit': 'widget/richedit.js?',
+            # this is picked up by the source analysis when empty option
+            # is appied
+            'underscore': 'empty:',
+        })
+        self.assertEqual(config_js['include'], [])
+
     def test_runtime_cli_bundle_method_standard(self):
         current_dir, target_file = self.setup_runtime_main_env()
         os.chdir(current_dir)
@@ -897,6 +949,39 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
             # the 'service' package.
             'underscore/underscore.js\n'
         ))
+
+    def test_runtime_cli_method_none_with_empty_various(self):
+        # this time, use the empty option
+        utils.remember_cwd(self)
+        utils.stub_stdouts(self)
+        current_dir = utils.mkdtemp(self)
+        export_target = join(current_dir, 'export_target.js')
+
+        os.chdir(current_dir)
+        with self.assertRaises(SystemExit) as e:
+            # this should fail
+            runtime.main([
+                'rjs', 'service', 'site',
+                '--bundle-map-method=none',
+                '--export-target=' + export_target,
+                '--source-registry=' + self.registry_name,
+            ])
+
+        self.assertEqual(e.exception.args[0], 1)
+
+        os.chdir(current_dir)
+        with self.assertRaises(SystemExit) as e:
+            # this time, apply empty, which should automatically patch
+            # the configuration
+            runtime.main([
+                'rjs', 'service', 'site',
+                '--empty',
+                '--bundle-map-method=none',
+                '--export-target=' + export_target,
+                '--source-registry=' + self.registry_name,
+            ])
+
+        self.assertEqual(e.exception.args[0], 0)
 
     def test_runtime_cli_compile_no_indent(self):
         utils.remember_cwd(self)

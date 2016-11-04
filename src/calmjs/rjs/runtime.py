@@ -12,6 +12,7 @@ from calmjs.rjs.dist import source_map_methods_list
 from calmjs.rjs.dist import calmjs_module_registry_methods
 from calmjs.rjs.cli import create_spec
 from calmjs.rjs.cli import default_toolchain
+from calmjs.rjs.toolchain import STUB_MISSING_WITH_EMPTY
 
 
 class RJSRuntime(ToolchainRuntime):
@@ -50,6 +51,13 @@ class RJSRuntime(ToolchainRuntime):
         """
 
         super(RJSRuntime, self).init_argparser(argparser)
+
+        argparser.add_argument(
+            '-e', '--empty',
+            dest=STUB_MISSING_WITH_EMPTY, action='store_true',
+            help="stub remaining missing modules with empty: force r.js "
+                 "to ignore missing files in build directory",
+        )
 
         argparser.add_argument(
             '--source-map-method', default='all',
@@ -103,6 +111,7 @@ class RJSRuntime(ToolchainRuntime):
 
     def create_spec(
             self, package_names=(), export_target=None,
+            stub_missing_with_empty=False,
             working_dir=None,
             build_dir=None,
             source_registry_method='all', source_registries=None,
@@ -117,6 +126,7 @@ class RJSRuntime(ToolchainRuntime):
         return create_spec(
             package_names=package_names,
             export_target=export_target,
+            stub_missing_with_empty=stub_missing_with_empty,
             working_dir=working_dir,
             build_dir=build_dir,
             source_registry_method=source_registry_method,
