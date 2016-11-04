@@ -387,6 +387,8 @@ class RJSToolchain(Toolchain):
         # the final result will be merged here.
         requirejs_config['paths'] = {}
 
+        emptied = set()
+
         # correct the targets by appending a ? for the affected targets
         source_prefixes = ('transpiled', 'bundled')
         for prefix in source_prefixes:
@@ -395,6 +397,7 @@ class RJSToolchain(Toolchain):
             for modname, target in spec[key].items():
                 if spec[modpaths_group].get(modname) == EMPTY:
                     # simply omit empty exported modpaths_group.
+                    emptied.add(modname)
                     continue
                 if target.endswith('.js'):
                     full_target = join(spec[BUILD_DIR], *target.split('/'))
@@ -419,7 +422,8 @@ class RJSToolchain(Toolchain):
         # should have been correctly processed by the plugin handlers.
         configured_paths.update(spec['plugins_targets'])
 
-        missing_modname = set(parsed_required_paths) - set(configured_paths)
+        missing_modname = (
+            set(parsed_required_paths) - set(configured_paths) - emptied)
 
         # now merge the results together and figure out the logger.
         if spec.get(STUB_MISSING_WITH_EMPTY):

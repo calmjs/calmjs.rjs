@@ -821,6 +821,9 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         current_dir, target_file = self.setup_runtime_main_env()
         os.chdir(current_dir)
 
+        # stubbing to check for a _lack_ of error message.
+        utils.stub_stdouts(self)
+
         # Invoke the thing through the main runtime
         runtime_main([
             'rjs', 'framework', 'forms', 'service',
@@ -829,6 +832,8 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
             '--source-registry=' + self.registry_name,
         ])
         self.assertTrue(exists(target_file))
+        # no complaints about missing 'widget/*' modules
+        self.assertEqual('', sys.stderr.getvalue())
 
         # Try running it anyway with widget missing...
         stdout, stderr = run_node_with_require(target_file)
@@ -844,6 +849,8 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
             '--export-target=' + widget_js,
             '--source-registry=' + self.registry_name,
         ])
+        # no complaints about missing 'framework/lib'
+        self.assertEqual('', sys.stderr.getvalue())
 
         # The execution should now work if the widget bundle is loaded
         # first, and output should be as expected.
@@ -872,6 +879,8 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
             '--export-target=' + widget_slim_js,
             '--source-registry=' + self.registry_name,
         ])
+        # no complaints about missing 'underscores' as bundle empty
+        self.assertEqual('', sys.stderr.getvalue())
 
         # The execution should now work if the widget bundle is loaded
         # first, and output should be as expected.  This time the
