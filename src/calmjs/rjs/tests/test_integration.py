@@ -703,7 +703,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         # result in nothing.
         self.assertNotIn('framework/lib', contents)
         self.assertIn(
-            'no calmjs module registry declarations found for packages',
+            'no module registry declarations found using packages',
             sys.stderr.getvalue(),
         )
         self.assertIn("'site'", sys.stderr.getvalue())

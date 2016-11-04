@@ -17,7 +17,11 @@ class CliTestCase(unittest.TestCase):
     """
 
     def test_create_spec_empty(self):
-        spec = create_spec([])
+        with pretty_logging(stream=StringIO()) as stream:
+            spec = create_spec([])
+
+        self.assertNotIn('packages []', stream.getvalue())
+        self.assertIn('no packages specified', stream.getvalue())
         self.assertTrue(isinstance(spec, Spec))
         self.assertEqual(spec['export_target'], 'calmjs.rjs.export.js')
         self.assertEqual(spec['calmjs_module_registry_names'], [])
@@ -57,12 +61,20 @@ class CliTestCase(unittest.TestCase):
 
     def test_toolchain_empty(self):
         # dict works well enough as a null toolchain
-        spec = compile_all([], toolchain=dict)
+        with pretty_logging(stream=StringIO()) as stream:
+            spec = compile_all([], toolchain=dict)
+
+        self.assertNotIn('packages []', stream.getvalue())
+        self.assertIn('no packages specified', stream.getvalue())
         self.assertTrue(isinstance(spec, Spec))
         self.assertEqual(spec['export_target'], 'calmjs.rjs.export.js')
 
     def test_toolchain_transpile_empty(self):
         # dict works well enough as a null toolchain
-        spec = compile_all([], toolchain=dict, transpile_no_indent=True)
+        with pretty_logging(stream=StringIO()) as stream:
+            spec = compile_all([], toolchain=dict, transpile_no_indent=True)
+
+        self.assertNotIn('packages []', stream.getvalue())
+        self.assertIn('no packages specified', stream.getvalue())
         self.assertTrue(isinstance(spec, Spec))
         self.assertTrue(spec['transpile_no_indent'])

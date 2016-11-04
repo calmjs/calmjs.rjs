@@ -144,12 +144,14 @@ def create_spec(
                 "automatically picked registries %r for building source map",
                 source_registries,
             )
-        else:
+        elif package_names:
             logger.warning(
-                "no calmjs module registry declarations found for packages %r "
+                "no module registry declarations found using packages %r "
                 "using acquisition method '%s'",
                 package_names, source_registry_method,
             )
+        else:
+            logger.warning('no packages specified for spec construction')
     else:
         logger.info(
             "using manually specified registries %r for building source map",
