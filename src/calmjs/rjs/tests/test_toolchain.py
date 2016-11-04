@@ -546,8 +546,17 @@ class ToolchainUnitTestCase(unittest.TestCase):
         rjs = toolchain.RJSToolchain()
         spec[rjs.rjs_bin_key] = join(tmpdir, 'r.js')
         rjs.prepare(spec)
+
         # skip the compile step as those entries are manually applied.
-        rjs.assemble(spec)
+        with pretty_logging(logger='calmjs.rjs', stream=mocks.StringIO()) as s:
+            # the parser will try to load the file
+            rjs.assemble(spec)
+
+        self.assertIn('No such file or directory', s.getvalue())
+        self.assertIn(
+            join(*('path/to/src/example/module.js'.split('/'))),
+            s.getvalue(),
+        )
 
         self.assertTrue(exists(join(tmpdir, 'build.js')))
         self.assertTrue(exists(join(tmpdir, 'config.js')))
