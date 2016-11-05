@@ -45,6 +45,10 @@ commonjs_require = """
 var mod1 = require('mod1');
 var mod2 = require("name/mod/mod2");
 var invalid = require();
+
+// test out dynamic require calls.
+var target = mod1.target;
+var dynamic = require(target);
 """
 
 requirejs_require = """
@@ -62,6 +66,10 @@ define('some test', ['require', 'module'], function(require, module) {});
 // invalid code shouldn't choke the walker.
 require();
 define();
+
+// test out dynamic define calls.
+var target = window.target;
+var dynamic = define([target], function(target_mod) {});
 """
 
 

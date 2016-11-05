@@ -123,7 +123,8 @@ def extract_all_amd_requires(text):
                         continue
 
                     for node in child.args[pos]:
-                        yield to_str(node)
+                        if isinstance(node, ast.String):
+                            yield to_str(node)
 
             # yield from visit(child)
             for value in visit(child):
