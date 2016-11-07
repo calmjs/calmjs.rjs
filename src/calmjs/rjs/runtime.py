@@ -3,9 +3,7 @@
 The calmjs runtime collection
 """
 
-from argparse import SUPPRESS
-from calmjs.argparse import StoreDelimitedList
-from calmjs.runtime import ToolchainRuntime
+from calmjs.runtime import SourcePackageToolchainRuntime
 
 from calmjs.rjs.dist import extras_calmjs_methods
 from calmjs.rjs.dist import source_map_methods_list
@@ -15,7 +13,7 @@ from calmjs.rjs.cli import default_toolchain
 from calmjs.rjs.toolchain import STUB_MISSING_WITH_EMPTY
 
 
-class RJSRuntime(ToolchainRuntime):
+class RJSRuntime(SourcePackageToolchainRuntime):
     """
     Runtime for the RJSToolchain
 
@@ -40,6 +38,17 @@ class RJSRuntime(ToolchainRuntime):
             explanation=(
                 'for this tool it will be used as the base directory to '
                 'find source files declared for bundling; '
+            ),
+        )
+
+    def init_argparser_source_registry(self, argparser):
+        super(RJSRuntime, self).init_argparser_source_registry(
+            argparser,
+            help=(
+                'comma separated list of registries to use for gathering '
+                'JavaScript sources from the given Python packages; default '
+                'behavior is to auto-select, enable verbose output to check '
+                'to see which ones were selected'
             ),
         )
 
@@ -68,21 +77,6 @@ class RJSRuntime(ToolchainRuntime):
         )
 
         argparser.add_argument(
-            '--source-registry', default=None,
-            dest='source_registries', action=StoreDelimitedList,
-            help='comma separated list of registries to use for gathering '
-                 'JavaScript sources from the given Python packages; default '
-                 'behavior is to auto-select, enable verbose output to check '
-                 'to see which ones were selected',
-        )
-
-        argparser.add_argument(
-            '--source-registries', default=None,
-            dest='source_registries', action=StoreDelimitedList,
-            help=SUPPRESS,
-        )
-
-        argparser.add_argument(
             '--source-registry-method', default='all',
             dest='source_registry_method',
             choices=sorted(calmjs_module_registry_methods.keys()),
@@ -104,17 +98,13 @@ class RJSRuntime(ToolchainRuntime):
             help='disable indentation of transpile sources',
         )
 
-        argparser.add_argument(
-            'package_names', help='names of the python package to use',
-            metavar='package_names', nargs='+',
-        )
-
     def create_spec(
-            self, package_names=(), export_target=None,
+            self, source_package_names=(), export_target=None,
             stub_missing_with_empty=False,
             working_dir=None,
             build_dir=None,
-            source_registry_method='all', source_registries=None,
+            calmjs_module_registry_names=None,
+            source_registry_method='all',
             source_map_method='all', bundle_map_method='all',
             transpile_no_indent=False,
             toolchain=None, **kwargs):
@@ -123,14 +113,16 @@ class RJSRuntime(ToolchainRuntime):
         that get passed down onto the toolchain.
         """
 
+        # the spec takes a different set of keys as it will ultimately
+        # derive the final values for the standardized spec keys.
         return create_spec(
-            package_names=package_names,
+            package_names=source_package_names,
             export_target=export_target,
             stub_missing_with_empty=stub_missing_with_empty,
             working_dir=working_dir,
             build_dir=build_dir,
             source_registry_method=source_registry_method,
-            source_registries=source_registries,
+            source_registries=calmjs_module_registry_names,
             source_map_method=source_map_method,
             bundle_map_method=bundle_map_method,
             transpile_no_indent=transpile_no_indent,
