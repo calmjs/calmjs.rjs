@@ -407,9 +407,21 @@ integration with other Python/Node.js packages.
 When calling ``calmjs rjs`` on a package, got ``ENOENT``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Typically this is caused by the package being used not declaring the
-needed ``extras_calmjs`` for the appropriate packages within the correct
-section.
+Typically this is caused by source files from the source package or
+registry invoking ``require`` a JavaScript module that is not available
+in the build directory.  One possible cause through the ``calmjs``
+framework is that the Python package failed to declare ``extras_calmjs``
+that it might require, or that explicit map method and/or source
+registry that was selected did not result in all required sources be
+loaded into the build directory.
+
+If the missing source files are intended, applying the ``--empty`` or
+the ``-e`` flag to the ``rjs`` tool will stub out all the missing
+modules from the bundle; do note that this will result in the generated
+artifact bunlde not having all the required modules for its execution.
+The resulting artifact bundle should be used in conjunction with the
+other artifact bundles that provide the result of the required
+dependencies.
 
 WARNING: Couldn't write lextab module <module 'slimit.lextab' ...>
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
