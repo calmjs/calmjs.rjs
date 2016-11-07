@@ -163,13 +163,49 @@ class RequireJSHelperTestCase(unittest.TestCase):
     def test_extract_all_amd_requires(self):
         self.assertEqual([
             'defined/alternate/module',
-            'module',
-            'require',
             'some.weird.module',
             'some/dummy/module1',
             'some/dummy/module2',
             'some/dummy/module3',
         ], sorted(set(requirejs.extract_all_amd_requires(requirejs_require))))
+
+    def test_extract_all_amd_requires_skip_reserved(self):
+        src = (
+            "define('some/test', ['require', 'exports', 'module'], "
+            "function(require, exports, module) {});"
+        )
+        self.assertEqual(
+            [],
+            sorted(set(requirejs.extract_all_amd_requires(src)))
+        )
+
+        src = (
+            "define('some/test', ['require', 'exports', 'module', 'mod1'], "
+            "function(require, exports, module, mod1) {});"
+        )
+        self.assertEqual(
+            ['mod1'],
+            sorted(set(requirejs.extract_all_amd_requires(src)))
+        )
+
+        # an actual real world one with the loader plugin
+        src = "define('text', ['module'], function(module) {});"
+        self.assertEqual(
+            [],
+            sorted(set(requirejs.extract_all_amd_requires(src)))
+        )
+
+        src = "define('alt/text', ['module', 'alt'], function(module) {});"
+        self.assertEqual(
+            ['alt'],
+            sorted(set(requirejs.extract_all_amd_requires(src)))
+        )
+
+        src = "define('alt/text', ['alt', 'module'], function(a, module) {});"
+        self.assertEqual(
+            ['alt'],
+            sorted(set(requirejs.extract_all_amd_requires(src)))
+        )
 
     def test_extract_read_from_file(self):
         tmpdir = mkdtemp(self)
@@ -183,8 +219,6 @@ class RequireJSHelperTestCase(unittest.TestCase):
 
         self.assertEqual([
             'defined/alternate/module',
-            'module',
-            'require',
             'some.weird.module',
             'some/dummy/module1',
             'some/dummy/module2',

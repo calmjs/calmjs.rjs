@@ -86,6 +86,9 @@ def extract_all_amd_requires(text):
     """
 
     f_names = ('require', 'define',)
+    # reserved modules
+    define_wrapped = dict(enumerate(('require', 'exports', 'module',)))
+    reserved = ['module']
 
     def visit(node):
         for child in node:
@@ -122,9 +125,12 @@ def extract_all_amd_requires(text):
                     if not cond:
                         continue
 
-                    for node in child.args[pos]:
+                    for i, node in enumerate(child.args[pos]):
                         if isinstance(node, ast.String):
-                            yield to_str(node)
+                            result = to_str(node)
+                            if ((result not in reserved) and (
+                                    result != define_wrapped.get(i))):
+                                yield result
 
             # yield from visit(child)
             for value in visit(child):
