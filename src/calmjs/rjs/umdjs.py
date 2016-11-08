@@ -95,12 +95,16 @@ UMD_NODE_AMD_FOOTER = """
 
 }(
     typeof module === 'object' &&
+    /* istanbul ignore next */
     module.exports &&
+    /* istanbul ignore next */
     typeof define !== 'function' ?
+        /* istanbul ignore next */
         function (factory) {
             module.exports = factory(require, exports, module);
         }
     :
+        /* istanbul ignore next */
         define
 ));
 """
