@@ -147,37 +147,38 @@ def _transpile_generic_to_umd_node_amd_compat_rjs(spec, reader, writer):
     level = UMD_NODE_AMD_INDENT
     indent = '' if spec.get('transpile_no_indent') else ' ' * level
     _states = {
-        'pad': 3,  # length of the header to trac
+        'pad': 3,  # length of the header to track
     }
 
     def write_line(line):
         contents = line.strip()
         if _states['pad']:
             if not contents:
+                writer.discard(line)
                 _states['pad'] -= 1
                 return
             _states['pad'] = 0
         if contents:
-            writer.write(indent)
+            writer.write_padding(indent)
         writer.write(line)
 
     line = reader.readline()
     if line.strip() in ("'use strict';", '"use strict";'):
         header_lines = iter(UMD_NODE_AMD_HEADER.splitlines(True))
-        writer.write(next(header_lines))
-        writer.write(next(header_lines))
-        writer.write(indent)
+        writer.write_padding(next(header_lines))
+        writer.write_padding(next(header_lines))
+        writer.write_padding(indent)
         writer.write(line)
-        writer.write(next(header_lines))
+        writer.write_padding(next(header_lines))
     else:
-        writer.write(UMD_NODE_AMD_HEADER)
+        writer.write_padding(UMD_NODE_AMD_HEADER)
         write_line(line)
 
     while line:
         line = reader.readline()
         write_line(line)
 
-    writer.write(UMD_NODE_AMD_FOOTER)
+    writer.write_padding(UMD_NODE_AMD_FOOTER)
 
 
 def _rjs_transpiler(spec, reader, writer):

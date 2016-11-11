@@ -11,6 +11,7 @@ from io import StringIO
 
 from calmjs.toolchain import Spec
 from calmjs.toolchain import CONFIG_JS_FILES
+from calmjs.vlqsm import SourceWriter
 from calmjs.npm import get_npm_version
 from calmjs.utils import pretty_logging
 
@@ -110,7 +111,7 @@ class TranspilerTestCase(unittest.TestCase):
             '\n'
             'exports.dummy = dummy;\n'
         )
-        target = StringIO()
+        target = SourceWriter(StringIO())
         spec = Spec()
 
         toolchain._transpile_generic_to_umd_node_amd_compat_rjs(
@@ -132,7 +133,7 @@ class TranspilerTestCase(unittest.TestCase):
             '\n'
             'exports.dummy = dummy;\n'
         )
-        target = StringIO()
+        target = SourceWriter(StringIO())
         spec = Spec()
 
         toolchain._transpile_generic_to_umd_node_amd_compat_rjs(
@@ -171,7 +172,7 @@ class TranspilerTestCase(unittest.TestCase):
             '\n' +
             original + '\n'
         )
-        target = StringIO()
+        target = SourceWriter(StringIO())
         spec = Spec(transpile_no_indent=True)
 
         toolchain._transpile_generic_to_umd_node_amd_compat_rjs(
@@ -192,7 +193,7 @@ class TranspilerTestCase(unittest.TestCase):
             '\n'
             'exports.dummy = dummy;\n'
         )
-        target = StringIO()
+        target = SourceWriter(StringIO())
         spec = Spec()
 
         toolchain._transpile_generic_to_umd_node_amd_compat_rjs(
@@ -207,7 +208,10 @@ class TranspilerTestCase(unittest.TestCase):
             '        return exports;',
         ])
 
-        target_main = StringIO()
+        self.assertEqual(target.mappings[:7], [
+            [], [], [], [(8, 0, 1, 0)], [(0, 0, 1, 0)], [(8, 0, 1, 0)], []])
+
+        target_main = SourceWriter(StringIO())
         toolchain._rjs_transpiler(spec, source, target_main)
         self.assertEqual(target.getvalue(), target_main.getvalue())
 
