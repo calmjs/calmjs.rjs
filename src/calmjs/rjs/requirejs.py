@@ -150,6 +150,18 @@ def extract_defines_with_deps(text):
     return list(extract_defines_with_deps_visitor([('<text>', tree)]))
 
 
+def extract_defines_with_deps_from_paths(paths):
+    items = []
+
+    def append_tree(path, text):
+        items.append((path, parse(text)))
+
+    for path in paths:
+        process_path(path, partial(append_tree, path))
+
+    return list(extract_defines_with_deps_visitor(items))
+
+
 def extract_all_amd_requires(text):
     """
     Extract all require and define calls from unbundled JavaScript

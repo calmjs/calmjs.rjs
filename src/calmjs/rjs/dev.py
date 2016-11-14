@@ -24,7 +24,7 @@ except ImportError:  # pragma: no cover
 
 from calmjs.rjs.registry import RJS_LOADER_PLUGIN_REGISTRY
 from calmjs.rjs.registry import RJS_LOADER_PLUGIN_REGISTRY_NAME
-from calmjs.rjs.requirejs import extract_defines
+from calmjs.rjs.requirejs import extract_defines_with_deps_from_paths
 from calmjs.rjs.umdjs import UMD_REQUIREJS_JSON_EXPORT_HEADER
 from calmjs.rjs.umdjs import UMD_REQUIREJS_JSON_EXPORT_FOOTER
 
@@ -70,22 +70,7 @@ def process_artifacts(paths):
 
     # TODO figure out how to have a flag to disable this feature for use
     # cases where this is undesirable (e.g. performance reasons).
-    deps = []
-
-    for path in paths:
-        try:
-            with open(path) as fd:
-                text = fd.read()
-        except (OSError, IOError):
-            logger.warning("specified artifact '%s' cannot be read", path)
-            continue
-
-        try:
-            deps.extend(extract_defines(text))
-        except SyntaxError as e:
-            logger.error("syntax error in '%s': %s", path, e)
-
-    return deps
+    return extract_defines_with_deps_from_paths(paths)
 
 
 def karma_requirejs(spec):

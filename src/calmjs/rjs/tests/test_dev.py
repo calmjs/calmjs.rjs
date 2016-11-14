@@ -47,8 +47,8 @@ class ProcessArtifactsTestCase(unittest.TestCase):
         with pretty_logging(stream=StringIO()) as s:
             result = process_artifacts([source1, source2])
 
-        self.assertEqual(result, ['source1/mod1', 'source1/mod2'])
-        self.assertIn('cannot be read', s.getvalue())
+        self.assertEqual(sorted(result), ['source1/mod1', 'source1/mod2'])
+        self.assertIn('failed to read', s.getvalue())
         self.assertIn(source2, s.getvalue())
         self.assertNotIn(source1, s.getvalue())
 
@@ -80,7 +80,7 @@ class ProcessArtifactsTestCase(unittest.TestCase):
 
         with pretty_logging(stream=StringIO()) as s:
             result = process_artifacts([source1, source2, source3])
-        self.assertEqual(result, [
+        self.assertEqual(sorted(result), [
             'source1/mod1', 'source1/mod2', 'source3/mod1'])
         self.assertIn('syntax error in', s.getvalue())
         self.assertIn(source2, s.getvalue())
