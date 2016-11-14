@@ -41,6 +41,75 @@ artifact = """
 }());
 """
 
+artifact_multiple1 = """
+(function () {(function(define) {
+    define('lib1',['require','exports','module','lib2'],function (
+        require, exports, module
+    ) {
+        var lib2 = require('lib2');
+    });
+})();
+
+define('text',['module'], function (module) {
+});
+
+define('lib2',['require','exports','module'],function () {
+});
+
+}());
+"""
+
+artifact_multiple2 = """
+define('lib1',[],function () {
+    require('lib2');
+    require('lib3');
+});
+
+define('lib2',[],function () {
+    require('lib3');
+});
+
+define('lib4',[],function () {
+    require('lib1');
+});
+
+define('lib3',[],function () {
+});
+"""
+
+# missing case
+artifact_multiple3 = """
+define('lib1',[],function () {
+    require('lib4');
+    require('lib2');
+    require('missing');
+});
+
+define('lib2',[],function () {
+    require('lib4');
+    require('missing');
+});
+
+define('lib4',[],function () {
+    require('missing');
+});
+"""
+
+# redefinition case
+artifact_multiple4 = """
+define('lib1',[],function () {
+    require('lib3');
+});
+
+define('lib1',[],function () {
+    require('missing');
+});
+
+define('lib3',[],function () {
+});
+"""
+
+
 commonjs_require = """
 var mod1 = require('mod1');
 var mod2 = require("name/mod/mod2");
@@ -149,6 +218,34 @@ class RequireJSHelperTestCase(unittest.TestCase):
 
     def test_extract_defines(self):
         self.assertEqual(['lib1', 'lib2'], requirejs.extract_defines(artifact))
+
+    def test_extract_defines_amd_artifact1(self):
+        result = requirejs.extract_defines_with_deps(artifact_multiple1)
+        # since text has no dependencies, it can be anywhere.
+        result.remove('text')
+        self.assertEqual(['lib2', 'lib1'], result)
+
+    def test_extract_defines_amd_artifact2(self):
+        self.assertEqual([
+            'lib3', 'lib2', 'lib1', 'lib4'
+        ], requirejs.extract_defines_with_deps(artifact_multiple2))
+
+    def test_extract_defines_amd_artifact3_missing(self):
+        with pretty_logging(stream=StringIO()) as stream:
+            result = requirejs.extract_defines_with_deps(artifact_multiple3)
+        self.assertEqual(['lib4', 'lib2', 'lib1'], result)
+        s = stream.getvalue()
+        self.assertIn("module 'missing' required but seems to be missing", s)
+        self.assertIn("WARNING", s)
+
+    def test_extract_defines_amd_artifact4_dupe(self):
+        with pretty_logging(stream=StringIO()) as stream:
+            result = requirejs.extract_defines_with_deps(artifact_multiple4)
+        self.assertEqual(['lib3', 'lib1'], result)
+        s = stream.getvalue()
+        self.assertNotIn("'missing' required but seems to be missing", s)
+        self.assertIn("module 'lib1' defined again in '<text>'", s)
+        self.assertIn("WARNING", s)
 
     def test_extract_requires(self):
         self.assertEqual(

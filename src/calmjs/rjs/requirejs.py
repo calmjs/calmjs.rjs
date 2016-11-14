@@ -23,6 +23,25 @@ def to_str(ast_string):
     return strip_slashes(strip_quotes(ast_string.value))
 
 
+def extract_function_argument_visitor(
+        node, f_name, f_argn, f_argt, visitor=None):
+
+    if visitor is None:
+        visitor = extract_function_argument_visitor
+
+    for child in node:
+        # only skimming the top function, not going in.
+        if isinstance(child, ast.FunctionCall) and isinstance(
+                child.identifier, ast.Identifier):
+            if child.identifier.value == f_name and f_argn < len(
+                    child.args) and isinstance(child.args[f_argn], f_argt):
+                yield to_str(child.args[f_argn])
+        else:
+            # yield from visit(child)
+            for value in visitor(child, f_name, f_argn, f_argt):
+                yield value
+
+
 def extract_function_argument(text, f_name, f_argn, f_argt=ast.String):
     """
     Extract a specific argument from a specific function name.
@@ -39,21 +58,9 @@ def extract_function_argument(text, f_name, f_argn, f_argt=ast.String):
         The argument type from slimit.ast; default: slimit.ast.String
     """
 
-    def visit(node):
-        for child in node:
-            # only skimming the top function, not going in.
-            if isinstance(child, ast.FunctionCall) and isinstance(
-                    child.identifier, ast.Identifier):
-                if child.identifier.value == f_name and f_argn < len(
-                        child.args) and isinstance(child.args[f_argn], f_argt):
-                    yield to_str(child.args[f_argn])
-            else:
-                # yield from visit(child)
-                for value in visit(child):
-                    yield value
-
     tree = parse(text)
-    return list(visit(tree))
+    return list(extract_function_argument_visitor(
+        tree, f_name, f_argn, f_argt))
 
 
 def extract_defines(text):
@@ -77,6 +84,70 @@ def extract_requires(text):
     """
 
     return extract_function_argument(text, 'require', 0)
+
+
+def extract_defines_with_deps_visitor(node_map):
+    """
+    For the execution of tests against a pre-built artifact, there is no
+    way to tell requirejs that all the modules are already available
+    synchronously through the provided artifact files.  This function
+    will build a dictionary with keys being the module name and value
+    being a list of module names it requires synchronously.
+    """
+
+    defines = {}
+    yielded = set()
+
+    def extract_defines_visitor(node, node_name):
+        f_name = 'define'
+        f_argn = 0
+        f_argt = ast.String
+
+        for child in node:
+            if isinstance(child, ast.FunctionCall) and isinstance(
+                    child.identifier, ast.Identifier):
+                if child.identifier.value == f_name and f_argn < len(
+                        child.args) and isinstance(child.args[f_argn], f_argt):
+                    modname = to_str(child.args[f_argn])
+                    moddeps = list(extract_function_argument_visitor(
+                        child, 'require', 0, ast.String))
+                    if modname in defines:
+                        logger.warning(
+                            "module '%s' defined again in '%s'",
+                            modname, node_name,
+                        )
+                        # don't do anything more since requirejs doesn't
+                        # permit redefinition in general.
+                        continue
+                    defines[modname] = moddeps
+            else:
+                extract_defines_visitor(child, node_name)
+
+    # first flatten it into a dependency map
+    for node_name, node in node_map:
+        extract_defines_visitor(node, node_name)
+
+    # then process that map to generate the values in correct order.
+    def process_defines(modname):
+        if modname not in yielded:
+            for modname_ in defines.get(modname, ()):
+                for mn in process_defines(modname_):
+                    yield mn
+            if modname in defines:
+                yielded.add(modname)
+                yield modname
+            else:
+                logger.warning(
+                    "module '%s' required but seems to be missing", modname)
+
+    for modname in defines.keys():
+        for mn in process_defines(modname):
+            yield mn
+
+
+def extract_defines_with_deps(text):
+    tree = parse(text)
+    return list(extract_defines_with_deps_visitor([('<text>', tree)]))
 
 
 def extract_all_amd_requires(text):
