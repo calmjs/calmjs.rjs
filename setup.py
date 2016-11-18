@@ -54,12 +54,12 @@ setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=[
-        'calmjs>=2.0.0.dev,<3',
-        'slimit',
+        'calmjs>=2.0.0,<3',
+        'slimit>=0.8.0',
     ],
     extras_require={
         'dev': [
-            'calmjs.dev>=1.0.0.dev,<2',
+            'calmjs.dev>=1.0.0,<2',
         ],
     },
     entry_points={
