@@ -59,8 +59,12 @@ before_install:
 
 install:
   - pip install nose coverage flake8
-  # must be installed first, as this writes package_json into egg-info
-  - pip install calmjs
+  # This typically will work for standard python, but pypy for some
+  # reason will choke hard
+  # - python setup.py develop easy_install calmjs.rjs[dev]
+  # - python setup.py egg_info
+  # Use pypy friendly installation instructions
+  - pip install calmjs calmjs.dev
   - python setup.py develop
 script:
   - flake8 setup.py src
