@@ -4,7 +4,7 @@ from setuptools import find_packages
 version = '1.0.0'
 
 classifiers = """
-Development Status :: 4 - Beta
+Development Status :: 5 - Production/Stable
 Environment :: Console
 Intended Audience :: Developers
 License :: OSI Approved :: GNU General Public License v2 or later (GPLv2+)
@@ -38,7 +38,14 @@ long_description = (
 setup(
     name='calmjs.rjs',
     version=version,
-    description="",
+    description=(
+        "Package for the integration of RequireJS into a Python "
+        "environment via the Calmjs framework, to provide a reproducible "
+        "workflow for the generation of deployable artifacts from "
+        "JavaScript source code provided by Python packages in "
+        "conjunction with standard JavaScript or Node.js packages sourced "
+        "from npm or other similar package repositories."
+    ),
     long_description=long_description,
     # Get more strings from
     # http://pypi.python.org/pypi?%3Aaction=list_classifiers
