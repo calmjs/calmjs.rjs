@@ -1037,23 +1037,15 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         self.assertTrue(exists(export_target))
 
 
-@unittest.skipIf(*skip_full_toolchain_test())
+@unittest.skipIf(karma is None, 'calmjs.dev or its karma module not available')
 class KarmaToolchainIntegrationTestCase(unittest.TestCase):
     """
-    Test out the full toolchain, involving requirejs completely along
+    Test out the karma toolchain, involving requirejs completely along
     with the karma testing framework as defined by calmjs.dev
     """
 
-    # Ensure that requirejs is properly installed through the calmjs
-    # framework and specification for this package.  This environment
-    # will be reused for the duration for this test.
-
     @classmethod
     def setUpClass(cls):
-        # nosetest will still execute setUpClass, so the test condition
-        # will need to be checked here also.
-        if skip_full_toolchain_test()[0]:  # pragma: no cover
-            return
         cls._cwd = os.getcwd()
         utils.setup_class_install_environment(
             cls, Driver, ['calmjs.rjs', 'calmjs.dev'], production=False)
