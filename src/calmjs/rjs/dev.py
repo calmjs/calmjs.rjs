@@ -4,6 +4,7 @@ Integration with various tools proided by the calmjs.dev package
 """
 
 import logging
+from os.path import basename
 from os.path import join
 from os.path import sep
 
@@ -18,6 +19,8 @@ from calmjs.utils import json_dumps
 
 try:
     from calmjs.dev.karma import BEFORE_KARMA
+    from calmjs.dev.toolchain import TEST_FILENAME_PREFIX
+    from calmjs.dev.toolchain import TEST_FILENAME_PREFIX_DEFAULT
 except ImportError:  # pragma: no cover
     # Package not available; None is the advice blackhole
     BEFORE_KARMA = None
@@ -155,8 +158,15 @@ def karma_requirejs(spec):
         # TODO have a flag of some sort for flagging this as optional.
         deps.extend(process_artifacts(spec.get(ARTIFACT_PATHS)))
 
-    # Include tests separately
-    tests = sorted(test_module_paths_map.keys())
+    test_prefix = spec.get(TEST_FILENAME_PREFIX, TEST_FILENAME_PREFIX_DEFAULT)
+    tests = []
+    # Process tests separately; include them iff the filename starts
+    # with test, otherwise they are just provided as dependency modules.
+    for k, v in test_module_paths_map.items():
+        if basename(v).startswith(test_prefix):
+            tests.append(k)
+        else:
+            deps.append(k)
 
     test_script_path = spec['karma_requirejs_test_script'] = join(
         build_dir, 'karma_test_init.js')
