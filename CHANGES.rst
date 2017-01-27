@@ -1,6 +1,14 @@
 Changelog
 =========
 
+1.0.1 (2017-01-27)
+------------------
+
+- Load the non-test files in deps also, instead as part of the tests to
+  avoid automatic inclusion.
+- Test files should start with the name test as per convention.
+
+
 1.0.0 (2016-11-18)
 ------------------
 

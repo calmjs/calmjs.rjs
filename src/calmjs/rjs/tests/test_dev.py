@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import unittest
+import json
 from os.path import exists
 from os.path import join
 
@@ -22,6 +23,7 @@ from calmjs.utils import pretty_logging
 
 from calmjs.rjs.dev import karma_requirejs
 from calmjs.rjs.dev import process_artifacts
+from calmjs.rjs.ecma import parse
 from calmjs.rjs.registry import RJS_LOADER_PLUGIN_REGISTRY_NAME
 
 from calmjs.testing.mocks import StringIO
@@ -180,3 +182,35 @@ class KarmaTestCase(unittest.TestCase):
                 'included': False,
             },
         ])
+
+    def test_karma_test_files_located(self):
+        karma_config = karma.build_base_config()
+        karma_config['files'] = ['example/package/lib.js']
+        spec = Spec(
+            karma_config=karma_config,
+            build_dir=mkdtemp(self),
+            rjs_loader_plugin_registry=get(RJS_LOADER_PLUGIN_REGISTRY_NAME),
+            export_module_names=['preexported'],
+            test_module_paths_map={
+                'example/package/tests/test_some_module':
+                    '/src/example/package/tests/test_some_module.js',
+                'example/package/tests/some_test_data':
+                    '/src/example/package/tests/some_test_data.js',
+            },
+        )
+
+        with pretty_logging(stream=StringIO()):
+            karma_requirejs(spec)
+
+        with open(spec['karma_requirejs_test_script']) as fd:
+            script = parse(fd.read())
+
+        # this is the node for the json in the build file
+        deps = json.loads(
+            script.children()[0].children()[0].initializer.to_ecma())
+        tests = json.loads(
+            script.children()[1].children()[0].initializer.to_ecma())
+
+        self.assertEqual(['example/package/tests/test_some_module'], tests)
+        self.assertEqual(
+            ['preexported', 'example/package/tests/some_test_data'], deps)
