@@ -235,6 +235,8 @@ class RJSToolchain(Toolchain):
         export_module_names = []
 
         for modname, source, target, modpath in entries:
+            if source == EMPTY or modpath == EMPTY:
+                continue
             plugin_name, arguments = modname.split('!', 1)
             handler = spec[RJS_LOADER_PLUGIN_REGISTRY].get_record(plugin_name)
             p_pm, p_pt, m_ns = handler(

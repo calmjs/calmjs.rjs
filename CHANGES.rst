@@ -1,6 +1,12 @@
 Changelog
 =========
 
+1.0.2 (Unreleased)
+------------------
+
+- Corrected the issue where plugins that have been unmapped using the
+  ``empty:`` scheme triggering ``FileNotFoundError``.
+
 1.0.1 (2017-01-27)
 ------------------
 
