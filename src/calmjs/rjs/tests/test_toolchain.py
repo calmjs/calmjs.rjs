@@ -361,7 +361,6 @@ class ToolchainCompilePluginTestCase(unittest.TestCase):
 
     def test_compile_plugin_empty(self):
         build_dir = utils.mkdtemp(self)
-        src = 'empty:'
         target = 'target.txt'
 
         rjs = toolchain.RJSToolchain()
