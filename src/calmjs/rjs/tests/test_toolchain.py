@@ -359,6 +359,31 @@ class ToolchainCompilePluginTestCase(unittest.TestCase):
                 ('unregistered/mod!target.txt', src, target, 'target.txt'),
             ])
 
+    def test_compile_plugin_empty(self):
+        build_dir = utils.mkdtemp(self)
+        src = 'empty:'
+        target = 'target.txt'
+
+        rjs = toolchain.RJSToolchain()
+        spec = {
+            'build_dir': build_dir,
+            toolchain.RJS_LOADER_PLUGIN_REGISTRY: rjs.loader_plugin_registry,
+        }
+
+        # Should result in no exceptions with either cases.
+        # Normally, both source and modpath will become the same if the
+        # value is `empty:`.
+        rjs.compile_plugin(spec, [
+            # modname, source, target, modpath
+            ('text!target.txt', 'empty:', target, 'target.txt'),
+            ('text!target.txt', 'source.txt', target, 'empty:'),
+            ('text!target.txt', 'empty:', target, 'empty:'),
+        ])
+
+        # Nothing should have been written at the end of that.
+        self.assertFalse(exists(join(build_dir, target)))
+        self.assertFalse(exists(join(build_dir, 'empty:')))
+
 
 class ToolchainBaseUnitTestCase(unittest.TestCase):
     """
