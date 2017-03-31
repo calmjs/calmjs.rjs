@@ -489,6 +489,15 @@ operations that involve working with the JavaScript source tree has
 significant performance penalties.  This information also applies for
 the ``slimit.yacctab`` module.
 
+RJSRuntimeError: unable to locate 'r.js'
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This means the current Node.js environment is missing the requirejs
+package from |npm|; either install it manually with it or through
+|calmjs| on this package.  If a given Python package is required to use
+requirejs to generate the package, its ``package_json`` should declare
+that, or declare dependency on ``calmjs.rjs``.
+
 UserWarning: Unknown distribution option:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
