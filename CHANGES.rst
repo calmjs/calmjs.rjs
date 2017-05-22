@@ -1,7 +1,7 @@
 Changelog
 =========
 
-1.0.2 (Unreleased)
+1.0.2 (2017-05-22)
 ------------------
 
 - Corrected the issue where plugins that have been unmapped using the
