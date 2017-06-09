@@ -382,7 +382,7 @@ class RJSToolchain(Toolchain):
 
         # These are the configured paths
         configured_paths = {}
-        # as a last resort, all targets loaded will have their soruce
+        # as a last resort, all targets loaded will have their source
         # tree inspected for module names they need; this is done so
         # that the r.js bundler will not choke when it finds missing
         # paths.
@@ -428,7 +428,7 @@ class RJSToolchain(Toolchain):
         missing_modname = (
             set(parsed_required_paths) - set(configured_paths) - emptied)
 
-        # now merge the results together and figure out the logger.
+        # now merge the results together and figure out the log level.
         if spec.get(STUB_MISSING_WITH_EMPTY):
             missing_logger = logger.info
             requirejs_config['paths'].update(parsed_required_paths)
