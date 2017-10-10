@@ -15,10 +15,6 @@ umdjs
     Universal Module Definition headers and footers, sourced from the
     UMD repository.
 
-ecma
-    Provides the ECMAScript language family parsing helper functions
-    through the ``slimit`` package.
-
 requirejs
     Various utility functions for making ``requirejs``/``r.js`` work
     better, so that it can actually be used with minimum pain.

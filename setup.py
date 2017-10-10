@@ -63,8 +63,8 @@ setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=[
-        'calmjs>=2.0.0,<3',
-        'slimit>=0.8.0',
+        'calmjs>=2.0.0,<4',
+        'calmjs.parse>=1.0.0,<2',
     ],
     extras_require={
         'dev': [

@@ -40,6 +40,7 @@ from os.path import isdir
 from os.path import isfile
 from subprocess import call
 
+from calmjs.interrogate import extract_module_imports
 from calmjs.registry import get
 from calmjs.toolchain import Toolchain
 from calmjs.toolchain import CONFIG_JS_FILES
@@ -55,7 +56,6 @@ from .exc import RJSExitError
 from .registry import RJS_LOADER_PLUGIN_REGISTRY
 from .registry import RJS_LOADER_PLUGIN_REGISTRY_KEY
 from .registry import RJS_LOADER_PLUGIN_REGISTRY_NAME
-from .requirejs import extract_all_amd_requires
 from .requirejs import process_path
 from .umdjs import UMD_NODE_AMD_HEADER
 from .umdjs import UMD_NODE_AMD_FOOTER
@@ -415,7 +415,7 @@ class RJSToolchain(Toolchain):
                         # syntax error.
                         parsed_required_paths.update({
                             modname: EMPTY for modname in (process_path(
-                                full_target, extract_all_amd_requires) or [])
+                                full_target, extract_module_imports) or [])
                         })
                         continue
 

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import unittest
 import json
+from codecs import open
 from os.path import exists
 from os.path import join
 
@@ -16,6 +17,7 @@ try:
 except ImportError:  # pragma: no cover
     karma = None
 
+from calmjs.parse import es5
 from calmjs.exc import ToolchainAbort
 from calmjs.registry import get
 from calmjs.toolchain import Spec
@@ -23,7 +25,6 @@ from calmjs.utils import pretty_logging
 
 from calmjs.rjs.dev import karma_requirejs
 from calmjs.rjs.dev import process_artifacts
-from calmjs.rjs.ecma import parse
 from calmjs.rjs.registry import RJS_LOADER_PLUGIN_REGISTRY_NAME
 
 from calmjs.testing.mocks import StringIO
@@ -202,14 +203,12 @@ class KarmaTestCase(unittest.TestCase):
         with pretty_logging(stream=StringIO()):
             karma_requirejs(spec)
 
-        with open(spec['karma_requirejs_test_script']) as fd:
-            script = parse(fd.read())
+        with open(spec['karma_requirejs_test_script'], encoding='utf-8') as fd:
+            script = es5(fd.read())
 
         # this is the node for the json in the build file
-        deps = json.loads(
-            script.children()[0].children()[0].initializer.to_ecma())
-        tests = json.loads(
-            script.children()[1].children()[0].initializer.to_ecma())
+        deps = json.loads(str(script.children()[0].children()[0].initializer))
+        tests = json.loads(str(script.children()[1].children()[0].initializer))
 
         self.assertEqual(['example/package/tests/test_some_module'], tests)
         self.assertEqual(

@@ -4,22 +4,26 @@ from __future__ import unicode_literals
 import unittest
 import json
 import os
+import codecs
 from os.path import exists
 from os.path import join
+from functools import partial
 
 from io import StringIO
 
+from calmjs.parse import es5
 from calmjs.toolchain import Spec
 from calmjs.toolchain import CONFIG_JS_FILES
 from calmjs.vlqsm import SourceWriter
 from calmjs.npm import get_npm_version
 from calmjs.utils import pretty_logging
 
-from calmjs.rjs.ecma import parse
 from calmjs.rjs import toolchain
 
 from calmjs.testing import utils
 from calmjs.testing import mocks
+
+open = partial(codecs.open, encoding='utf-8')
 
 
 class SpecUpdateSourceMapTestCase(unittest.TestCase):
@@ -734,18 +738,19 @@ class ToolchainUnitTestCase(unittest.TestCase):
         # only checking the build_manifest version, as the node config
         # version is not that much different.
         with open(build_manifest_path) as fd:
-            build_tree = parse(fd.read())
+            build_tree = es5(fd.read())
 
         # this is the node for the json in the build file
-        build_js = json.loads(build_tree.children()[0].children()[0].to_ecma())
+        build_js = json.loads(str(build_tree.children()[0].expr.expr))
 
         with open(requirejs_config_js) as fd:
-            config_tree = parse(fd.read())
+            config_tree = es5(fd.read())
 
         # this is the node for json in the config file
-        config_js = json.loads(
-            config_tree.children()[0].children()[0].children()[0].children(
-                )[2].children()[0].children()[1].to_ecma())
+        config_js = json.loads(str(
+            config_tree.children()[0].expr.expr.identifier.children(
+            )[2].children()[0].initializer.expr
+        ))
 
         return build_js, config_js
 
@@ -756,7 +761,8 @@ class ToolchainUnitTestCase(unittest.TestCase):
         self.assertIn('ERROR', s.getvalue())
         self.assertIn(
             "source file(s) referenced modules that are missing in the "
-            "build directory: 'jquery', 'some.pylike.module', 'underscore'",
+            "build directory: %r, %r, %r" % (
+                'jquery', 'some.pylike.module', 'underscore'),
             s.getvalue()
         )
 
@@ -776,7 +782,8 @@ class ToolchainUnitTestCase(unittest.TestCase):
         self.assertNotIn('ERROR', s.getvalue())
         self.assertIn(
             "source file(s) referenced modules that are missing in the "
-            "build directory: 'jquery', 'some.pylike.module', 'underscore'",
+            "build directory: %r, %r, %r" % (
+                'jquery', 'some.pylike.module', 'underscore'),
             s.getvalue()
         )
 
