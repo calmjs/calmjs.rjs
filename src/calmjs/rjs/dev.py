@@ -126,7 +126,7 @@ def karma_requirejs(spec):
         plugin_registry = get(RJS_LOADER_PLUGIN_REGISTRY_NAME)
 
     test_module_paths_map = spec.get(TEST_MODULE_PATHS_MAP, {})
-    test_conf = plugin_registry.modname_target_mapping_to_config_paths(
+    test_conf = plugin_registry.modname_targetpath_mapping_to_config_paths(
         test_module_paths_map)
 
     # Ensure '/absolute' is prefixed like so to eliminate spurious error

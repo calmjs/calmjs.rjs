@@ -122,7 +122,7 @@ class MappingConversionTestCase(unittest.TestCase):
             'calmjs.rjs.loader_plugin', _working_set=working_set)
 
     def test_standard_modpath_source(self):
-        result = self.registry.modname_source_mapping_to_config_paths({
+        result = self.registry.modname_sourcepath_mapping_to_config_paths({
             'foo/bar': '/src/foo/bar.js',
             'foo/baz': '/src/foo/baz.js',
         })
@@ -133,7 +133,7 @@ class MappingConversionTestCase(unittest.TestCase):
         self.assertEqual(sorted(result.keys()), ['paths'])
 
     def test_standard_modpath_target(self):
-        result = self.registry.modname_target_mapping_to_config_paths({
+        result = self.registry.modname_targetpath_mapping_to_config_paths({
             'bar/bar': '/src/bar/baz.js',
             'foo/baz': '/src/foo/baz.js',
         })
@@ -143,7 +143,7 @@ class MappingConversionTestCase(unittest.TestCase):
         }, result['paths'])
 
     def test_standard_modpath_plugins(self):
-        result = self.registry.modname_source_mapping_to_config_paths({
+        result = self.registry.modname_sourcepath_mapping_to_config_paths({
             'text!foo/bar': 'text!/src/foo/bar',
             'text!example.ns/baz.txt': 'text!/src/example/ns/baz.txt',
         })
@@ -155,7 +155,7 @@ class MappingConversionTestCase(unittest.TestCase):
 
     def test_standard_modpath_plugin_not_found(self):
         with pretty_logging(stream=StringIO()) as stream:
-            result = self.registry.modname_source_mapping_to_config_paths({
+            result = self.registry.modname_sourcepath_mapping_to_config_paths({
                 'nosuchplugin!foo/bar': 'nosuchplugin!/src/foo/bar',
                 'text!example.ns/baz.txt': 'text!/src/example/ns/baz.txt',
             })
@@ -181,7 +181,7 @@ class MappingConversionTestCase(unittest.TestCase):
         """
 
         with pretty_logging(stream=StringIO()) as stream:
-            result = self.registry.modname_source_mapping_to_config_paths({
+            result = self.registry.modname_sourcepath_mapping_to_config_paths({
                 'foo/bar': '/src/foo/bar.js',
                 'text!foo/bar.txt': '/src/foo/bar.txt',
             })
@@ -203,7 +203,7 @@ class MappingConversionTestCase(unittest.TestCase):
         """
 
         with pretty_logging(stream=StringIO()) as stream:
-            result = self.registry.modname_source_mapping_to_config_paths({
+            result = self.registry.modname_sourcepath_mapping_to_config_paths({
                 'foo/bar': '/src/foo/bar.js',
                 'text!foo/bar.txt': '/alt/src/foo/bar.txt',
             })
@@ -225,7 +225,7 @@ class MappingConversionTestCase(unittest.TestCase):
         """
 
         with pretty_logging(stream=StringIO()) as stream:
-            result = self.registry.modname_target_mapping_to_config_paths({
+            result = self.registry.modname_targetpath_mapping_to_config_paths({
                 'text!foo/bar.html': 'text!/alt/src/foo/bar.txt',
             })
         err = stream.getvalue()
@@ -250,7 +250,7 @@ class MappingConversionTestCase(unittest.TestCase):
         """
 
         with pretty_logging(stream=StringIO()) as stream:
-            result = self.registry.modname_target_mapping_to_config_paths({
+            result = self.registry.modname_targetpath_mapping_to_config_paths({
                 'text!foo/bar.txt': 'text!/src/foo/bar.txt',
                 'text!foo/bar.html': 'text!/alt/src/foo/bar.html',
             })

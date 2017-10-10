@@ -32,14 +32,14 @@ class SpecUpdateSourceMapTestCase(unittest.TestCase):
     in such a way that makes it compatible with the base system.
     """
 
-    def test_spec_update_source_map_standard_modules_base(self):
-        source_map = {
+    def test_spec_update_sourcepath_standard_modules_base(self):
+        sourcepath = {
             'standard/module': 'standard/module',
             'standard.module': 'standard.module',
         }
         spec = {}
 
-        toolchain.spec_update_source_map(spec, source_map, 'source_key')
+        toolchain.spec_update_sourcepath(spec, sourcepath, 'source_key')
         self.assertEqual(spec, {
             'source_key': {
                 'standard/module': 'standard/module',
@@ -47,27 +47,27 @@ class SpecUpdateSourceMapTestCase(unittest.TestCase):
             }
         })
 
-    def test_spec_update_source_map_standard_modules_id(self):
-        source_map = {
+    def test_spec_update_sourcepath_standard_modules_id(self):
+        sourcepath = {
             'standard/module': 'standard/module',
         }
         base_map = {}
         spec = {'source_key': base_map}
 
-        toolchain.spec_update_source_map(spec, source_map, 'source_key')
+        toolchain.spec_update_sourcepath(spec, sourcepath, 'source_key')
         self.assertIs(spec['source_key'], base_map)
         self.assertEqual(base_map, {
             'standard/module': 'standard/module',
         })
 
-    def test_spec_update_source_map_plugin_modules(self):
-        source_map = {
+    def test_spec_update_sourcepath_plugin_modules(self):
+        sourcepath = {
             'plugin/module!argument': 'some/filesystem/path',
             'text!argument': 'some/text/file.txt',
         }
         spec = {}
 
-        toolchain.spec_update_source_map(spec, source_map, 'source_key')
+        toolchain.spec_update_sourcepath(spec, sourcepath, 'source_key')
         self.maxDiff = 123123
         self.assertEqual(spec, {
             'requirejs_plugins': {
@@ -82,7 +82,7 @@ class SpecUpdateSourceMapTestCase(unittest.TestCase):
             },
         })
 
-        toolchain.spec_update_source_map(spec, {
+        toolchain.spec_update_sourcepath(spec, {
             'text!argument2': 'some/text/file2.txt',
         }, 'source_key')
         self.assertEqual(spec['requirejs_plugins']['text'], {
@@ -499,9 +499,9 @@ class ToolchainUnitTestCase(unittest.TestCase):
             transpiled_modpaths={},
             bundled_modpaths={},
             plugins_modpaths={},
-            transpiled_targets={},
-            bundled_targets={},
-            plugins_targets={},
+            transpiled_targetpaths={},
+            bundled_targetpaths={},
+            plugins_targetpaths={},
             export_module_names=[],
         )
 
@@ -549,16 +549,16 @@ class ToolchainUnitTestCase(unittest.TestCase):
             plugins_modpaths={
                 'loader/plugin!resource/name': '/resource/name'
             },
-            transpiled_targets={
+            transpiled_targetpaths={
                 'example/module': '/path/to/src/example/module.js',
             },
-            bundled_targets={
+            bundled_targetpaths={
                 'bundled_pkg': '/path/to/bundled/index.js',
                 'bundled_txt': '/path/to/bundled/txt',
                 'bundled_dir': '/path/to/bundled/dir.js',
                 'bundled_empty': 'empty:',
             },
-            plugins_targets={
+            plugins_targetpaths={
                 'resource/name': '/resource/name',
             },
             export_module_names=[
@@ -651,7 +651,7 @@ class ToolchainUnitTestCase(unittest.TestCase):
         with pretty_logging(logger='calmjs.rjs', stream=mocks.StringIO()) as s:
             rjs.prepare(spec)
 
-        self.assertEqual(spec['plugin_source_map'], {
+        self.assertEqual(spec['plugin_sourcepath'], {
             'text!namespace/module/path.txt': '/namespace/module/path.txt',
         })
 
@@ -713,16 +713,16 @@ class ToolchainUnitTestCase(unittest.TestCase):
             },
             # these are not actually transpiled sources, but will fit
             # with the purposes of this test.
-            transpiled_targets={
+            transpiled_targetpaths={
                 'module1': 'module1.js',
                 'module2': 'module2.js',
                 'module3': 'module3.js',
             },
             # the "bundled" names were specified to be omitted.
             bundled_modpaths={},
-            bundled_targets={},
+            bundled_targetpaths={},
             plugins_modpaths={},
-            plugins_targets={},
+            plugins_targetpaths={},
             export_module_names=['module1', 'module2', 'module3'],
             **kw
         )

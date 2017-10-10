@@ -6,7 +6,7 @@ The calmjs runtime collection
 from calmjs.runtime import SourcePackageToolchainRuntime
 
 from calmjs.rjs.dist import extras_calmjs_methods
-from calmjs.rjs.dist import source_map_methods_list
+from calmjs.rjs.dist import sourcepath_methods_list
 from calmjs.rjs.dist import calmjs_module_registry_methods
 from calmjs.rjs.cli import create_spec
 from calmjs.rjs.cli import default_toolchain
@@ -70,9 +70,9 @@ class RJSRuntime(SourcePackageToolchainRuntime):
 
         argparser.add_argument(
             '--source-map-method', default='all',
-            dest='source_map_method',
-            choices=sorted(source_map_methods_list.keys()),
-            help='the acquisition method for getting the source mappings from '
+            dest='sourcepath_method',
+            choices=sorted(sourcepath_methods_list.keys()),
+            help='the acquisition method for getting the source files from '
                  'the source registry for the given packages; default: all',
         )
 
@@ -86,7 +86,7 @@ class RJSRuntime(SourcePackageToolchainRuntime):
 
         argparser.add_argument(
             '--bundle-map-method', default='all',
-            dest='bundle_map_method',
+            dest='bundlepath_method',
             choices=sorted(extras_calmjs_methods.keys()),
             help='the acquisition method for the bundle sources for the given '
                  'packages; default: all',
@@ -105,7 +105,7 @@ class RJSRuntime(SourcePackageToolchainRuntime):
             build_dir=None,
             calmjs_module_registry_names=None,
             source_registry_method='all',
-            source_map_method='all', bundle_map_method='all',
+            sourcepath_method='all', bundlepath_method='all',
             transpile_no_indent=False,
             toolchain=None, **kwargs):
         """
@@ -123,8 +123,8 @@ class RJSRuntime(SourcePackageToolchainRuntime):
             build_dir=build_dir,
             source_registry_method=source_registry_method,
             source_registries=calmjs_module_registry_names,
-            source_map_method=source_map_method,
-            bundle_map_method=bundle_map_method,
+            sourcepath_method=sourcepath_method,
+            bundlepath_method=bundlepath_method,
             transpile_no_indent=transpile_no_indent,
         )
 

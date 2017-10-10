@@ -265,15 +265,15 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
     def test_build_bundle_standard(self):
         bundle_dir = utils.mkdtemp(self)
         build_dir = utils.mkdtemp(self)
-        transpile_source_map = {}
-        transpile_source_map.update(self._example_package_map)
-        bundle_source_map = {}
+        transpile_sourcepath = {}
+        transpile_sourcepath.update(self._example_package_map)
+        bundle_sourcepath = {}
         export_target = join(bundle_dir, 'example.package.js')
 
         rjs = toolchain.RJSToolchain()
         spec = Spec(
-            transpile_source_map=transpile_source_map,
-            bundle_source_map=bundle_source_map,
+            transpile_sourcepath=transpile_sourcepath,
+            bundle_sourcepath=bundle_sourcepath,
             export_target=export_target,
             build_dir=build_dir,
         )
@@ -297,15 +297,15 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
     def test_build_bundle_no_indent(self):
         bundle_dir = utils.mkdtemp(self)
         build_dir = utils.mkdtemp(self)
-        transpile_source_map = {}
-        transpile_source_map.update(self._example_package_map)
-        bundle_source_map = {}
+        transpile_sourcepath = {}
+        transpile_sourcepath.update(self._example_package_map)
+        bundle_sourcepath = {}
         export_target = join(bundle_dir, 'example.package.js')
 
         rjs = toolchain.RJSToolchain()
         spec = Spec(
-            transpile_source_map=transpile_source_map,
-            bundle_source_map=bundle_source_map,
+            transpile_sourcepath=transpile_sourcepath,
+            bundle_sourcepath=bundle_sourcepath,
             export_target=export_target,
             build_dir=build_dir,
             transpile_no_indent=True,
@@ -332,11 +332,11 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
     def test_build_bundle_with_data(self):
         bundle_dir = utils.mkdtemp(self)
         build_dir = utils.mkdtemp(self)
-        transpile_source_map = {}
-        transpile_source_map.update(self._example_package_map)
+        transpile_sourcepath = {}
+        transpile_sourcepath.update(self._example_package_map)
         # include custom loader and data
-        transpile_source_map.update(self._example_package_loader)
-        bundle_source_map = {}
+        transpile_sourcepath.update(self._example_package_loader)
+        bundle_sourcepath = {}
         export_target = join(bundle_dir, 'example.package')
         requirejs_plugins = {
             'example/package/loader': self._example_package_data
@@ -350,8 +350,8 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         rjs = toolchain.RJSToolchain()
         rjs.loader_plugin_registry = custom_registry
         spec = Spec(
-            transpile_source_map=transpile_source_map,
-            bundle_source_map=bundle_source_map,
+            transpile_sourcepath=transpile_sourcepath,
+            bundle_sourcepath=bundle_sourcepath,
             requirejs_plugins=requirejs_plugins,
             export_target=export_target,
             build_dir=build_dir,
@@ -437,7 +437,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         # but without bundling
         spec = cli.compile_all(
             ['service'], source_registries=(self.registry_name,),
-            bundle_map_method='none',
+            bundlepath_method='none',
         )
         self.assertEqual(
             spec['export_target'], join(working_dir, 'service.js'))
@@ -469,7 +469,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         # but without bundling
         spec = cli.compile_all(
             ['service'], source_registries=(self.registry_name,),
-            bundle_map_method='none', source_map_method='explicit',
+            bundlepath_method='none', sourcepath_method='explicit',
         )
         service_js = join(working_dir, 'service.js')
         self.assertEqual(spec['export_target'], service_js)
@@ -480,7 +480,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         # build its parent js separately, too
         spec = cli.compile_all(
             ['framework'], source_registries=(self.registry_name,),
-            bundle_map_method='none', source_map_method='explicit',
+            bundlepath_method='none', sourcepath_method='explicit',
         )
         framework_js = join(working_dir, 'framework.js')
         self.assertEqual(spec['export_target'], framework_js)

@@ -41,7 +41,7 @@ def list_none(*a, **kw):
     return []
 
 
-source_map_methods_list = {
+sourcepath_methods_list = {
     # list of tuples of (function, filter)
     'all': (
         (flatten_module_registry_dependencies, identity),
@@ -103,7 +103,7 @@ def get_calmjs_module_registry_for(package_names, method=_default):
     return registries
 
 
-def generate_transpile_source_maps(
+def generate_transpile_sourcepaths(
         package_names, registries=('calmjs.modules'), method=_default):
     """
     Invoke the module_registry_dependencies family of dist functions,
@@ -134,8 +134,8 @@ def generate_transpile_source_maps(
         Defaults to 'all'.
     """
 
-    source_map_methods = acquire_method(source_map_methods_list, method)
-    transpile_source_map = {}
+    sourcepath_methods = acquire_method(sourcepath_methods_list, method)
+    transpile_sourcepath = {}
 
     # source mapping functions loop first, to prevent subsequent
     # registries from providing key-value pairs via flatten that
@@ -144,18 +144,18 @@ def generate_transpile_source_maps(
     # words, this ensures the get source mapping function get executed
     # last across all registeries, if needed.
 
-    for source_f, n_filter in source_map_methods:
+    for source_f, n_filter in sourcepath_methods:
         for registry_name in registries:
-            transpile_source_map.update(
+            transpile_sourcepath.update(
                 (k, n_filter(v)) for k, v in source_f(
                     package_names, registry_name=registry_name
                 ).items()
             )
 
-    return transpile_source_map
+    return transpile_sourcepath
 
 
-def generate_bundle_source_maps(
+def generate_bundle_sourcepaths(
         package_names, working_dir=None, method=_default):
     """
     Acquire the bundle source maps through the calmjs registry system.
@@ -201,7 +201,7 @@ def generate_bundle_source_maps(
     # subdirectories.
     valid_pkgmgr_dirs = set(get('calmjs.extras_keys').iter_records())
     extras_calmjs = acquire_extras_calmjs(package_names)
-    bundle_source_map = {}
+    bundle_sourcepath = {}
 
     for mgr in extras_calmjs:
         if mgr not in valid_pkgmgr_dirs:
@@ -217,6 +217,6 @@ def generate_bundle_source_maps(
             continue  # pragma: no cover
 
         for k, v in extras_calmjs[mgr].items():
-            bundle_source_map[k] = joiner(basedir, *(v.split('/')))
+            bundle_sourcepath[k] = joiner(basedir, *(v.split('/')))
 
-    return bundle_source_map
+    return bundle_sourcepath

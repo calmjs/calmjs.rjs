@@ -77,9 +77,12 @@ REQUIREJS_PLUGINS = 'requirejs_plugins'
 STUB_MISSING_WITH_EMPTY = 'stub_missing_with_empty'
 
 
-def spec_update_source_map(spec, source_map, default_source_key):
+def spec_update_sourcepath(spec, sourcepath, default_source_key):
+    # TODO migrate to using
+    # calmjs.toolchain.spec_update_plugins_sourcepath_dict
+    # as we need to unify the plugins registry
     default = dict_get(spec, default_source_key)
-    for modname, source in source_map.items():
+    for modname, source in sourcepath.items():
         parts = modname.split('!', 1)
         if len(parts) == 1:
             # default
@@ -231,7 +234,7 @@ class RJSToolchain(Toolchain):
         """
 
         plugins_modpaths = {}
-        plugins_targets = {}
+        plugins_targetpaths = {}
         export_module_names = []
 
         for modname, source, target, modpath in entries:
@@ -243,9 +246,9 @@ class RJSToolchain(Toolchain):
                 self, spec, modname, source, target, modpath)
             _spec = locals()
             dict_key_update_overwrite_check(_spec, 'plugins_modpaths', p_pm)
-            dict_key_update_overwrite_check(_spec, 'plugins_targets', p_pt)
+            dict_key_update_overwrite_check(_spec, 'plugins_targetpaths', p_pt)
             export_module_names.extend(m_ns)
-        return plugins_modpaths, plugins_targets, export_module_names
+        return plugins_modpaths, plugins_targetpaths, export_module_names
 
     def modname_source_target_to_modpath(self, spec, modname, source, target):
         """
@@ -264,7 +267,8 @@ class RJSToolchain(Toolchain):
             # marked to be ignored for r.js, and so don't bother letting
             # parent "compile" this (which is just a simple copying)
             return
-        super(RJSToolchain, self).transpile_modname_source_target(
+        # XXX TODO convert to the calmjs.parse version
+        super(RJSToolchain, self).simple_transpile_modname_source_target(
             spec, modname, source, target)
 
     def prepare(self, spec):
@@ -330,13 +334,13 @@ class RJSToolchain(Toolchain):
             raise RJSRuntimeError(
                 "'%s' must not be same as '%s'" % (EXPORT_TARGET, matched[0]))
 
-        plugin_source_map = spec['plugin_source_map'] = {}
+        plugin_sourcepath = spec['plugin_sourcepath'] = {}
         raw_plugins = spec.get(REQUIREJS_PLUGINS, {})
         for key, value in raw_plugins.items():
             handler = loader_plugin_registry.get_record(key)
             if handler:
                 # assume handler will do the job.
-                plugin_source_map.update(value)
+                plugin_sourcepath.update(value)
                 logger.debug("found handler for '%s' loader plugin", key)
             else:
                 logger.warning(
@@ -395,7 +399,7 @@ class RJSToolchain(Toolchain):
         # correct the targets by appending a ? for the affected targets
         source_prefixes = ('transpiled', 'bundled')
         for prefix in source_prefixes:
-            key = prefix + '_targets'
+            key = prefix + '_targetpaths'
             modpaths_group = prefix + '_modpaths'
             for modname, target in spec[key].items():
                 if spec[modpaths_group].get(modname) == EMPTY:
@@ -423,7 +427,7 @@ class RJSToolchain(Toolchain):
 
         # finally, update the config with the plugin targets, which
         # should have been correctly processed by the plugin handlers.
-        configured_paths.update(spec['plugins_targets'])
+        configured_paths.update(spec['plugins_targetpaths'])
 
         missing_modname = (
             set(parsed_required_paths) - set(configured_paths) - emptied)

@@ -36,22 +36,22 @@ class DistIntegrationTestCase(unittest.TestCase):
     def tearDownClass(cls):
         utils.teardown_class_integration_environment(cls)
 
-    def test_generate_transpile_source_maps_none(self):
-        mapping = dist.generate_transpile_source_maps(
+    def test_generate_transpile_sourcepaths_none(self):
+        mapping = dist.generate_transpile_sourcepaths(
             ['site'], registries=(self.registry_name,), method='none')
         self.assertEqual(sorted(mapping.keys()), [])
 
-    def test_generate_transpile_source_maps_explicit_registry(self):
-        mapping = dist.generate_transpile_source_maps(
+    def test_generate_transpile_sourcepaths_explicit_registry(self):
+        mapping = dist.generate_transpile_sourcepaths(
             ['site'], registries=(self.registry_name,))
         self.assertEqual(sorted(mapping.keys()), [
             'forms/ui', 'framework/lib', 'widget/core', 'widget/datepicker',
             'widget/richedit',
         ])
 
-    def test_generate_transpile_source_maps_explicit_registry_auto(self):
+    def test_generate_transpile_sourcepaths_explicit_registry_auto(self):
         # explicitly use the package only for source
-        mapping = dist.generate_transpile_source_maps(
+        mapping = dist.generate_transpile_sourcepaths(
             ['site'], registries=(self.registry_name,), method='explicit')
         # all keys should be present.
         self.assertEqual(sorted(mapping.keys()), [
@@ -63,7 +63,7 @@ class DistIntegrationTestCase(unittest.TestCase):
             [],
         )
 
-        mapping = dist.generate_transpile_source_maps(
+        mapping = dist.generate_transpile_sourcepaths(
             ['forms'], registries=(self.registry_name,), method='explicit')
         self.assertEqual(
             sorted(k for k in mapping.keys() if mapping[k] != dist.EMPTY),
@@ -100,8 +100,8 @@ class DistIntegrationTestCase(unittest.TestCase):
             [self.registry_name],
         )
 
-    def test_generate_transpile_source_maps_site_explicit_method(self):
-        mapping = dist.generate_transpile_source_maps(
+    def test_generate_transpile_sourcepaths_site_explicit_method(self):
+        mapping = dist.generate_transpile_sourcepaths(
             ['site'], registries=(self.registry_name,), method='explicit')
         # it doesn't remove this, but only mark it as empty as the
         # underlying tool will fail otherwise if any require statements
@@ -119,15 +119,15 @@ class DistIntegrationTestCase(unittest.TestCase):
             'widget/richedit',
         ])
 
-    def test_generate_transpile_source_maps_service_default(self):
-        mapping = dist.generate_transpile_source_maps(
+    def test_generate_transpile_sourcepaths_service_default(self):
+        mapping = dist.generate_transpile_sourcepaths(
             ['service'], registries=(self.registry_name,))
         self.assertEqual(sorted(mapping.keys()), [
             'framework/lib', 'service/endpoint', 'service/rpc/lib',
         ])
 
-    def test_generate_transpile_source_maps_service_explicit(self):
-        mapping = dist.generate_transpile_source_maps(
+    def test_generate_transpile_sourcepaths_service_explicit(self):
+        mapping = dist.generate_transpile_sourcepaths(
             ['service'], registries=(self.registry_name,), method='explicit')
         self.assertEqual(sorted(mapping.keys()), [
             'framework/lib', 'service/endpoint', 'service/rpc/lib',
@@ -136,21 +136,21 @@ class DistIntegrationTestCase(unittest.TestCase):
         self.assertNotEqual(mapping['service/endpoint'], 'empty:')
         self.assertNotEqual(mapping['service/rpc/lib'], 'empty:')
 
-    def test_generate_bundle_source_maps_none(self):
-        mapping = dist.generate_bundle_source_maps(
+    def test_generate_bundle_sourcepaths_none(self):
+        mapping = dist.generate_bundle_sourcepaths(
             ['site'], method='none')
         self.assertEqual(sorted(mapping.keys()), [])
 
-    def test_generate_bundle_source_maps_bad_dir(self):
+    def test_generate_bundle_sourcepaths_bad_dir(self):
         bad_dir = utils.mkdtemp(self)
         with pretty_logging(stream=StringIO()) as log:
-            mapping = dist.generate_bundle_source_maps(
+            mapping = dist.generate_bundle_sourcepaths(
                 ['service'], bad_dir)
         self.assertEqual(sorted(mapping.keys()), [])
         self.assertIn('fake_modules', log.getvalue())
 
-    def test_generate_bundle_source_maps_site_default(self):
-        mapping = dist.generate_bundle_source_maps(
+    def test_generate_bundle_sourcepaths_site_default(self):
+        mapping = dist.generate_bundle_sourcepaths(
             ['site'], self.dist_dir)
         self.assertEqual(sorted(mapping.keys()), ['jquery', 'underscore'])
         self.assertTrue(mapping['jquery'].endswith(
@@ -158,15 +158,15 @@ class DistIntegrationTestCase(unittest.TestCase):
         self.assertTrue(mapping['underscore'].endswith(
             join('fake_modules', 'underscore', 'underscore.js')))
 
-    def test_generate_bundle_source_maps_default(self):
-        mapping = dist.generate_bundle_source_maps(
+    def test_generate_bundle_sourcepaths_default(self):
+        mapping = dist.generate_bundle_sourcepaths(
             ['framework'], self.dist_dir)
         self.assertEqual(sorted(mapping.keys()), [
             'jquery', 'underscore',
         ])
         self.assertIn(
             (join('underscore', 'underscore-min.js')), mapping['underscore'])
-        mapping = dist.generate_bundle_source_maps(
+        mapping = dist.generate_bundle_sourcepaths(
             ['service'], self.dist_dir)
         self.assertEqual(sorted(mapping.keys()), [
             'jquery', 'underscore',
@@ -175,15 +175,15 @@ class DistIntegrationTestCase(unittest.TestCase):
             (join('underscore', 'underscore.js')), mapping['underscore'])
         self.assertIn('jquery', mapping['jquery'])
 
-    def test_generate_bundle_source_maps_service_explicit(self):
-        mapping = dist.generate_bundle_source_maps(
+    def test_generate_bundle_sourcepaths_service_explicit(self):
+        mapping = dist.generate_bundle_sourcepaths(
             ['service'], self.dist_dir, method='explicit')
         self.assertEqual(sorted(mapping.keys()), ['underscore'])
         self.assertIn(
             (join('underscore', 'underscore.js')), mapping['underscore'])
 
-    def test_generate_bundle_source_maps_service_empty(self):
-        mapping = dist.generate_bundle_source_maps(
+    def test_generate_bundle_sourcepaths_service_empty(self):
+        mapping = dist.generate_bundle_sourcepaths(
             ['service'], self.dist_dir, method='empty')
         # Note that this ends up including all it sparents
         self.assertEqual(mapping, {
@@ -191,9 +191,9 @@ class DistIntegrationTestCase(unittest.TestCase):
             'underscore': 'empty:',
         })
 
-    def test_generate_bundle_source_maps_site_empty(self):
+    def test_generate_bundle_sourcepaths_site_empty(self):
         # This one declares exact, should still work.
-        mapping = dist.generate_bundle_source_maps(
+        mapping = dist.generate_bundle_sourcepaths(
             ['site'], self.dist_dir, method='empty')
         self.assertEqual(sorted(mapping.keys()), ['jquery', 'underscore'])
         self.assertEqual(mapping['jquery'], 'empty:')

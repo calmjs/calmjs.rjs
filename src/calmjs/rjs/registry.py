@@ -126,7 +126,7 @@ class LoaderPluginRegistry(BaseRegistry):
 
         return result
 
-    def modname_source_mapping_to_config_paths(self, mapping):
+    def modname_sourcepath_mapping_to_config_paths(self, mapping):
         """
         For a mapping of exported module names and the specified source
         locations, produce a mapping that is compatible for usage with
@@ -139,12 +139,12 @@ class LoaderPluginRegistry(BaseRegistry):
         Arguments:
 
         mapping
-            A source mapping, from modname to source.
+            A sourcepath mapping, from modname to source.
         """
 
         return self._mapping_to_config_paths(mapping, 'modname_source')
 
-    def modname_target_mapping_to_config_paths(self, mapping):
+    def modname_targetpath_mapping_to_config_paths(self, mapping):
         """
         For a mapping of exported module names and the specified target
         locations, produce a mapping that is compatible for usage with
@@ -157,7 +157,7 @@ class LoaderPluginRegistry(BaseRegistry):
         Arguments:
 
         mapping
-            A target mapping, from modname to target.
+            A targetpath mapping, from modname to target.
         """
 
         return self._mapping_to_config_paths(mapping, 'modname_target')

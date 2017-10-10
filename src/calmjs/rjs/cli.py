@@ -13,10 +13,10 @@ from calmjs.toolchain import SOURCE_PACKAGE_NAMES
 from calmjs.rjs.toolchain import STUB_MISSING_WITH_EMPTY
 
 from calmjs.rjs.toolchain import RJSToolchain
-from calmjs.rjs.toolchain import spec_update_source_map
+from calmjs.rjs.toolchain import spec_update_sourcepath
 
-from calmjs.rjs.dist import generate_transpile_source_maps
-from calmjs.rjs.dist import generate_bundle_source_maps
+from calmjs.rjs.dist import generate_transpile_sourcepaths
+from calmjs.rjs.dist import generate_bundle_sourcepaths
 from calmjs.rjs.dist import get_calmjs_module_registry_for
 
 default_toolchain = RJSToolchain()
@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 def create_spec(
         package_names, export_target=None, working_dir=None, build_dir=None,
         source_registry_method='all', source_registries=None,
-        source_map_method='all', bundle_map_method='all',
+        sourcepath_method='all', bundlepath_method='all',
         stub_missing_with_empty=False,
         transpile_no_indent=False):
     """
@@ -72,7 +72,7 @@ def create_spec(
         explicit list of calmjs module registries to use.  Typical use
         case is to generate tests.
 
-    source_map_method
+    sourcepath_method
         The acquisition method for the source mapping for the given
         package from the source_registries specified.  Choices are
         between 'all', 'explicit' or 'none'.  Defaults to 'all'.
@@ -86,7 +86,7 @@ def create_spec(
             Do not acquire sources.  Useful for creating bundles of just
             the bundle sources.
 
-    bundle_map_method
+    bundlepath_method
         The acquisition method for the bundle sources for the given
         module.  Choices are between 'all', 'explicit' or 'none'.
         Defaults to 'all'.
@@ -164,17 +164,17 @@ def create_spec(
     spec[SOURCE_PACKAGE_NAMES] = package_names
     spec[STUB_MISSING_WITH_EMPTY] = stub_missing_with_empty
 
-    spec_update_source_map(spec, generate_transpile_source_maps(
+    spec_update_sourcepath(spec, generate_transpile_sourcepaths(
         package_names=package_names,
         registries=source_registries,
-        method=source_map_method,
-    ), 'transpile_source_map')
+        method=sourcepath_method,
+    ), 'transpile_sourcepath')
 
-    spec_update_source_map(spec, generate_bundle_source_maps(
+    spec_update_sourcepath(spec, generate_bundle_sourcepaths(
         package_names=package_names,
         working_dir=working_dir,
-        method=bundle_map_method,
-    ), 'bundle_source_map')
+        method=bundlepath_method,
+    ), 'bundle_sourcepath')
 
     return spec
 
@@ -182,7 +182,7 @@ def create_spec(
 def compile_all(
         package_names, export_target=None, working_dir=None, build_dir=None,
         source_registry_method='all', source_registries=None,
-        source_map_method='all', bundle_map_method='all',
+        sourcepath_method='all', bundlepath_method='all',
         stub_missing_with_empty=False,
         transpile_no_indent=False,
         toolchain=default_toolchain):
@@ -212,8 +212,8 @@ def compile_all(
         build_dir=build_dir,
         source_registry_method=source_registry_method,
         source_registries=source_registries,
-        source_map_method=source_map_method,
-        bundle_map_method=bundle_map_method,
+        sourcepath_method=sourcepath_method,
+        bundlepath_method=bundlepath_method,
         stub_missing_with_empty=stub_missing_with_empty,
         transpile_no_indent=transpile_no_indent,
     )
