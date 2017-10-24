@@ -47,8 +47,8 @@ from calmjs.toolchain import CONFIG_JS_FILES
 from calmjs.toolchain import EXPORT_TARGET
 from calmjs.toolchain import BUILD_DIR
 from calmjs.toolchain import EXPORT_MODULE_NAMES
+from calmjs.toolchain import spec_update_plugins_sourcepath_dict
 
-from .utils import dict_get
 from .utils import dict_key_update_overwrite_check
 from .dev import rjs_advice
 from .exc import RJSRuntimeError
@@ -77,22 +77,11 @@ REQUIREJS_PLUGINS = 'requirejs_plugins'
 STUB_MISSING_WITH_EMPTY = 'stub_missing_with_empty'
 
 
-def spec_update_sourcepath(spec, sourcepath, default_source_key):
-    # TODO migrate to using
-    # calmjs.toolchain.spec_update_plugins_sourcepath_dict
-    # as we need to unify the plugins registry
-    default = dict_get(spec, default_source_key)
-    for modname, source in sourcepath.items():
-        parts = modname.split('!', 1)
-        if len(parts) == 1:
-            # default
-            default[modname] = source
-            continue
-
-        plugin_name, arguments = parts
-        plugins = dict_get(spec, REQUIREJS_PLUGINS)
-        plugin = dict_get(plugins, plugin_name)
-        plugin[modname] = source
+def spec_update_sourcepath(spec, sourcepath_dict, sourcepath_dict_key):
+    return spec_update_plugins_sourcepath_dict(
+        spec, sourcepath_dict, sourcepath_dict_key,
+        loaderplugins_sourcepath_dict_key=REQUIREJS_PLUGINS
+    )
 
 
 def get_rjs_runtime_name(platform):
