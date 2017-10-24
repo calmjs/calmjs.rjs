@@ -3,8 +3,9 @@ import unittest
 
 from calmjs.registry import get
 
+from calmjs.loaderplugin import BaseLoaderPluginHandler
 from calmjs.rjs.registry import LoaderPluginRegistry
-from calmjs.rjs.plugin import LoaderPluginHandler
+from calmjs.rjs.plugin import RJSLoaderPluginHandlerMixin
 from calmjs.rjs.plugin import TextPlugin
 
 from calmjs.utils import pretty_logging
@@ -16,13 +17,13 @@ class NotPlugin(LoaderPluginRegistry):
     """yeanah"""
 
 
-class BadPlugin(LoaderPluginHandler):
+class BadPlugin(BaseLoaderPluginHandler, RJSLoaderPluginHandlerMixin):
 
     def __init__(self):
         """this will not be called; missing argument"""
 
 
-class DupePlugin(LoaderPluginHandler):
+class DupePlugin(BaseLoaderPluginHandler, RJSLoaderPluginHandlerMixin):
     """
     Dummy duplicate plugin
     """

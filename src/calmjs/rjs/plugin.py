@@ -37,37 +37,18 @@ from os.path import dirname
 from os.path import exists
 from os.path import join
 
+from calmjs.loaderplugin import NPMLoaderPluginHandler
+
 logger = logging.getLogger(__name__)
 
 
-class LoaderPluginHandler(object):
+class RJSLoaderPluginHandlerMixin(object):
     """
-    Encapsulates a loader plugin for requirejs, this provides a
-    framework to deal with path mangling and/or resolution for setting
-    up the paths for usage from within a requirejs environment.
+    A mixin for the loader plugin handler that also address the specific
+    needs of the requirejs system; provides a framework to deal with path
+    mangling and/or resolution for setting up the paths for usage from
+    within a requirejs environment.
     """
-
-    def __init__(self, registry, name=None):
-        """
-        The registry itself will try to construct the instance and pass
-        itself into the constructor; leaving this as the default will
-        enable specific plugins to load further plugins should the input
-        modname has more loader plugin strings.
-        """
-
-        self.registry = registry
-        self.name = name
-
-    def strip_plugin(self, value):
-        """
-        Strip the first plugin fragment and return just the value.
-        """
-
-        if value.startswith(self.name + '!'):
-            result = value.split('!', 1)
-            return result[-1].split('!', 1)[0]
-        else:
-            return value
 
     def modname_modpath_to_config_paths(self, modname, modpath):
         """
@@ -103,21 +84,8 @@ class LoaderPluginHandler(object):
 
         return self.modname_target_to_config_paths(modname, source)
 
-    def __call__(self, toolchain, spec, modname, source, target, modpath):
-        """
-        These need to provide the actual implementation required for the
-        production of the final artifact, so this will need to locate
-        the resources needed for this set of arguments to function.
 
-        Each of these should return the associated bundled_modpaths,
-        bundled_targets, and the export_module_name, after the copying
-        or transpilation step was done.
-        """
-
-        raise NotImplementedError
-
-
-class TextPlugin(LoaderPluginHandler):
+class TextPlugin(NPMLoaderPluginHandler, RJSLoaderPluginHandlerMixin):
     """
     A basic text loader plugin handler; does not handle further chained
     loader plugins that have been specified in the modname, as it
@@ -127,6 +95,21 @@ class TextPlugin(LoaderPluginHandler):
     def __init__(self, registry, name='text'):
         # just give this a default value for ease of use.
         super(TextPlugin, self).__init__(registry, name)
+
+    def strip_plugin(self, value):
+        """
+        The text plugin only support the first argument, does not have
+        chaining, thus only the argument after the first '!' will be
+        returned with all remaining tokens stripped.
+
+        Returns the target resource identifier.
+        """
+
+        if value.startswith(self.name + '!'):
+            result = value.split('!', 1)
+            return result[-1].split('!', 1)[0]
+        else:
+            return value
 
     def requirejs_text_issue123(self, value):
         """

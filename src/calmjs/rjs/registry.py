@@ -21,63 +21,19 @@ module.
 
 from logging import getLogger
 
-from calmjs.base import BaseRegistry
-from calmjs.rjs.plugin import LoaderPluginHandler
+from calmjs import loaderplugin
+from calmjs.rjs.plugin import RJSLoaderPluginHandlerMixin
 from calmjs.rjs.utils import dict_key_update_overwrite_check
 
 logger = getLogger(__name__)
-_default_handler = LoaderPluginHandler(None)
+_default_handler = RJSLoaderPluginHandlerMixin()
 
 RJS_LOADER_PLUGIN_REGISTRY_NAME = 'calmjs.rjs.loader_plugin'
 RJS_LOADER_PLUGIN_REGISTRY_KEY = 'rjs_loader_plugin_registry_key'
 RJS_LOADER_PLUGIN_REGISTRY = 'rjs_loader_plugin_registry'
 
 
-class LoaderPluginRegistry(BaseRegistry):
-
-    # TODO make upstream consider implement this pattern of construction
-    # through a new generic base registry class of some sort.
-
-    def _init(self):
-        for entry_point in self.raw_entry_points:
-            try:
-                cls = entry_point.load()
-            except ImportError:
-                logger.warning(
-                    "registry '%s' failed to load loader plugin handler for "
-                    "entry point '%s'", self.registry_name, entry_point,
-                )
-                continue
-
-            if not issubclass(cls, LoaderPluginHandler):
-                logger.warning(
-                    "entry point '%s' does not lead to a valid loader plugin "
-                    "handler class", entry_point
-                )
-                continue
-
-            try:
-                inst = cls(self, entry_point.name)
-            except Exception:
-                logger.exception(
-                    "the loader plugin class registered at '%s' failed "
-                    "to be instantiated with the following exception",
-                    entry_point,
-                )
-                continue
-
-            if entry_point.name in self.records:
-                old = type(self.records[entry_point.name])
-                logger.warning(
-                    "loader plugin handler for '%s' was already registered to "
-                    "an instance of '%s:%s'; '%s' will now override this "
-                    "registration",
-                    entry_point.name, old.__module__, old.__name__, entry_point
-                )
-            self.records[entry_point.name] = inst
-
-    def get_record(self, name):
-        return self.records.get(name)
+class LoaderPluginRegistry(loaderplugin.LoaderPluginRegistry):
 
     def _mapping_to_config_paths(self, mapping, method_prefix):
         """

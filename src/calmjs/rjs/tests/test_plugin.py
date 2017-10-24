@@ -12,10 +12,10 @@ from calmjs.testing.utils import mkdtemp
 from calmjs.testing.mocks import StringIO
 
 
-class LoaderPluginHandlerTestCase(unittest.TestCase):
+class RJSMixinTestCase(unittest.TestCase):
 
     def test_config_paths(self):
-        handler = plugin.LoaderPluginHandler(None)
+        handler = plugin.RJSLoaderPluginHandlerMixin()
         self.assertEqual(handler.modname_target_to_config_paths(
             'example/path', 'example/path.js'),
             {'example/path': 'example/path.js?'},
@@ -26,14 +26,12 @@ class LoaderPluginHandlerTestCase(unittest.TestCase):
         )
 
     def test_others(self):
-        handler = plugin.LoaderPluginHandler(None)
+        handler = plugin.RJSLoaderPluginHandlerMixin()
         modname_modpath = ('example/path', 'example/path')
         self.assertEqual(
             handler.modname_modpath_to_config_paths(*modname_modpath),
             dict([modname_modpath]),
         )
-        with self.assertRaises(NotImplementedError):
-            handler(None, None, None, None, None, None)
 
 
 class TextLoaderPluginTestCase(unittest.TestCase):
