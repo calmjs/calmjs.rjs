@@ -92,6 +92,8 @@ class TextPlugin(NPMLoaderPluginHandler, RJSLoaderPluginHandlerMixin):
     assumes everything between the first and second '!' is the target.
     """
 
+    node_module_pkg_name = 'requirejs-text'
+
     def __init__(self, registry, name='text'):
         # just give this a default value for ease of use.
         super(TextPlugin, self).__init__(registry, name)

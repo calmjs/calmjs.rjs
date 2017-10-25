@@ -669,6 +669,62 @@ class ToolchainUnitTestCase(unittest.TestCase):
             "handler for 'unsupported/unknown_plugin' loader plugin not found",
             logs)
         self.assertIn("also this is an invalid value", logs)
+        self.assertIn(
+            "could not locate 'package.json' for the npm package "
+            "'requirejs-text'", logs)
+
+    def test_prepare_rjs_plugin_key_text(self):
+        tmpdir = utils.mkdtemp(self)
+        working_dir = utils.mkdtemp(self)
+        module_root = join(working_dir, 'node_modules', 'requirejs-text')
+        module_cfg = join(module_root, 'package.json')
+        module_src = join(module_root, 'text.js')
+
+        # create the dummy requirejs-text package.json entry, using the
+        # basic partial information that would be available.
+        os.makedirs(module_root)
+        with open(module_cfg, 'w') as fd:
+            json.dump({
+                "name": "requirejs-text",
+                "version": "2.0.15",
+                "main": "text.js",
+                "license": "MIT",
+            }, fd)
+
+        rjs = toolchain.RJSToolchain()
+
+        with open(join(tmpdir, 'r.js'), 'w'):
+            # mock a r.js file.
+            pass
+
+        spec = Spec(
+            # this is not written
+            export_target=join(tmpdir, 'bundle.js'),
+            build_dir=tmpdir,
+            bundle_sourcepath={},
+            transpiled_modpaths={},
+            bundled_modpaths={},
+            export_module_names=[],
+            working_dir=working_dir,
+        )
+        spec[rjs.rjs_bin_key] = join(tmpdir, 'r.js')
+        spec[toolchain.REQUIREJS_PLUGINS] = {
+            'text': {
+                'text!namespace/module/path.txt': '/namespace/module/path.txt',
+            },
+        }
+
+        with pretty_logging(logger='calmjs', stream=mocks.StringIO()) as s:
+            rjs.prepare(spec)
+
+        logs = s.getvalue()
+        self.assertIn("found handler for 'text' loader plugin", logs)
+        self.assertNotIn(
+            "could not locate 'package.json' for the npm package "
+            "'requirejs-text'", logs)
+
+        # This is now assigned.
+        self.assertEqual(spec['bundle_sourcepath'], {'text': module_src})
 
     def assemble_spec_config(self, **kw):
         # for the assemble related tests.

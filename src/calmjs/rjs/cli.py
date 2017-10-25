@@ -10,6 +10,7 @@ from calmjs.toolchain import BUILD_DIR
 from calmjs.toolchain import CALMJS_MODULE_REGISTRY_NAMES
 from calmjs.toolchain import EXPORT_TARGET
 from calmjs.toolchain import SOURCE_PACKAGE_NAMES
+from calmjs.toolchain import WORKING_DIR
 from calmjs.rjs.toolchain import STUB_MISSING_WITH_EMPTY
 
 from calmjs.rjs.toolchain import RJSToolchain
@@ -163,6 +164,7 @@ def create_spec(
     spec[EXPORT_TARGET] = export_target
     spec[SOURCE_PACKAGE_NAMES] = package_names
     spec[STUB_MISSING_WITH_EMPTY] = stub_missing_with_empty
+    spec[WORKING_DIR] = working_dir
 
     spec_update_sourcepath(spec, generate_transpile_sourcepaths(
         package_names=package_names,
