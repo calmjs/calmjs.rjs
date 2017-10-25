@@ -329,8 +329,13 @@ class RJSToolchain(Toolchain):
             handler = loader_plugin_registry.get_record(key)
             if handler:
                 # assume handler will do the job.
-                plugin_sourcepath.update(value)
                 logger.debug("found handler for '%s' loader plugin", key)
+                plugin_sourcepath.update(value)
+                logger.debug(
+                    "plugin_sourcepath updated with %d keys", len(value))
+                bundle_sourcepath = handler.locate_bundle_sourcepath(
+                    self, spec, value)
+                spec['bundle_sourcepath'].update(bundle_sourcepath)
             else:
                 logger.warning(
                     "handler for '%s' loader plugin not found in registry; "

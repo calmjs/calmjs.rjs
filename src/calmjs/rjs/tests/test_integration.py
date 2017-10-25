@@ -345,7 +345,10 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         custom_registry = LoaderPluginRegistry(
             'custom', _working_set=WorkingSet({
                 'custom': [
-                    'example/package/loader = calmjs.rjs.plugin:TextPlugin']})
+                    'example/package/loader = '
+                    'calmjs.rjs.testing.plugin:DemoPluginHandler'
+                ]
+            })
         )
         rjs = toolchain.RJSToolchain()
         rjs.loader_plugin_registry = custom_registry

@@ -624,6 +624,7 @@ class ToolchainUnitTestCase(unittest.TestCase):
 
     def test_prepare_rjs_plugin_key(self):
         tmpdir = utils.mkdtemp(self)
+        working_dir = utils.mkdtemp(self)
         rjs = toolchain.RJSToolchain()
 
         with open(join(tmpdir, 'r.js'), 'w'):
@@ -634,9 +635,11 @@ class ToolchainUnitTestCase(unittest.TestCase):
             # this is not written
             export_target=join(tmpdir, 'bundle.js'),
             build_dir=tmpdir,
+            bundle_sourcepath={},
             transpiled_modpaths={},
             bundled_modpaths={},
             export_module_names=[],
+            working_dir=working_dir,
         )
         spec[rjs.rjs_bin_key] = join(tmpdir, 'r.js')
         spec[toolchain.REQUIREJS_PLUGINS] = {
@@ -648,12 +651,15 @@ class ToolchainUnitTestCase(unittest.TestCase):
             },
         }
 
-        with pretty_logging(logger='calmjs.rjs', stream=mocks.StringIO()) as s:
+        with pretty_logging(logger='calmjs', stream=mocks.StringIO()) as s:
             rjs.prepare(spec)
 
         self.assertEqual(spec['plugin_sourcepath'], {
             'text!namespace/module/path.txt': '/namespace/module/path.txt',
         })
+        # due to working dir NOT having the text plugin installed from
+        # npm.
+        self.assertEqual(spec['bundle_sourcepath'], {})
 
         logs = s.getvalue()
         self.assertIn("DEBUG", logs)
