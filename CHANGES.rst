@@ -1,6 +1,16 @@
 Changelog
 =========
 
+2.0.0 (unreleased)
+------------------
+
+- Support for ``calmjs-3.0.0`` features and breaking changes.
+- Loader plugin framework migrated upstream; downstream packages that
+  make use of them should no longer declare explicit entries in
+  ``extras_calmjs`` to permit wider portability.
+- Removed usage of ``slimit`` in favor of the capabilities now provided
+  by ``calmjs`` and ``calmjs.parse``.
+
 1.0.2 (2017-05-22)
 ------------------
 

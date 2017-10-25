@@ -449,7 +449,10 @@ details on how this is constructed and set up for usage.
 
 By default, the ``text`` handler is registered to the default loader
 plugin registry, which should cover the most common use case encountered
-by the |calmjs| framework.
+by the |calmjs| framework.  Do note that packages are still required to
+declare their (dev)dependencies in their ``package_json`` to the plugin,
+ideally with a well constrained version, so to ensure a consistent build
+experience for all end users.
 
 
 Troubleshooting
