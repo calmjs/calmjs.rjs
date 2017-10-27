@@ -5,7 +5,7 @@ from os import makedirs
 from os.path import exists
 from os.path import join
 
-from calmjs.rjs import plugin
+from calmjs.rjs import loaderplugin
 from calmjs.utils import pretty_logging
 
 from calmjs.testing.utils import mkdtemp
@@ -15,7 +15,7 @@ from calmjs.testing.mocks import StringIO
 class RJSMixinTestCase(unittest.TestCase):
 
     def test_config_paths(self):
-        handler = plugin.RJSLoaderPluginHandlerMixin()
+        handler = loaderplugin.RJSLoaderPluginHandlerMixin()
         self.assertEqual(handler.modname_target_to_config_paths(
             'example/path', 'example/path.js'),
             {'example/path': 'example/path.js?'},
@@ -26,7 +26,7 @@ class RJSMixinTestCase(unittest.TestCase):
         )
 
     def test_others(self):
-        handler = plugin.RJSLoaderPluginHandlerMixin()
+        handler = loaderplugin.RJSLoaderPluginHandlerMixin()
         modname_modpath = ('example/path', 'example/path')
         self.assertEqual(
             handler.modname_modpath_to_config_paths(*modname_modpath),
@@ -37,26 +37,27 @@ class RJSMixinTestCase(unittest.TestCase):
 class TextLoaderPluginTestCase(unittest.TestCase):
 
     def test_strip_plugin(self):
-        f = plugin.TextPlugin(None).strip_plugin
+        f = loaderplugin.TextPlugin(None).strip_plugin
         self.assertEqual(f('file.txt'), 'file.txt')
         self.assertEqual(f('text!file.txt'), 'file.txt')
         self.assertEqual(f('text!file.txt!strip'), 'file.txt')
 
     def test_strip_plugin_unstripped_values(self):
-        f = plugin.TextPlugin(None).strip_plugin
+        f = loaderplugin.TextPlugin(None).strip_plugin
         self.assertEqual(f('/file.txt'), '/file.txt')
         self.assertEqual(f('/text!file.txt'), '/text!file.txt')
         self.assertEqual(f('/text!file.txt!strip'), '/text!file.txt!strip')
 
     def test_strip_plugin_empty(self):
-        f = plugin.TextPlugin(None).strip_plugin
+        f = loaderplugin.TextPlugin(None).strip_plugin
         # this should be invalid, but we are forgiving
         self.assertEqual(f(''), '')
         self.assertEqual(f('text!'), '')
 
     def test_requirejs_text_issue123_handling(self):
-        f = plugin.TextPlugin(None).requirejs_text_issue123
-        with pretty_logging('calmjs.rjs.plugin', stream=StringIO()) as stream:
+        f = loaderplugin.TextPlugin(None).requirejs_text_issue123
+        with pretty_logging(
+                'calmjs.rjs.loaderplugin', stream=StringIO()) as stream:
             self.assertEqual(f('file'), ['file', ''])
             self.assertEqual(f('dir/text'), ['dir/text', ''])
             self.assertEqual(f('dir/text.txt'), ['dir/text', 'txt'])
@@ -66,7 +67,8 @@ class TextLoaderPluginTestCase(unittest.TestCase):
 
         self.assertEqual(stream.getvalue(), '')
 
-        with pretty_logging('calmjs.rjs.plugin', stream=StringIO()) as stream:
+        with pretty_logging(
+                'calmjs.rjs.loaderplugin', stream=StringIO()) as stream:
             # the following also implement the stripping of trailing
             # dots which requirejs-text doesn't support correctly,
             # and with requirejs>=2.0.13 will fail consistently.
@@ -79,8 +81,9 @@ class TextLoaderPluginTestCase(unittest.TestCase):
         self.assertIn('trailing', stream.getvalue())
 
     def test_empty_modname_target_to_config_paths(self):
-        f = plugin.TextPlugin(None).modname_target_to_config_paths
-        with pretty_logging('calmjs.rjs.plugin', stream=StringIO()) as stream:
+        f = loaderplugin.TextPlugin(None).modname_target_to_config_paths
+        with pretty_logging(
+                'calmjs.rjs.loaderplugin', stream=StringIO()) as stream:
             self.assertEqual(
                 f('text!', 'text!'),
                 {'': ''},  # we are following our own rules...
@@ -88,15 +91,16 @@ class TextLoaderPluginTestCase(unittest.TestCase):
         self.assertEqual(stream.getvalue(), '')
 
     def test_modname_target_to_config_paths(self):
-        f = plugin.TextPlugin(None).modname_target_to_config_paths
+        f = loaderplugin.TextPlugin(None).modname_target_to_config_paths
         self.modname_x_to_config_paths(f)
 
     def test_modname_source_to_config_paths(self):
-        f = plugin.TextPlugin(None).modname_source_to_config_paths
+        f = loaderplugin.TextPlugin(None).modname_source_to_config_paths
         self.modname_x_to_config_paths(f)
 
     def modname_x_to_config_paths(self, f):
-        with pretty_logging('calmjs.rjs.plugin', stream=StringIO()) as stream:
+        with pretty_logging(
+                'calmjs.rjs.loaderplugin', stream=StringIO()) as stream:
             self.assertEqual(
                 f('text!file', 'text!file'),
                 {'file': 'file'},
@@ -137,8 +141,9 @@ class TextLoaderPluginTestCase(unittest.TestCase):
         # this will blow up, actually, since requesting for file.htm
         # will NOT resolve it to file.html - no configuration can be
         # currently done to produce a working mapping.
-        f = plugin.TextPlugin(None).modname_target_to_config_paths
-        with pretty_logging('calmjs.rjs.plugin', stream=StringIO()) as stream:
+        f = loaderplugin.TextPlugin(None).modname_target_to_config_paths
+        with pretty_logging(
+                'calmjs.rjs.loaderplugin', stream=StringIO()) as stream:
             self.assertEqual(
                 f('text!file.htm', 'text!some.dotted/dir/file.html'),
                 {'file.htm': 'some.dotted/dir/file.html'},
@@ -148,8 +153,9 @@ class TextLoaderPluginTestCase(unittest.TestCase):
         self.assertIn('no possible workaround', err)
 
     def test_modname_target_to_config_paths_mismatch_dir_ext_file_noext(self):
-        f = plugin.TextPlugin(None).modname_target_to_config_paths
-        with pretty_logging('calmjs.rjs.plugin', stream=StringIO()) as stream:
+        f = loaderplugin.TextPlugin(None).modname_target_to_config_paths
+        with pretty_logging(
+                'calmjs.rjs.loaderplugin', stream=StringIO()) as stream:
             self.assertEqual(
                 {
                     'file': 'some.dotted/dir/file',
@@ -175,14 +181,15 @@ class TextLoaderPluginTestCase(unittest.TestCase):
         self.assertIn('text!some.dotted/dir/file.ns/html', err)
 
     def test_modname_target_to_config_paths_warning(self):
-        f = plugin.TextPlugin(None).modname_target_to_config_paths
+        f = loaderplugin.TextPlugin(None).modname_target_to_config_paths
         # There are cases where if the python style namespace separator
         # is used for the generated path, and the final fragment has no
         # further '.' characters, WILL result in a complete mismatch of
         # the key to the expected target.  That said, this particular
         # type of mapping doesn't seem to be supported at all by the
-        # requirejs-text plugin.
-        with pretty_logging('calmjs.rjs.plugin', stream=StringIO()) as stream:
+        # requirejs-text loader plugin.
+        with pretty_logging(
+                'calmjs.rjs.loaderplugin', stream=StringIO()) as stream:
             self.assertEqual(
                 f('text!some.target/file', '/src/some/target/file'),
                 {'some.target/file': '/src/some/target/file'},
@@ -204,8 +211,9 @@ class TextLoaderPluginTestCase(unittest.TestCase):
 
     def test_modname_target_to_config_paths_info_no_false_positive(self):
         # like the htm -> html example
-        f = plugin.TextPlugin(None).modname_target_to_config_paths
-        with pretty_logging('calmjs.rjs.plugin', stream=StringIO()) as stream:
+        f = loaderplugin.TextPlugin(None).modname_target_to_config_paths
+        with pretty_logging(
+                'calmjs.rjs.loaderplugin', stream=StringIO()) as stream:
             self.assertEqual(
                 f('text!some/file.html', '/src/some/target/file.rst'),
                 {'some/file.html': '/src/some/target/file.rst'},
@@ -218,8 +226,9 @@ class TextLoaderPluginTestCase(unittest.TestCase):
         # Again, the mapping just do not work.  Mapping from 'some' to
         # '/src/some' will not suddenly make 'contents/html' map to
         # 'contents/rst'.
-        f = plugin.TextPlugin(None).modname_target_to_config_paths
-        with pretty_logging('calmjs.rjs.plugin', stream=StringIO()) as stream:
+        f = loaderplugin.TextPlugin(None).modname_target_to_config_paths
+        with pretty_logging(
+                'calmjs.rjs.loaderplugin', stream=StringIO()) as stream:
             self.assertEqual(
                 {'some.contents/html': '/src/some.contents/rst'},
                 f('text!some.contents/html', '/src/some.contents/rst'),
@@ -243,8 +252,9 @@ class TextLoaderPluginTestCase(unittest.TestCase):
         target = 'text!text_file.txt'
         modpath = 'text!text_file.txt'
 
-        with pretty_logging('calmjs.rjs.plugin', stream=StringIO()) as stream:
-            result = plugin.TextPlugin(None)(
+        with pretty_logging(
+                'calmjs.rjs.loaderplugin', stream=StringIO()) as stream:
+            result = loaderplugin.TextPlugin(None)(
                 toolchain, spec, modname, source, target, modpath)
         self.assertEqual(stream.getvalue(), '')
 
@@ -276,8 +286,9 @@ class TextLoaderPluginTestCase(unittest.TestCase):
         target = 'text!namespace/text_file.txt'
         modpath = 'text!namespace/text_file.txt'
 
-        with pretty_logging('calmjs.rjs.plugin', stream=StringIO()) as stream:
-            result = plugin.TextPlugin(None)(
+        with pretty_logging(
+                'calmjs.rjs.loaderplugin', stream=StringIO()) as stream:
+            result = loaderplugin.TextPlugin(None)(
                 toolchain, spec, modname, source, target, modpath)
         self.assertEqual(stream.getvalue(), '')
 
@@ -308,8 +319,9 @@ class TextLoaderPluginTestCase(unittest.TestCase):
         target = 'text!dotted.ns/data'
         modpath = 'text!dotted.ns/data'
 
-        with pretty_logging('calmjs.rjs.plugin', stream=StringIO()) as stream:
-            result = plugin.TextPlugin(None)(
+        with pretty_logging(
+                'calmjs.rjs.loaderplugin', stream=StringIO()) as stream:
+            result = loaderplugin.TextPlugin(None)(
                 toolchain, spec, modname, source, target, modpath)
         err = stream.getvalue()
         self.assertIn('WARNING', err)
@@ -356,13 +368,14 @@ class TextLoaderPluginTestCase(unittest.TestCase):
         # note, this mismatch target and modpath shouldn't normally be
         # produced, however as the build script will have an empty paths
         # mapping, this wouldn't have worked as part of the build anyway.
-        # So for plugin authors, do ensure the targets in the build
-        # directory map directly to the intended locations.
+        # So for loader plugin authors, do ensure the targets in the
+        # build directory map directly to the intended locations.
         target = join('dotted', 'ns', 'data')
         modpath = 'text!dotted.ns/data'
 
-        with pretty_logging('calmjs.rjs.plugin', stream=StringIO()) as stream:
-            result = plugin.TextPlugin(None)(
+        with pretty_logging(
+                'calmjs.rjs.loaderplugin', stream=StringIO()) as stream:
+            result = loaderplugin.TextPlugin(None)(
                 toolchain, spec, modname, source, target, modpath)
         err = stream.getvalue()
         self.assertIn('WARNING', err)

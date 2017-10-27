@@ -5,8 +5,8 @@ from calmjs.registry import get
 
 from calmjs.loaderplugin import BaseLoaderPluginHandler
 from calmjs.rjs.registry import LoaderPluginRegistry
-from calmjs.rjs.plugin import RJSLoaderPluginHandlerMixin
-from calmjs.rjs.plugin import TextPlugin
+from calmjs.rjs.loaderplugin import RJSLoaderPluginHandlerMixin
+from calmjs.rjs.loaderplugin import TextPlugin
 
 from calmjs.utils import pretty_logging
 from calmjs.testing.mocks import StringIO
@@ -34,7 +34,7 @@ class LoaderPluginRegistryTestCase(unittest.TestCase):
     def test_initialize_standard(self):
         # ensure that we have a proper working registry
         working_set = WorkingSet({'calmjs.rjs.loader_plugin': [
-            'text = calmjs.rjs.plugin:TextPlugin',
+            'text = calmjs.rjs.loaderplugin:TextPlugin',
         ]})
         registry = LoaderPluginRegistry(
             'calmjs.rjs.loader_plugin', _working_set=working_set)
@@ -89,7 +89,7 @@ class LoaderPluginRegistryTestCase(unittest.TestCase):
         # ensure that we have a proper working registry
         working_set = WorkingSet({'calmjs.rjs.loader_plugin': [
             'text = calmjs.rjs.tests.test_registry:DupePlugin',
-            'text = calmjs.rjs.plugin:TextPlugin',
+            'text = calmjs.rjs.loaderplugin:TextPlugin',
         ]})
         # should not trigger import failure
         with pretty_logging(stream=StringIO()) as stream:
@@ -117,7 +117,7 @@ class MappingConversionTestCase(unittest.TestCase):
 
     def setUp(self):
         working_set = WorkingSet({'calmjs.rjs.loader_plugin': [
-            'text = calmjs.rjs.plugin:TextPlugin',
+            'text = calmjs.rjs.loaderplugin:TextPlugin',
         ]})
         self.registry = LoaderPluginRegistry(
             'calmjs.rjs.loader_plugin', _working_set=working_set)

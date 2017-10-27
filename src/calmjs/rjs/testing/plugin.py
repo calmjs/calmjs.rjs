@@ -3,7 +3,7 @@ import shutil
 from os.path import join
 
 from calmjs.loaderplugin import BaseLoaderPluginHandler
-from calmjs.rjs.plugin import RJSLoaderPluginHandlerMixin
+from calmjs.rjs.loaderplugin import RJSLoaderPluginHandlerMixin
 
 
 class DemoPluginHandler(BaseLoaderPluginHandler, RJSLoaderPluginHandlerMixin):

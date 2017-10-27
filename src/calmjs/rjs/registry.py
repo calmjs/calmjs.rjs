@@ -22,7 +22,7 @@ module.
 from logging import getLogger
 
 from calmjs import loaderplugin
-from calmjs.rjs.plugin import RJSLoaderPluginHandlerMixin
+from calmjs.rjs.loaderplugin import RJSLoaderPluginHandlerMixin
 from calmjs.rjs.utils import dict_key_update_overwrite_check
 
 logger = getLogger(__name__)

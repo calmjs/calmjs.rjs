@@ -19,7 +19,7 @@ requirejs
     Various utility functions for making ``requirejs``/``r.js`` work
     better, so that it can actually be used with minimum pain.
 
-plugin
+loaderplugin
     For integration with the requirejs loader plugin system.
 
 registry
