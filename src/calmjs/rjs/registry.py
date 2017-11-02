@@ -29,7 +29,6 @@ logger = getLogger(__name__)
 _default_handler = RJSLoaderPluginHandlerMixin()
 
 RJS_LOADER_PLUGIN_REGISTRY_NAME = 'calmjs.rjs.loader_plugin'
-RJS_LOADER_PLUGIN_REGISTRY_KEY = 'rjs_loader_plugin_registry_key'
 RJS_LOADER_PLUGIN_REGISTRY = 'rjs_loader_plugin_registry'
 
 

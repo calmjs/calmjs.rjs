@@ -43,18 +43,21 @@ from subprocess import call
 from calmjs.interrogate import extract_module_imports
 from calmjs.registry import get
 from calmjs.toolchain import Toolchain
+from calmjs.toolchain import ToolchainSpecCompileEntry
 from calmjs.toolchain import CONFIG_JS_FILES
 from calmjs.toolchain import EXPORT_TARGET
 from calmjs.toolchain import BUILD_DIR
 from calmjs.toolchain import EXPORT_MODULE_NAMES
-from calmjs.toolchain import spec_update_plugins_sourcepath_dict
 
-from .utils import dict_key_update_overwrite_check
+from calmjs.toolchain import CALMJS_LOADERPLUGIN_REGISTRIES
+from calmjs.toolchain import CALMJS_LOADERPLUGIN_HANDLERS
+from calmjs.toolchain import spec_update_plugins_sourcepath_dict
+from calmjs.toolchain import spec_extend_loaderplugin_registries
+from calmjs.toolchain import spec_update_loaderplugins_handlers
+
 from .dev import rjs_advice
 from .exc import RJSRuntimeError
 from .exc import RJSExitError
-from .registry import RJS_LOADER_PLUGIN_REGISTRY
-from .registry import RJS_LOADER_PLUGIN_REGISTRY_KEY
 from .registry import RJS_LOADER_PLUGIN_REGISTRY_NAME
 from .requirejs import process_path
 from .umdjs import UMD_NODE_AMD_HEADER
@@ -213,31 +216,50 @@ class RJSToolchain(Toolchain):
 
     def build_compile_entries(self):
         return super(RJSToolchain, self).build_compile_entries() + (
-            ('plugin', 'plugin', 'plugins'),
+            ToolchainSpecCompileEntry(
+                'loaderplugin', 'plugin', 'plugins',
+                __name__, logging.WARNING),
         )
 
-    def compile_plugin(self, spec, entries):
-        """
-        The associated spec entry that ultimately call this should be
-        prepared through this class's prepare method.
-        """
+    def prepare_loaderplugins(self, spec):
+        # set up the loaderplugin registries for the spec.
+        spec_extend_loaderplugin_registries(spec)
+        if not spec.get(CALMJS_LOADERPLUGIN_REGISTRIES):
+            spec[CALMJS_LOADERPLUGIN_REGISTRIES] = [
+                self.loader_plugin_registry]
 
-        plugins_modpaths = {}
-        plugins_targetpaths = {}
-        export_module_names = []
+        # set up the plugin handlers onto the spec
+        spec_update_loaderplugins_handlers(spec, REQUIREJS_PLUGINS)
 
-        for modname, source, target, modpath in entries:
-            if source == EMPTY or modpath == EMPTY:
-                continue
-            plugin_name, arguments = modname.split('!', 1)
-            handler = spec[RJS_LOADER_PLUGIN_REGISTRY].get_record(plugin_name)
-            p_pm, p_pt, m_ns = handler(
-                self, spec, modname, source, target, modpath)
-            _spec = locals()
-            dict_key_update_overwrite_check(_spec, 'plugins_modpaths', p_pm)
-            dict_key_update_overwrite_check(_spec, 'plugins_targetpaths', p_pt)
-            export_module_names.extend(m_ns)
-        return plugins_modpaths, plugins_targetpaths, export_module_names
+        plugin_sourcepath = spec['plugin_sourcepath'] = {}
+        raw_plugins = spec.get(REQUIREJS_PLUGINS, {})
+        handlers = spec[CALMJS_LOADERPLUGIN_HANDLERS]
+        for key, value in raw_plugins.items():
+            handler = handlers.get(key)
+            if handler:
+                # assume handler will do the job.
+                logger.debug("found handler for '%s' loader plugin", key)
+                plugin_sourcepath.update(value)
+                logger.debug(
+                    "plugin_sourcepath updated with %d keys", len(value))
+                bundle_sourcepath = handler.locate_bundle_sourcepath(
+                    self, spec, value)
+                spec['bundle_sourcepath'].update(bundle_sourcepath)
+            else:
+                logger.warning(
+                    "handler for '%s' loader plugin not found in spec; "
+                    "as arguments associated with requirejs loader plugins "
+                    "are specific, processing is disabled and the following "
+                    "names will not be compiled into the target: %s",
+                    key, sorted(value.keys()),
+                )
+
+    def compile_loaderplugin_entry(self, spec, entry):
+        modname, source, target, modpath = entry
+        if source == EMPTY or modpath == EMPTY:
+            return
+        return super(RJSToolchain, self).compile_loaderplugin_entry(
+            spec, entry)
 
     def modname_source_target_to_modpath(self, spec, modname, source, target):
         """
@@ -265,10 +287,6 @@ class RJSToolchain(Toolchain):
         Attempts to locate the r.js binary if not already specified.  If
         the binary file was not found, RJSRuntimeError will be raised.
         """
-
-        loader_plugin_registry = get(spec.get(RJS_LOADER_PLUGIN_REGISTRY_KEY))
-        loader_plugin_registry = spec[RJS_LOADER_PLUGIN_REGISTRY] = (
-            loader_plugin_registry or self.loader_plugin_registry)
 
         if self.rjs_bin_key not in spec:
             which_bin = spec[self.rjs_bin_key] = (
@@ -323,28 +341,7 @@ class RJSToolchain(Toolchain):
             raise RJSRuntimeError(
                 "'%s' must not be same as '%s'" % (EXPORT_TARGET, matched[0]))
 
-        plugin_sourcepath = spec['plugin_sourcepath'] = {}
-        raw_plugins = spec.get(REQUIREJS_PLUGINS, {})
-        for key, value in raw_plugins.items():
-            handler = loader_plugin_registry.get_record(key)
-            if handler:
-                # assume handler will do the job.
-                logger.debug("found handler for '%s' loader plugin", key)
-                plugin_sourcepath.update(value)
-                logger.debug(
-                    "plugin_sourcepath updated with %d keys", len(value))
-                bundle_sourcepath = handler.locate_bundle_sourcepath(
-                    self, spec, value)
-                spec['bundle_sourcepath'].update(bundle_sourcepath)
-            else:
-                logger.warning(
-                    "handler for '%s' loader plugin not found in registry; "
-                    "as arguments associated with requirejs loader plugins "
-                    "are specific, processing is disabled and the following "
-                    "names will not be compiled into the target: %s",
-                    key, sorted(value.keys()),
-                )
-
+        self.prepare_loaderplugins(spec)
         # setup own advice.
         rjs_advice(spec)
 
