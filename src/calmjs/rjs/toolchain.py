@@ -51,7 +51,7 @@ from calmjs.toolchain import EXPORT_MODULE_NAMES
 
 from calmjs.toolchain import CALMJS_LOADERPLUGIN_REGISTRIES
 from calmjs.toolchain import CALMJS_LOADERPLUGIN_HANDLERS
-from calmjs.toolchain import spec_update_plugins_sourcepath_dict
+from calmjs.toolchain import spec_update_loaderplugins_sourcepath_dict
 from calmjs.toolchain import spec_extend_loaderplugin_registries
 from calmjs.toolchain import spec_update_loaderplugins_handlers
 
@@ -81,7 +81,7 @@ STUB_MISSING_WITH_EMPTY = 'stub_missing_with_empty'
 
 
 def spec_update_sourcepath(spec, sourcepath_dict, sourcepath_dict_key):
-    return spec_update_plugins_sourcepath_dict(
+    return spec_update_loaderplugins_sourcepath_dict(
         spec, sourcepath_dict, sourcepath_dict_key,
         loaderplugins_sourcepath_dict_key=REQUIREJS_PLUGINS
     )
