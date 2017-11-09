@@ -49,11 +49,8 @@ from calmjs.toolchain import EXPORT_TARGET
 from calmjs.toolchain import BUILD_DIR
 from calmjs.toolchain import EXPORT_MODULE_NAMES
 
-from calmjs.toolchain import CALMJS_LOADERPLUGIN_REGISTRIES
-from calmjs.toolchain import CALMJS_LOADERPLUGIN_HANDLERS
-from calmjs.toolchain import spec_update_loaderplugins_sourcepath_dict
-from calmjs.toolchain import spec_extend_loaderplugin_registries
-from calmjs.toolchain import spec_update_loaderplugins_handlers
+from calmjs.toolchain import spec_update_loaderplugin_registry
+from calmjs.toolchain import spec_update_loaderplugin_sourcepath_dict
 
 from .dev import rjs_advice
 from .exc import RJSRuntimeError
@@ -81,9 +78,9 @@ STUB_MISSING_WITH_EMPTY = 'stub_missing_with_empty'
 
 
 def spec_update_sourcepath(spec, sourcepath_dict, sourcepath_dict_key):
-    return spec_update_loaderplugins_sourcepath_dict(
+    return spec_update_loaderplugin_sourcepath_dict(
         spec, sourcepath_dict, sourcepath_dict_key,
-        loaderplugins_sourcepath_dict_key=REQUIREJS_PLUGINS
+        loaderplugin_sourcepath_dict_key=REQUIREJS_PLUGINS
     )
 
 
@@ -222,20 +219,14 @@ class RJSToolchain(Toolchain):
         )
 
     def prepare_loaderplugins(self, spec):
-        # set up the loaderplugin registries for the spec.
-        spec_extend_loaderplugin_registries(spec)
-        if not spec.get(CALMJS_LOADERPLUGIN_REGISTRIES):
-            spec[CALMJS_LOADERPLUGIN_REGISTRIES] = [
-                self.loader_plugin_registry]
-
         # set up the plugin handlers onto the spec
-        spec_update_loaderplugins_handlers(spec, REQUIREJS_PLUGINS)
+        registry = spec_update_loaderplugin_registry(
+            spec, default=self.loader_plugin_registry)
 
         plugin_sourcepath = spec['plugin_sourcepath'] = {}
-        raw_plugins = spec.get(REQUIREJS_PLUGINS, {})
-        handlers = spec[CALMJS_LOADERPLUGIN_HANDLERS]
-        for key, value in raw_plugins.items():
-            handler = handlers.get(key)
+        raw_plugin_map = spec.get(REQUIREJS_PLUGINS, {})
+        for key, value in raw_plugin_map.items():
+            handler = registry.get(key)
             if handler:
                 # assume handler will do the job.
                 logger.debug("found handler for '%s' loader plugin", key)

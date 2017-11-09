@@ -12,9 +12,9 @@ from functools import partial
 from io import StringIO
 
 from calmjs.parse import es5
+from calmjs.base import BaseLoaderPluginRegistry
 from calmjs.toolchain import Spec
 from calmjs.toolchain import CONFIG_JS_FILES
-from calmjs.toolchain import CALMJS_LOADERPLUGIN_HANDLERS
 from calmjs.vlqsm import SourceWriter
 from calmjs.npm import get_npm_version
 from calmjs.utils import pretty_logging
@@ -60,6 +60,8 @@ class SpecUpdateSourceMapTestCase(unittest.TestCase):
         spec = {}
 
         toolchain.spec_update_sourcepath(spec, sourcepath, 'source_key')
+        self.assertTrue(isinstance(spec.pop(
+            'calmjs_loaderplugin_registry'), BaseLoaderPluginRegistry))
         self.assertEqual(spec, {
             'requirejs_plugins': {},
             'source_key': {
@@ -89,7 +91,8 @@ class SpecUpdateSourceMapTestCase(unittest.TestCase):
         spec = {}
 
         toolchain.spec_update_sourcepath(spec, sourcepath, 'source_key')
-        self.maxDiff = 123123
+        self.assertTrue(isinstance(spec.pop(
+            'calmjs_loaderplugin_registry'), BaseLoaderPluginRegistry))
         self.assertEqual(spec, {
             'requirejs_plugins': {
                 'plugin/module': {
@@ -359,7 +362,6 @@ class ToolchainCompilePluginTestCase(unittest.TestCase):
         rjs.prepare_loaderplugins(spec)
 
         self.assertIn('text', bundle_sourcepath)
-        self.assertIn('text', spec[CALMJS_LOADERPLUGIN_HANDLERS])
 
         rjs.compile_loaderplugin_entry(spec, (
             'text!mod1.txt', src, target1, 'mod1'))
