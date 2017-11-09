@@ -8,9 +8,11 @@ import logging
 from calmjs.toolchain import Spec
 from calmjs.toolchain import BUILD_DIR
 from calmjs.toolchain import CALMJS_MODULE_REGISTRY_NAMES
+from calmjs.toolchain import CALMJS_LOADERPLUGIN_REGISTRY_NAME
 from calmjs.toolchain import EXPORT_TARGET
 from calmjs.toolchain import SOURCE_PACKAGE_NAMES
 from calmjs.toolchain import WORKING_DIR
+from calmjs.rjs.registry import RJS_LOADER_PLUGIN_REGISTRY_NAME
 from calmjs.rjs.toolchain import STUB_MISSING_WITH_EMPTY
 
 from calmjs.rjs.toolchain import RJSToolchain
@@ -28,6 +30,7 @@ def create_spec(
         package_names, export_target=None, working_dir=None, build_dir=None,
         source_registry_method='all', source_registries=None,
         sourcepath_method='all', bundlepath_method='all',
+        calmjs_loaderplugin_registry_name=RJS_LOADER_PLUGIN_REGISTRY_NAME,
         stub_missing_with_empty=False,
         transpile_no_indent=False):
     """
@@ -109,6 +112,10 @@ def create_spec(
 
         Defaults to 'all'.
 
+    calmjs_loaderplugin_registry_name
+        The name of the loaderplugin registry to use.  Defaults to the
+        one provided by this package: 'calmjs.rjs.plugin_registry'.
+
     stub_missing_with_empty
         If r.js/requirejs encounters a module that it cannot find, it
         will flat out kill itself and this feature cannot be disabled
@@ -161,6 +168,7 @@ def create_spec(
 
     spec[BUILD_DIR] = build_dir
     spec[CALMJS_MODULE_REGISTRY_NAMES] = source_registries
+    spec[CALMJS_LOADERPLUGIN_REGISTRY_NAME] = calmjs_loaderplugin_registry_name
     spec[EXPORT_TARGET] = export_target
     spec[SOURCE_PACKAGE_NAMES] = package_names
     spec[STUB_MISSING_WITH_EMPTY] = stub_missing_with_empty
@@ -185,6 +193,7 @@ def compile_all(
         package_names, export_target=None, working_dir=None, build_dir=None,
         source_registry_method='all', source_registries=None,
         sourcepath_method='all', bundlepath_method='all',
+        calmjs_loaderplugin_registry_name=RJS_LOADER_PLUGIN_REGISTRY_NAME,
         stub_missing_with_empty=False,
         transpile_no_indent=False,
         toolchain=default_toolchain):
@@ -216,6 +225,7 @@ def compile_all(
         source_registries=source_registries,
         sourcepath_method=sourcepath_method,
         bundlepath_method=bundlepath_method,
+        calmjs_loaderplugin_registry_name=calmjs_loaderplugin_registry_name,
         stub_missing_with_empty=stub_missing_with_empty,
         transpile_no_indent=transpile_no_indent,
     )

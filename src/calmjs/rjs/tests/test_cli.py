@@ -3,6 +3,7 @@ import unittest
 
 from calmjs.toolchain import Spec
 from calmjs.utils import pretty_logging
+from calmjs.rjs.registry import RJS_LOADER_PLUGIN_REGISTRY_NAME
 
 from calmjs.rjs.cli import create_spec
 from calmjs.rjs.cli import compile_all
@@ -25,6 +26,10 @@ class CliTestCase(unittest.TestCase):
         self.assertTrue(isinstance(spec, Spec))
         self.assertEqual(spec['export_target'], 'calmjs.rjs.export.js')
         self.assertEqual(spec['calmjs_module_registry_names'], [])
+        self.assertEqual(
+            RJS_LOADER_PLUGIN_REGISTRY_NAME,
+            spec['calmjs_loaderplugin_registry'].registry_name,
+        )
 
     def test_create_spec_with_calmjs_rjs(self):
         with pretty_logging(stream=StringIO()) as stream:
