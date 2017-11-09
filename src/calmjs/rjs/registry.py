@@ -26,7 +26,7 @@ from calmjs.rjs.loaderplugin import RJSLoaderPluginHandlerMixin
 from calmjs.rjs.utils import dict_key_update_overwrite_check
 
 logger = getLogger(__name__)
-_default_handler = RJSLoaderPluginHandlerMixin()
+_default_handler = RJSLoaderPluginHandlerMixin('<calmjs.rjs.default>')
 
 RJS_LOADER_PLUGIN_REGISTRY_NAME = 'calmjs.rjs.loader_plugin'
 RJS_LOADER_PLUGIN_REGISTRY = 'rjs_loader_plugin_registry'

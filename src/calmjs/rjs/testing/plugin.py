@@ -2,11 +2,11 @@
 import shutil
 from os.path import join
 
-from calmjs.loaderplugin import BaseLoaderPluginHandler
+from calmjs.loaderplugin import LoaderPluginHandler
 from calmjs.rjs.loaderplugin import RJSLoaderPluginHandlerMixin
 
 
-class DemoPluginHandler(BaseLoaderPluginHandler, RJSLoaderPluginHandlerMixin):
+class DemoPluginHandler(LoaderPluginHandler, RJSLoaderPluginHandlerMixin):
     """
     A demo plugin handler; currently only copies the stripped path to
     where requirejs expects the data to be.

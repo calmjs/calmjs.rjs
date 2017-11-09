@@ -3,7 +3,7 @@ import unittest
 
 from calmjs.registry import get
 
-from calmjs.loaderplugin import BaseLoaderPluginHandler
+from calmjs.loaderplugin import LoaderPluginHandler
 from calmjs.rjs.registry import LoaderPluginRegistry
 from calmjs.rjs.loaderplugin import RJSLoaderPluginHandlerMixin
 from calmjs.rjs.loaderplugin import TextPlugin
@@ -17,13 +17,13 @@ class NotPlugin(LoaderPluginRegistry):
     """yeanah"""
 
 
-class BadPlugin(BaseLoaderPluginHandler, RJSLoaderPluginHandlerMixin):
+class BadPlugin(LoaderPluginHandler, RJSLoaderPluginHandlerMixin):
 
     def __init__(self):
         """this will not be called; missing argument"""
 
 
-class DupePlugin(BaseLoaderPluginHandler, RJSLoaderPluginHandlerMixin):
+class DupePlugin(LoaderPluginHandler, RJSLoaderPluginHandlerMixin):
     """
     Dummy duplicate plugin
     """
@@ -79,11 +79,9 @@ class LoaderPluginRegistryTestCase(unittest.TestCase):
                 'calmjs.rjs.loader_plugin', _working_set=working_set)
         self.assertIsNone(registry.get('bad_plugin'))
         self.assertIn(
-            "the loader plugin class registered at 'bad_plugin = "
-            "calmjs.rjs.tests.test_registry:BadPlugin' failed "
-            "to be instantiated with the following exception",
-            stream.getvalue()
-        )
+            "registration of entry point 'bad_plugin = "
+            "calmjs.rjs.tests.test_registry:BadPlugin'", stream.getvalue())
+        self.assertIn("failed with the following exception", stream.getvalue())
 
     def test_initialize_warning_dupe_plugin(self):
         # ensure that we have a proper working registry

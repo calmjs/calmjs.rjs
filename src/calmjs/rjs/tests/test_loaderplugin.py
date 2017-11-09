@@ -15,7 +15,7 @@ from calmjs.testing.mocks import StringIO
 class RJSMixinTestCase(unittest.TestCase):
 
     def test_config_paths(self):
-        handler = loaderplugin.RJSLoaderPluginHandlerMixin()
+        handler = loaderplugin.RJSLoaderPluginHandlerMixin('dummy')
         self.assertEqual(handler.modname_target_to_config_paths(
             'example/path', 'example/path.js'),
             {'example/path': 'example/path.js?'},
@@ -26,7 +26,7 @@ class RJSMixinTestCase(unittest.TestCase):
         )
 
     def test_others(self):
-        handler = loaderplugin.RJSLoaderPluginHandlerMixin()
+        handler = loaderplugin.RJSLoaderPluginHandlerMixin('dummy')
         modname_modpath = ('example/path', 'example/path')
         self.assertEqual(
             handler.modname_modpath_to_config_paths(*modname_modpath),

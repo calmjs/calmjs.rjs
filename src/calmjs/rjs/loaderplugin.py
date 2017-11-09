@@ -38,11 +38,12 @@ from os.path import exists
 from os.path import join
 
 from calmjs.loaderplugin import NPMLoaderPluginHandler
+from calmjs.loaderplugin import BaseLoaderPluginHandler
 
 logger = logging.getLogger(__name__)
 
 
-class RJSLoaderPluginHandlerMixin(object):
+class RJSLoaderPluginHandlerMixin(BaseLoaderPluginHandler):
     """
     A mixin for the loader plugin handler that also address the specific
     needs of the requirejs system; provides a framework to deal with path
