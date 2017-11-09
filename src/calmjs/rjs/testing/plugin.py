@@ -19,11 +19,10 @@ class DemoPluginHandler(LoaderPluginHandler, RJSLoaderPluginHandlerMixin):
         directory.
         """
 
-        stripped_target = self.strip_plugin(target)
-        copy_target = join(spec['build_dir'], stripped_target)
+        copy_target = join(spec['build_dir'], target)
         shutil.copy(source, copy_target)
 
-        bundled_modpaths = {modname: modpath}
+        bundled_modpaths = {modname: target}
         bundled_targets = {modname: target}
         export_module_names = [modname]
         return bundled_modpaths, bundled_targets, export_module_names

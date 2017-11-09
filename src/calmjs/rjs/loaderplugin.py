@@ -51,6 +51,31 @@ class RJSLoaderPluginHandlerMixin(BaseLoaderPluginHandler):
     within a requirejs environment.
     """
 
+    def modname_source_to_target(self, toolchain, spec, modname, source):
+        """
+        This overrides the default to also call the toolchain version to
+        get the target
+        """
+
+        target = super(
+            RJSLoaderPluginHandlerMixin, self).modname_source_to_target(
+                toolchain, spec, modname, source)
+        # Assuming that the toolchain instance IS RJSToolchain.  The
+        # reason for the reliance on the parent is that the behavior of
+        # adding file name suffix is _required_ for certain lookup
+        # operations that requirejs does.  However, given that the
+        # default Toolchain instance WILL make use of the registry again
+        # to find a handler for further lookups, this can wrap back into
+        # this handler somehow (or even prematurely) which can trigger
+        # infinite recursion... So only trigger the lookup on the
+        # final cleanup, i.e. when the implementation returns a target
+        # without any loaderplugin syntax.
+        if '!' not in target:
+            return toolchain.modname_source_to_target(spec, target, source)
+        return target
+
+    # remainder are proprietary to the requirejs interfaces.
+
     def modname_modpath_to_config_paths(self, modname, modpath):
         """
         In the default tool, this is not used, but this is left here as

@@ -5,8 +5,11 @@ from os import makedirs
 from os.path import exists
 from os.path import join
 
-from calmjs.rjs import loaderplugin
+from calmjs.toolchain import Spec
 from calmjs.utils import pretty_logging
+from calmjs.rjs import loaderplugin
+from calmjs.rjs.toolchain import RJSToolchain
+from calmjs.rjs.registry import LoaderPluginRegistry
 
 from calmjs.testing.utils import mkdtemp
 from calmjs.testing.mocks import StringIO
@@ -32,6 +35,48 @@ class RJSMixinTestCase(unittest.TestCase):
             handler.modname_modpath_to_config_paths(*modname_modpath),
             dict([modname_modpath]),
         )
+
+    def test_modname_source_to_target(self):
+        registry = LoaderPluginRegistry('registry')
+        dummy = loaderplugin.RJSLoaderPluginHandlerMixin(registry, 'dummy')
+        registry.records['dummy'] = dummy
+        toolchain = RJSToolchain()
+        spec = Spec(calmjs_loaderplugin_registry=registry)
+        self.assertEqual('welp.file', toolchain.modname_source_to_target(
+            spec, 'welp.file', '/path/to/welp.file'))
+        self.assertEqual('welp.file', toolchain.modname_source_to_target(
+            spec, 'dummy!welp.file', '/path/to/welp.file'))
+        self.assertEqual('welp.file', toolchain.modname_source_to_target(
+            spec, 'dummy!dummy!welp.file', '/path/to/welp.file'))
+        self.assertEqual('bad!welp.file', toolchain.modname_source_to_target(
+            spec, 'dummy!bad!welp.file', '/path/to/welp.file'))
+
+    def test_modname_source_to_target_dupe(self):
+        class _IdentityHandler(loaderplugin.BaseLoaderPluginHandler):
+            def modname_source_to_target(
+                    self, toolchain, spec, modname, source):
+                return modname
+
+        class IdentityHandler(
+                loaderplugin.RJSLoaderPluginHandlerMixin, _IdentityHandler):
+            """
+            An obtuse construction that can cause super to return the
+            identity which the parent implementation may not necessarily
+            catch.
+            """
+
+        registry = LoaderPluginRegistry('registry')
+        registry.records['identity'] = IdentityHandler(registry, 'identity')
+        dummy = loaderplugin.RJSLoaderPluginHandlerMixin(registry, 'dummy')
+        registry.records['dummy'] = dummy
+        toolchain = RJSToolchain()
+        spec = Spec(calmjs_loaderplugin_registry=registry)
+        self.assertEqual(
+            'identity!welp.file', toolchain.modname_source_to_target(
+                spec, 'identity!welp.file', '/path/to/welp.file'))
+        self.assertEqual(
+            'identity!welp.file', toolchain.modname_source_to_target(
+                spec, 'dummy!identity!welp.file', '/path/to/welp.file'))
 
 
 class TextLoaderPluginTestCase(unittest.TestCase):
