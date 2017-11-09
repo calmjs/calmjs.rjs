@@ -337,7 +337,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         # include custom loader and data
         transpile_sourcepath.update(self._example_package_loader)
         bundle_sourcepath = {}
-        export_target = join(bundle_dir, 'example.package')
+        export_target = join(bundle_dir, 'example.package.js')
         requirejs_plugins = {
             'example/package/loader': self._example_package_data
         }
