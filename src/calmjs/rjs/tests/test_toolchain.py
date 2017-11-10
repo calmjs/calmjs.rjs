@@ -12,9 +12,9 @@ from functools import partial
 from io import StringIO
 
 from calmjs.parse import es5
-from calmjs.base import BaseLoaderPluginRegistry
 from calmjs.toolchain import Spec
 from calmjs.toolchain import CONFIG_JS_FILES
+from calmjs.toolchain import LOADERPLUGIN_SOURCEPATH_MAPS
 from calmjs.vlqsm import SourceWriter
 from calmjs.npm import get_npm_version
 from calmjs.utils import pretty_logging
@@ -44,75 +44,6 @@ def mock_requirejs_text(working_dir):
         }, fd)
 
     return module_src
-
-
-class SpecUpdateSourceMapTestCase(unittest.TestCase):
-    """
-    A function for updating the spec with a source map for target keys,
-    in such a way that makes it compatible with the base system.
-    """
-
-    def test_spec_update_sourcepath_standard_modules_base(self):
-        sourcepath = {
-            'standard/module': 'standard/module',
-            'standard.module': 'standard.module',
-        }
-        spec = {}
-
-        toolchain.spec_update_sourcepath(spec, sourcepath, 'source_key')
-        self.assertTrue(isinstance(spec.pop(
-            'calmjs_loaderplugin_registry'), BaseLoaderPluginRegistry))
-        self.assertEqual(spec, {
-            'requirejs_plugins': {},
-            'source_key': {
-                'standard/module': 'standard/module',
-                'standard.module': 'standard.module',
-            }
-        })
-
-    def test_spec_update_sourcepath_standard_modules_id(self):
-        sourcepath = {
-            'standard/module': 'standard/module',
-        }
-        base_map = {}
-        spec = {'source_key': base_map}
-
-        toolchain.spec_update_sourcepath(spec, sourcepath, 'source_key')
-        self.assertIs(spec['source_key'], base_map)
-        self.assertEqual(base_map, {
-            'standard/module': 'standard/module',
-        })
-
-    def test_spec_update_sourcepath_plugin_modules(self):
-        sourcepath = {
-            'plugin/module!argument': 'some/filesystem/path',
-            'text!argument': 'some/text/file.txt',
-        }
-        spec = {}
-
-        toolchain.spec_update_sourcepath(spec, sourcepath, 'source_key')
-        self.assertTrue(isinstance(spec.pop(
-            'calmjs_loaderplugin_registry'), BaseLoaderPluginRegistry))
-        self.assertEqual(spec, {
-            'requirejs_plugins': {
-                'plugin/module': {
-                    'plugin/module!argument': 'some/filesystem/path',
-                },
-                'text': {
-                    'text!argument': 'some/text/file.txt',
-                },
-            },
-            'source_key': {
-            },
-        })
-
-        toolchain.spec_update_sourcepath(spec, {
-            'text!argument2': 'some/text/file2.txt',
-        }, 'source_key')
-        self.assertEqual(spec['requirejs_plugins']['text'], {
-            'text!argument': 'some/text/file.txt',
-            'text!argument2': 'some/text/file2.txt',
-        })
 
 
 class ToolchainBootstrapTestCase(unittest.TestCase):
@@ -314,12 +245,6 @@ class TranspilerTestCase(unittest.TestCase):
         rjs.transpile_modname_source_target(spec, modname, src_file, tgt_file)
         self.assertFalse(exists(tgt_file))
 
-
-class ToolchainCompilePluginTestCase(unittest.TestCase):
-    """
-    Test the compile_plugin method
-    """
-
     def test_toolchain_instance_transpile_skip_on_amd(self):
         source = StringIO(
             "define(['jquery'], function($) {\n"
@@ -333,10 +258,21 @@ class ToolchainCompilePluginTestCase(unittest.TestCase):
         rjs.transpiler(spec, source, target)
         self.assertEqual(source.getvalue(), target.getvalue())
 
+
+class ToolchainCompilePluginTestCase(unittest.TestCase):
+    """
+    Test the compile_plugin method
+    """
+
+    def setUp(self):
+        self.build_dir = utils.mkdtemp(self)
+        # mock a r.js file.
+        with open(join(self.build_dir, 'r.js'), 'w'):
+            pass
+
     def test_compile_plugin_base(self):
         working_dir = utils.mkdtemp(self)
         mock_requirejs_text(working_dir)
-        build_dir = utils.mkdtemp(self)
         src_dir = utils.mkdtemp(self)
         src = join(src_dir, 'mod.js')
 
@@ -349,19 +285,19 @@ class ToolchainCompilePluginTestCase(unittest.TestCase):
         target3 = join('nested', 'namespace', 'mod3.txt')
         target4 = 'namespace.mod4.txt'
 
-        bundle_sourcepath = {}
         rjs = toolchain.RJSToolchain()
-        spec = {
-            'build_dir': build_dir,
-            'bundle_sourcepath': bundle_sourcepath,
-            toolchain.REQUIREJS_PLUGINS: {
+        spec = Spec(**{
+            'build_dir': self.build_dir,
+            rjs.rjs_bin_key: join(self.build_dir, 'r.js'),
+            'export_target': join(working_dir, 'export.js'),
+            LOADERPLUGIN_SOURCEPATH_MAPS: {
                 'text': {}
             },
             'working_dir': working_dir,
-        }
-        rjs.prepare_loaderplugins(spec)
+        })
+        rjs.prepare(spec)
 
-        self.assertIn('text', bundle_sourcepath)
+        self.assertIn('text', spec['bundle_sourcepath'])
 
         rjs.compile_loaderplugin_entry(spec, (
             'text!mod1.txt', src, target1, 'mod1'))
@@ -372,15 +308,14 @@ class ToolchainCompilePluginTestCase(unittest.TestCase):
         rjs.compile_loaderplugin_entry(spec, (
             'text!namespace.mod4.txt', src, target4, 'mod4'))
 
-        self.assertTrue(exists(join(build_dir, target1)))
-        self.assertTrue(exists(join(build_dir, target2)))
-        self.assertTrue(exists(join(build_dir, target3)))
-        self.assertTrue(exists(join(build_dir, target4)))
+        self.assertTrue(exists(join(self.build_dir, target1)))
+        self.assertTrue(exists(join(self.build_dir, target2)))
+        self.assertTrue(exists(join(self.build_dir, target3)))
+        self.assertTrue(exists(join(self.build_dir, target4)))
 
     def test_compile_plugin_error(self):
         working_dir = utils.mkdtemp(self)
         mock_requirejs_text(working_dir)
-        build_dir = utils.mkdtemp(self)
         src_dir = utils.mkdtemp(self)
         src = join(src_dir, 'mod.js')
 
@@ -391,16 +326,18 @@ class ToolchainCompilePluginTestCase(unittest.TestCase):
         target = 'target.txt'
 
         rjs = toolchain.RJSToolchain()
-        spec = {
-            'build_dir': build_dir,
+        spec = Spec(**{
+            'build_dir': self.build_dir,
+            rjs.rjs_bin_key: join(self.build_dir, 'r.js'),
+            'export_target': join(working_dir, 'export.js'),
             'bundle_sourcepath': {},
-            toolchain.REQUIREJS_PLUGINS: {
+            LOADERPLUGIN_SOURCEPATH_MAPS: {
                 'unregistered/mod': {}
             },
             'working_dir': working_dir,
-        }
+        })
         with pretty_logging(logger='calmjs', stream=mocks.StringIO()) as s:
-            rjs.prepare_loaderplugins(spec)
+            rjs.prepare(spec)
             rjs.compile_loaderplugin_entry(spec, (
                 'unregistered/mod!target.txt', src, target, 'target.txt'))
 
@@ -411,19 +348,20 @@ class ToolchainCompilePluginTestCase(unittest.TestCase):
     def test_compile_plugin_empty(self):
         working_dir = utils.mkdtemp(self)
         mock_requirejs_text(working_dir)
-        build_dir = utils.mkdtemp(self)
         target = 'target.txt'
 
         rjs = toolchain.RJSToolchain()
-        spec = {
-            'build_dir': build_dir,
+        spec = Spec(**{
+            'build_dir': self.build_dir,
+            rjs.rjs_bin_key: join(self.build_dir, 'r.js'),
+            'export_target': join(working_dir, 'export.js'),
             'bundle_sourcepath': {},
-            toolchain.REQUIREJS_PLUGINS: {
+            LOADERPLUGIN_SOURCEPATH_MAPS: {
                 'text': {}
             },
             'working_dir': working_dir,
-        }
-        rjs.prepare_loaderplugins(spec)
+        })
+        rjs.prepare(spec)
 
         # Should result in no exceptions with either cases.
         # Normally, both source and modpath will become the same if the
@@ -436,8 +374,8 @@ class ToolchainCompilePluginTestCase(unittest.TestCase):
             'text!target.txt', 'empty:', target, 'empty:'))
 
         # Nothing should have been written at the end of that.
-        self.assertFalse(exists(join(build_dir, target)))
-        self.assertFalse(exists(join(build_dir, 'empty:')))
+        self.assertFalse(exists(join(self.build_dir, target)))
+        self.assertFalse(exists(join(self.build_dir, 'empty:')))
 
 
 class ToolchainBaseUnitTestCase(unittest.TestCase):
@@ -694,7 +632,7 @@ class ToolchainUnitTestCase(unittest.TestCase):
             working_dir=working_dir,
         )
         spec[rjs.rjs_bin_key] = join(tmpdir, 'r.js')
-        spec[toolchain.REQUIREJS_PLUGINS] = {
+        spec[LOADERPLUGIN_SOURCEPATH_MAPS] = {
             'text': {
                 'text!namespace/module/path.txt': '/namespace/module/path.txt',
             },
@@ -718,8 +656,8 @@ class ToolchainUnitTestCase(unittest.TestCase):
         self.assertIn("found handler for 'text' loader plugin", logs)
         self.assertIn("WARNING", logs)
         self.assertIn(
-            "handler for 'unsupported/unknown_plugin' loader plugin not found",
-            logs)
+            "loaderplugin handler for 'unsupported/unknown_plugin' not found "
+            "in loaderplugin registry 'calmjs.rjs.loader_plugin';", logs)
         self.assertIn("also this is an invalid value", logs)
         self.assertIn(
             "could not locate 'package.json' for the npm package "
@@ -747,7 +685,7 @@ class ToolchainUnitTestCase(unittest.TestCase):
             working_dir=working_dir,
         )
         spec[rjs.rjs_bin_key] = join(tmpdir, 'r.js')
-        spec[toolchain.REQUIREJS_PLUGINS] = {
+        spec[LOADERPLUGIN_SOURCEPATH_MAPS] = {
             'text': {
                 'text!namespace/module/path.txt': '/namespace/module/path.txt',
             },

@@ -6,6 +6,9 @@ CalmJS RequireJS cli tools.
 import logging
 
 from calmjs.toolchain import Spec
+from calmjs.toolchain import (
+    spec_update_sourcepath_filter_loaderplugins as spec_update_sourcepath)
+
 from calmjs.toolchain import BUILD_DIR
 from calmjs.toolchain import CALMJS_MODULE_REGISTRY_NAMES
 from calmjs.toolchain import CALMJS_LOADERPLUGIN_REGISTRY_NAME
@@ -16,7 +19,6 @@ from calmjs.rjs.registry import RJS_LOADER_PLUGIN_REGISTRY_NAME
 from calmjs.rjs.toolchain import STUB_MISSING_WITH_EMPTY
 
 from calmjs.rjs.toolchain import RJSToolchain
-from calmjs.rjs.toolchain import spec_update_sourcepath
 
 from calmjs.rjs.dist import generate_transpile_sourcepaths
 from calmjs.rjs.dist import generate_bundle_sourcepaths

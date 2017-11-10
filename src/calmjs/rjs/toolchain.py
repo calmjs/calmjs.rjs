@@ -41,7 +41,6 @@ from os.path import isfile
 from subprocess import call
 
 from calmjs.interrogate import extract_module_imports
-from calmjs.registry import get
 from calmjs.toolchain import Toolchain
 from calmjs.toolchain import ToolchainSpecCompileEntry
 from calmjs.toolchain import CONFIG_JS_FILES
@@ -49,8 +48,7 @@ from calmjs.toolchain import EXPORT_TARGET
 from calmjs.toolchain import BUILD_DIR
 from calmjs.toolchain import EXPORT_MODULE_NAMES
 
-from calmjs.toolchain import spec_update_loaderplugin_registry
-from calmjs.toolchain import spec_update_loaderplugin_sourcepath_dict
+from calmjs.toolchain import toolchain_spec_prepare_loaderplugins
 
 from .dev import rjs_advice
 from .exc import RJSRuntimeError
@@ -75,13 +73,6 @@ _DEFAULT_RUNTIME = 'r.js'
 # reserved spec keys for this package
 REQUIREJS_PLUGINS = 'requirejs_plugins'
 STUB_MISSING_WITH_EMPTY = 'stub_missing_with_empty'
-
-
-def spec_update_sourcepath(spec, sourcepath_dict, sourcepath_dict_key):
-    return spec_update_loaderplugin_sourcepath_dict(
-        spec, sourcepath_dict, sourcepath_dict_key,
-        loaderplugin_sourcepath_dict_key=REQUIREJS_PLUGINS
-    )
 
 
 def get_rjs_runtime_name(platform):
@@ -204,7 +195,7 @@ class RJSToolchain(Toolchain):
             loader_plugin_registry=RJS_LOADER_PLUGIN_REGISTRY_NAME,
             *a, **kw):
         super(RJSToolchain, self).__init__(*a, **kw)
-        self.loader_plugin_registry = get(loader_plugin_registry)
+        self.loaderplugin_registry = loader_plugin_registry
         self.binary = self.rjs_bin
         self._set_env_path_with_node_modules()
 
@@ -217,33 +208,6 @@ class RJSToolchain(Toolchain):
                 'loaderplugin', 'plugin', 'plugins',
                 __name__, logging.WARNING),
         )
-
-    def prepare_loaderplugins(self, spec):
-        # set up the plugin handlers onto the spec
-        registry = spec_update_loaderplugin_registry(
-            spec, default=self.loader_plugin_registry)
-
-        plugin_sourcepath = spec['plugin_sourcepath'] = {}
-        raw_plugin_map = spec.get(REQUIREJS_PLUGINS, {})
-        for key, value in raw_plugin_map.items():
-            handler = registry.get(key)
-            if handler:
-                # assume handler will do the job.
-                logger.debug("found handler for '%s' loader plugin", key)
-                plugin_sourcepath.update(value)
-                logger.debug(
-                    "plugin_sourcepath updated with %d keys", len(value))
-                bundle_sourcepath = handler.locate_bundle_sourcepath(
-                    self, spec, value)
-                spec['bundle_sourcepath'].update(bundle_sourcepath)
-            else:
-                logger.warning(
-                    "handler for '%s' loader plugin not found in spec; "
-                    "as arguments associated with requirejs loader plugins "
-                    "are specific, processing is disabled and the following "
-                    "names will not be compiled into the target: %s",
-                    key, sorted(value.keys()),
-                )
 
     def compile_loaderplugin_entry(self, spec, entry):
         modname, source, target, modpath = entry
@@ -332,7 +296,8 @@ class RJSToolchain(Toolchain):
             raise RJSRuntimeError(
                 "'%s' must not be same as '%s'" % (EXPORT_TARGET, matched[0]))
 
-        self.prepare_loaderplugins(spec)
+        toolchain_spec_prepare_loaderplugins(
+            self, spec, 'plugin', 'bundle_sourcepath')
         # setup own advice.
         rjs_advice(spec)
 

@@ -350,12 +350,11 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
                 ]
             })
         )
-        rjs = toolchain.RJSToolchain()
-        rjs.loader_plugin_registry = custom_registry
+        rjs = toolchain.RJSToolchain(loader_plugin_registry=custom_registry)
         spec = Spec(
             transpile_sourcepath=transpile_sourcepath,
             bundle_sourcepath=bundle_sourcepath,
-            requirejs_plugins=requirejs_plugins,
+            loaderplugin_sourcepath_maps=requirejs_plugins,
             export_target=export_target,
             build_dir=build_dir,
         )
