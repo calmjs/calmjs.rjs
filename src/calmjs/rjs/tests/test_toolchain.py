@@ -356,8 +356,11 @@ class ToolchainCompilePluginTestCase(unittest.TestCase):
             rjs.rjs_bin_key: join(self.build_dir, 'r.js'),
             'export_target': join(working_dir, 'export.js'),
             'bundle_sourcepath': {},
+            'transpile_sourcepath': {},
             LOADERPLUGIN_SOURCEPATH_MAPS: {
-                'text': {}
+                'text': {
+                    'text!target.txt': 'empty:',
+                }
             },
             'working_dir': working_dir,
         })
@@ -376,6 +379,12 @@ class ToolchainCompilePluginTestCase(unittest.TestCase):
         # Nothing should have been written at the end of that.
         self.assertFalse(exists(join(self.build_dir, target)))
         self.assertFalse(exists(join(self.build_dir, 'empty:')))
+
+        # ensure that the entire run doesn't blow up on the condition
+        rjs.compile(spec)
+        self.assertFalse(exists(join(self.build_dir, 'empty:')))
+        self.assertFalse(exists(join(self.build_dir, 'text!target.txt')))
+        self.assertFalse(exists(join(self.build_dir, 'target.txt')))
 
 
 class ToolchainBaseUnitTestCase(unittest.TestCase):

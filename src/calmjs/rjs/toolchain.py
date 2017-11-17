@@ -212,7 +212,7 @@ class RJSToolchain(Toolchain):
     def compile_loaderplugin_entry(self, spec, entry):
         modname, source, target, modpath = entry
         if source == EMPTY or modpath == EMPTY:
-            return
+            return {}, {}, []
         return super(RJSToolchain, self).compile_loaderplugin_entry(
             spec, entry)
 
