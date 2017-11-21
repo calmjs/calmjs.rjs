@@ -15,6 +15,7 @@ from calmjs.parse import es5
 from calmjs.toolchain import Spec
 from calmjs.toolchain import CONFIG_JS_FILES
 from calmjs.toolchain import LOADERPLUGIN_SOURCEPATH_MAPS
+from calmjs.toolchain import TOOLCHAIN_BIN_PATH
 from calmjs.vlqsm import SourceWriter
 from calmjs.npm import get_npm_version
 from calmjs.utils import pretty_logging
@@ -57,6 +58,10 @@ class ToolchainBootstrapTestCase(unittest.TestCase):
         self.assertEqual(toolchain.get_rjs_runtime_name(platform), 'r.js')
         platform = 'win32'
         self.assertEqual(toolchain.get_rjs_runtime_name(platform), 'r.js.cmd')
+
+    def test_attribute(self):
+        rjs = toolchain.RJSToolchain()
+        self.assertEqual(rjs.rjs_bin_key, TOOLCHAIN_BIN_PATH)
 
 
 class TranspilerTestCase(unittest.TestCase):
@@ -421,7 +426,7 @@ class ToolchainUnitTestCase(unittest.TestCase):
 
     def test_prepare_failure_manual(self):
         rjs = toolchain.RJSToolchain()
-        spec = Spec(rjs_bin='/no/such/path')
+        spec = Spec(toolchain_bin_path='/no/such/path')
         with self.assertRaises(RuntimeError) as e:
             rjs.prepare(spec)
 

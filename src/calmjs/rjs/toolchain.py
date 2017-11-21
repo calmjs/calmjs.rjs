@@ -47,6 +47,7 @@ from calmjs.toolchain import CONFIG_JS_FILES
 from calmjs.toolchain import EXPORT_TARGET
 from calmjs.toolchain import BUILD_DIR
 from calmjs.toolchain import EXPORT_MODULE_NAMES
+from calmjs.toolchain import TOOLCHAIN_BIN_PATH
 
 from calmjs.toolchain import toolchain_spec_prepare_loaderplugins
 
@@ -184,7 +185,7 @@ class RJSToolchain(Toolchain):
     The toolchain that make use of r.js (from require.js).
     """
 
-    rjs_bin_key = 'rjs_bin'
+    rjs_bin_key = TOOLCHAIN_BIN_PATH
     rjs_bin = get_rjs_runtime_name(sys.platform)
     build_manifest_name = 'build.js'
     requirejs_config_name = 'config.js'
