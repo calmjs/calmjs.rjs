@@ -669,6 +669,31 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         with self.assertRaises(SystemExit) as e:
             runtime.main([
                 'rjs', 'site',
+                '--sourcepath-method=explicit',
+                '--bundlepath-method=none',
+                '--export-target=' + target_file,
+                '--source-registry=' + self.registry_name,
+            ])
+        self.assertEqual(e.exception.args[0], 0)
+
+        with open(target_file) as fd:
+            contents = fd.read()
+
+        # Since the package has no sources, and we disabled bundling of
+        # sources (none works here because no code to automatically get
+        # r.js to look for them), it should generate an empty bundle.
+        self.assertEqual(contents, '(function () {}());')
+
+    def test_runtime_cli_compile_explicit_site_legacy_flag(self):
+        # same as previous test, but use the legacy flags.
+        utils.stub_stdouts(self)
+        current_dir, target_file = self.setup_runtime_main_env()
+        os.chdir(current_dir)
+
+        # Invoke the thing through the main runtime
+        with self.assertRaises(SystemExit) as e:
+            runtime.main([
+                'rjs', 'site',
                 '--source-map-method=explicit',
                 '--bundle-map-method=none',
                 '--export-target=' + target_file,
@@ -683,6 +708,9 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         # sources (none works here because no code to automatically get
         # r.js to look for them), it should generate an empty bundle.
         self.assertEqual(contents, '(function () {}());')
+        err = sys.stderr.getvalue()
+        self.assertIn("flag '--source-map-method' is deprecated", err)
+        self.assertIn("flag '--bundle-map-method' is deprecated", err)
 
     def test_runtime_cli_compile_explicit_registry_site(self):
         utils.stub_stdouts(self)
@@ -722,8 +750,8 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
             runtime.main([
                 'rjs', 'widget',
                 '--build-dir=' + build_dir,
-                '--source-map-method=all',
-                '--bundle-map-method=empty',
+                '--sourcepath-method=all',
+                '--bundlepath-method=empty',
                 '--export-target=' + widget_slim_js,
             ])
         self.assertEqual(e.exception.args[0], 0)
@@ -769,8 +797,8 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
                 'rjs', 'widget',
                 '--build-dir=' + build_dir,
                 '--empty',
-                '--source-map-method=all',
-                '--bundle-map-method=none',
+                '--sourcepath-method=all',
+                '--bundlepath-method=none',
                 '--export-target=' + widget_slim_js,
             ])
         self.assertEqual(e.exception.args[0], 0)
@@ -819,8 +847,8 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
             runtime.main([
                 'rjs', 'widget',
                 '--build-dir=' + build_dir,
-                '--source-map-method=all',
-                '--bundle-map-method=all',
+                '--sourcepath-method=all',
+                '--bundlepath-method=all',
                 '--export-target=' + widget_js,
             ])
         self.assertEqual(e.exception.args[0], 0)
@@ -840,8 +868,8 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
             runtime.main([
                 'rjs', 'widget',
                 '--build-dir=' + build_dir,
-                '--source-map-method=all',
-                '--bundle-map-method=explicit',
+                '--sourcepath-method=all',
+                '--bundlepath-method=explicit',
                 '--export-target=' + widget_js,
             ])
         # as the explicit option only pulled dependencies from just
@@ -885,7 +913,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         # Invoke the thing through the main runtime
         runtime_main([
             'rjs', 'framework', 'forms', 'service',
-            '--source-map-method=explicit',
+            '--sourcepath-method=explicit',
             '--export-target=' + target_file,
             '--source-registry=' + self.registry_name,
         ])
@@ -903,7 +931,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         widget_js = join(current_dir, 'widget.js')
         runtime_main([
             'rjs', 'widget',
-            '--source-map-method=explicit',
+            '--sourcepath-method=explicit',
             '--export-target=' + widget_js,
             '--source-registry=' + self.registry_name,
         ])
@@ -932,8 +960,8 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         widget_slim_js = join(current_dir, 'widget_slim.js')
         runtime_main([
             'rjs', 'widget',
-            '--source-map-method=all',  # using all
-            '--bundle-map-method=empty',
+            '--sourcepath-method=all',  # using all
+            '--bundlepath-method=empty',
             '--export-target=' + widget_slim_js,
             '--source-registry=' + self.registry_name,
         ])
@@ -968,7 +996,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
             # this should fail
             runtime.main([
                 'rjs', 'service', 'site',
-                '--bundle-map-method=none',
+                '--bundlepath-method=none',
                 '--export-target=' + export_target,
                 '--source-registry=' + self.registry_name,
             ])
@@ -982,7 +1010,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
             runtime.main([
                 'rjs', 'service', 'site',
                 '--empty',
-                '--bundle-map-method=none',
+                '--bundlepath-method=none',
                 '--export-target=' + export_target,
                 '--source-registry=' + self.registry_name,
             ])

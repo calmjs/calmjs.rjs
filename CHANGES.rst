@@ -10,6 +10,14 @@ Changelog
   ``extras_calmjs`` to permit wider portability.
 - Removed usage of ``slimit`` in favor of the capabilities now provided
   by ``calmjs`` and ``calmjs.parse``.
+- The flags for the ``calmjs rjs`` runtime have been changed to remove
+  some naming confusion, mainly due to sourcemap and also to maintain
+  consistency with other ``calmjs`` tools.
+
+  - ``--bundle-map-method`` is deprecated in favor for
+    ``--bundlepath-method``; will be fully removed by 3.0.0
+  - ``--source-map-method`` is deprecated in favor for
+    ``--sourcepath-method``; will be fully removed by 3.0.0
 
 1.0.2 (2017-05-22)
 ------------------

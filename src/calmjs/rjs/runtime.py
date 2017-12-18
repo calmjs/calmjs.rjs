@@ -3,6 +3,8 @@
 The calmjs runtime collection
 """
 
+import warnings
+import argparse
 from calmjs.runtime import SourcePackageToolchainRuntime
 
 from calmjs.rjs.dist import extras_calmjs_methods
@@ -11,6 +13,25 @@ from calmjs.rjs.dist import calmjs_module_registry_methods
 from calmjs.rjs.cli import create_spec
 from calmjs.rjs.cli import default_toolchain
 from calmjs.rjs.toolchain import STUB_MISSING_WITH_EMPTY
+
+
+class DeprecatedStoreAction(argparse._StoreAction):
+
+    def __init__(self, *a, **kw):
+        self.deprecated_by = kw.pop('deprecated_by')
+        self.removed_by = kw.pop('removed_by')
+        super(DeprecatedStoreAction, self).__init__(*a, **kw)
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        warnings.warn(
+            "program '%s' flag '%s' is deprecated, to be removed by '%s'; "
+            "please use '%s' instead" % (
+                parser.prog,
+                option_string,
+                self.removed_by,
+                self.deprecated_by,
+            ), DeprecationWarning)
+        setattr(namespace, self.dest, values)
 
 
 class RJSRuntime(SourcePackageToolchainRuntime):
@@ -69,11 +90,21 @@ class RJSRuntime(SourcePackageToolchainRuntime):
         )
 
         argparser.add_argument(
-            '--source-map-method', default='all',
+            '--sourcepath-method', default='all',
             dest='sourcepath_method',
             choices=sorted(sourcepath_methods_list.keys()),
             help='the acquisition method for getting the source files from '
                  'the source registry for the given packages; default: all',
+        )
+
+        argparser.add_argument(
+            '--source-map-method', default='all',
+            action=DeprecatedStoreAction,
+            deprecated_by='--sourcepath-method',
+            removed_by='calmjs.rjs-3.0.0',
+            dest='sourcepath_method',
+            choices=sorted(sourcepath_methods_list.keys()),
+            help=argparse.SUPPRESS,
         )
 
         argparser.add_argument(
@@ -85,11 +116,21 @@ class RJSRuntime(SourcePackageToolchainRuntime):
         )
 
         argparser.add_argument(
-            '--bundle-map-method', default='all',
+            '--bundlepath-method', default='all',
             dest='bundlepath_method',
             choices=sorted(extras_calmjs_methods.keys()),
             help='the acquisition method for the bundle sources for the given '
                  'packages; default: all',
+        )
+
+        argparser.add_argument(
+            '--bundle-map-method', default='all',
+            action=DeprecatedStoreAction,
+            deprecated_by='--bundlepath-method',
+            removed_by='calmjs.rjs-3.0.0',
+            dest='bundlepath_method',
+            choices=sorted(extras_calmjs_methods.keys()),
+            help=argparse.SUPPRESS,
         )
 
         argparser.add_argument(
