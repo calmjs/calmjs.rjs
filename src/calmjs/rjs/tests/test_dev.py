@@ -151,8 +151,8 @@ class KarmaTestCase(unittest.TestCase):
             karma_requirejs(spec)
 
         self.assertIn(
-            "no rjs loader plugin registry provided in spec; "
-            "falling back to default registry 'calmjs.rjs.loader_plugin'",
+            "no loaderplugin registry referenced in spec; "
+            "using default loaderplugin registry 'calmjs.rjs.loader_plugin'",
             s.getvalue()
         )
 

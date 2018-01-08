@@ -14,6 +14,9 @@ from calmjs.toolchain import ARTIFACT_PATHS
 from calmjs.toolchain import BUILD_DIR
 from calmjs.toolchain import CONFIG_JS_FILES
 from calmjs.toolchain import TEST_MODULE_PATHS_MAP
+from calmjs.toolchain import spec_update_loaderplugin_registry
+from calmjs.toolchain import CALMJS_LOADERPLUGIN_REGISTRY
+
 from calmjs.utils import json_dump
 from calmjs.utils import json_dumps
 
@@ -25,7 +28,6 @@ except ImportError:  # pragma: no cover
     # Package not available; None is the advice blackhole
     BEFORE_KARMA = None
 
-from calmjs.rjs.registry import RJS_LOADER_PLUGIN_REGISTRY
 from calmjs.rjs.registry import RJS_LOADER_PLUGIN_REGISTRY_NAME
 from calmjs.rjs.requirejs import extract_defines_with_deps_from_paths
 from calmjs.rjs.umdjs import UMD_REQUIREJS_JSON_EXPORT_HEADER
@@ -116,14 +118,10 @@ def karma_requirejs(spec):
     config = spec.get(karma.KARMA_CONFIG)
     config_files = config.get('files', [])
     build_dir = spec.get(BUILD_DIR)
-    plugin_registry = spec.get(RJS_LOADER_PLUGIN_REGISTRY)
-    if not plugin_registry:
-        logger.warning(
-            'no rjs loader plugin registry provided in spec; '
-            "falling back to default registry '%s'",
-            RJS_LOADER_PLUGIN_REGISTRY_NAME
-        )
-        plugin_registry = get(RJS_LOADER_PLUGIN_REGISTRY_NAME)
+
+    spec_update_loaderplugin_registry(
+        spec, default=get(RJS_LOADER_PLUGIN_REGISTRY_NAME))
+    plugin_registry = spec[CALMJS_LOADERPLUGIN_REGISTRY]
 
     test_module_paths_map = spec.get(TEST_MODULE_PATHS_MAP, {})
     test_conf = plugin_registry.modname_targetpath_mapping_to_config_paths(
