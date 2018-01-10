@@ -7,6 +7,7 @@ import os
 import re
 import sys
 from os import makedirs
+from os import unlink
 from os.path import exists
 from os.path import join
 from shutil import copytree
@@ -176,6 +177,10 @@ def cls_setup_rjs_example_package(cls):
         ('requires.txt', ''),
         ('calmjs_module_registry.txt', cls.registry_name),
         ('entry_points.txt', (
+            '[calmjs.artifacts]\n'
+            'example.package.rjs.js = calmjs.rjs.artifact:complete_rjs\n'
+            '[calmjs.artifacts.tests]\n'
+            'example.package.rjs.js = calmjs.rjs.artifact:test_complete_rjs\n'
             '[%s]\n'
             'example.package = example.package\n'
             '[%s.tests]\n'
@@ -1066,6 +1071,15 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         self.assertEqual(e.exception.args[0], 0)
         self.assertTrue(exists(export_target))
 
+    def test_calmjs_artifact_package_generation(self):
+        utils.stub_stdouts(self)
+        with self.assertRaises(SystemExit) as e:
+            runtime.main(['artifact', 'build', 'example.package'])
+        self.assertEqual(e.exception.args[0], 0)
+        registry = get_registry('calmjs.artifacts')
+        for e, t, spec in registry.iter_builders_for('example.package'):
+            self.assertTrue(exists(spec['export_target']))
+
 
 @unittest.skipIf(karma is None, 'calmjs.dev or its karma module not available')
 class KarmaToolchainIntegrationTestCase(unittest.TestCase):
@@ -1141,3 +1155,40 @@ class KarmaToolchainIntegrationTestCase(unittest.TestCase):
             ])
         # tests should pass against the resultant bundle
         self.assertEqual(e.exception.args[0], 0)
+
+    def test_calmjs_artifact_test_verification(self):
+        utils.stub_stdouts(self)
+        artifact_path = join(
+            self.dist_dir, 'example.package-1.0.egg-info', 'calmjs_artifacts',
+            'example.package.rjs.js',
+        )
+
+        def clean_artifact():
+            if exists(artifact_path):
+                unlink(artifact_path)
+
+        self.addCleanup(clean_artifact)
+
+        with self.assertRaises(SystemExit) as e:
+            runtime.main(['artifact', 'karma', 'example.package'])
+        # artifacts haven't been built yet?
+        self.assertFalse(exists(artifact_path))
+        self.assertEqual(e.exception.args[0], 1)
+
+        # so build the artifacts
+        with self.assertRaises(SystemExit) as e:
+            runtime.main(['artifact', 'build', 'example.package'])
+        self.assertEqual(e.exception.args[0], 0)
+
+        # should pass
+        with self.assertRaises(SystemExit) as e:
+            runtime.main(['artifact', 'karma', 'example.package'])
+        self.assertEqual(e.exception.args[0], 0)
+
+        with open(artifact_path, 'w') as fd:
+            fd.write('// this should break the test.')
+
+        # should fail again since the artifact is invalid
+        with self.assertRaises(SystemExit) as e:
+            runtime.main(['artifact', 'karma', 'example.package'])
+        self.assertEqual(e.exception.args[0], 1)
