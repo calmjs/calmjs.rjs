@@ -67,7 +67,7 @@ before_install:
   - npm --version
 
 install:
-  - pip install nose coverage flake8
+  - pip install coverage flake8
   # This typically will work for standard python, but pypy for some
   # reason will choke hard
   # - python setup.py develop easy_install calmjs.rjs[dev]
@@ -77,11 +77,8 @@ install:
   - python setup.py develop
 script:
   - flake8 setup.py src
-  - nosetests --with-coverage --cover-package=calmjs.rjs --with-doctest
+  - coverage run --include=src/* -m unittest calmjs.rjs.tests.make_suite
   - coverage report -m
-# Alternatively without nose
-#  - coverage run --include=src/* -m unittest calmjs.rjs.tests.make_suite
-#  - coverage report -m
 after_success:
   # only submit coverage when testing under linux.
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
