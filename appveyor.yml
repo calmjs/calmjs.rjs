@@ -18,7 +18,8 @@ install:
   - virtualenv --clear venv
   - "venv\\Scripts\\activate.bat"
   - pip install coverage
-  - python setup.py develop easy_install calmjs.rjs[dev]
+  - pip install -U calmjs.dev
+  - python setup.py develop
   # regenerate egg_info for the package after installation of calmjs
   - python setup.py egg_info
 

@@ -3,7 +3,6 @@ matrix:
   allow_failures:
     - os: osx
     - python: 3.7-dev
-    - python: pypy3.3-5.2-alpha1
     - env: TRAVIS_NODE_VERSION=7.4
   include:
     - language: python
@@ -28,7 +27,7 @@ matrix:
       python: pypy
       env: TRAVIS_NODE_VERSION=4.8
     - language: python
-      python: pypy3.3-5.2-alpha1
+      python: pypy3
       env: TRAVIS_NODE_VERSION=6.9
     # test different versions of Node.js on osx
     - language: node_js
@@ -73,7 +72,7 @@ install:
   # - python setup.py develop easy_install calmjs.rjs[dev]
   # - python setup.py egg_info
   # Use pypy friendly installation instructions
-  - pip install calmjs calmjs.dev
+  - pip install -U calmjs.dev
   - python setup.py develop
 script:
   - flake8 setup.py src
