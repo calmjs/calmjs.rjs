@@ -19,6 +19,10 @@ Changelog
   - ``--source-map-method`` is deprecated in favor for
     ``--sourcepath-method``; will be fully removed by 3.0.0
 
+- Provide a generic package-level artifact builder for the
+  ``calmjs.artifacts`` registry along with the respective tester for the
+  ``calmjs.artifacts.tests`` registry.
+
 1.0.2 (2017-05-22)
 ------------------
 

@@ -162,20 +162,26 @@ installed directly from PyPI with the following command:
 
     $ pip install calmjs.rjs
 
-If a local installation of RequireJS into the current directory is
-desired, it can be done through |calmjs| with the following command:
+Installing/using RequireJS with calmjs
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To establish a development/build environment for a Python package with
+the support for |r.js| through |calmjs.rjs| in the current working
+directory (e.g. for a project), the following command may be executed:
 
 .. code:: sh
 
     $ calmjs npm --install calmjs.rjs
 
-Which does the equivalent of ``npm install requirejs``; while this does
-not seem immediately advantageous, other Python packages that declared
-their dependencies for specific sets of tool can be invoked like so, and
-to follow through on that.  As an example, ``example.package`` may
-declare dependencies on RequireJS through |npm| plus a number of other
-packages available through |requirejs|, the process then simply become
-this:
+While running ``npm install requirejs`` (along with other related
+packages declared by |calmjs.rjs| that it needs from |npm|) will achieve
+the same effect, do note the Calmjs framework makes it possible for
+|npm| dependencies to be propagated down to dependent packages; such
+that if a Python package that have declared |calmjs.rjs| as a dependency
+(either through ``install_requires`` or an ``extras_require`` in its
+``setup.py``) may have its complete set of dependencies on |npm| be
+installed using the following command (assuming the package is named
+``example.package``:
 
 .. code:: sh
 
@@ -185,8 +191,11 @@ All standard JavaScript and Node.js dependencies for ``example.package``
 will now be installed into the current directory through the relevant
 tools.  This process will also install all the other dependencies
 through |npm| or |requirejs| that other Python packages depended on by
-``example.package`` have declared.  For more usage please refer to
-further down this document or the documentation for |calmjs|_.
+``example.package`` have declared.
+
+For further details about how this all works can be found in the
+documentation for |calmjs|_.  Otherwise, please continue on to the
+`usage`_ section.
 
 Alternative installation methods (advanced users)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -211,15 +220,17 @@ please execute ``python setup.py egg_info`` if any message about
 ``Unknown distribution option:`` is noted during the invocation of
 ``setup.py``.
 
-As |calmjs| is declared as both a namespace and a package, mixing
-installation methods as described above when installing with other
-|calmjs| packages may result in the module importer being unable to look
-up the target module.  While this normally will not affect end users,
-provided they use the same, standard installation method (i.e. wheel),
-for developers it can be troublesome.  To resolve this, either stick to
-the same installation method for all packages (i.e. ``python setup.py
-develop``), or import a module from the main |calmjs| package.  Here
-is an example run:
+As |calmjs| is declared as both namespace and package, there are certain
+low-level setup that is required on the working Python environment to
+ensure that all modules within can be located correctly.  However,
+versions of ``setuptools`` earlier than `v31.0.0`__ does not create the
+required package namespace declarations when a package is installed
+using this development installation method when mixed with ``pip
+install`` within the same namespace.  As a result, inconsistent import
+failures can happen for any modules under the |calmjs| namespace.  As an
+example:
+
+.. __: https://setuptools.readthedocs.io/en/latest/history.html#v31-0-0
 
 .. code:: python
 
@@ -234,7 +245,8 @@ is an example run:
 If this behavior (and workaround) is undesirable, please ensure the
 installation of all |calmjs| related packages follow the same method
 (i.e. either ``python setup.py develop`` for all packages, or using the
-wheels acquired through ``pip``).
+wheels acquired through ``pip``), or upgrade ``setuptools`` to version
+31 or greater and reinstall all affected packages.
 
 Testing the installation
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -268,13 +280,42 @@ declaration like so:
 Usage
 -----
 
+To generate a RequireJS artifact from packages that have JavaScript code
+exposed through the Calmjs module registry system that are already
+installed into the current environment, simply execute the following
+command:
+
+.. code:: sh
+
+    $ calmjs rjs example.package
+
+The following sections in this document will provide an overview on how
+to enable the JavaScript module export feature for a given Python
+package through the Calmjs module registry system, however a more
+thorough description on this topic may be found in the README provided
+by the |calmjs|_ package, under the section `Export JavaScript code from
+Python packages`__.
+
+.. __: https://pypi.python.org/pypi/calmjs/#export-javascript-code-from-python-packages
+
+Declaring JavaScript exports for Python
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 Any exposed JavaScript code through the ``calmjs.module`` registry will
 be picked up and compiled into a working RequireJS artifact.  For
-details on how the calmjs registry system works please refer to the
-README included with the |calmjs|_ project.
+example, given the following entry points for that registry defined by a
+package named ``example``:
 
-For example, given the following entry points for that registry defined
-by a package named ``example``:
+.. code:: ini
+
+    [calmjs.module]
+    example = example
+
+This is the most basic declaration that works for packages that share
+the same name as the import location provided.
+
+The following is am example for packages that have nested submodules
+(called ``example.lib`` and ``example.app``):
 
 .. code:: ini
 
@@ -284,18 +325,64 @@ by a package named ``example``:
 
 While the import locations declared looks exactly like a Python module
 (as per the rules of a Python entry point), the ``calmjs.module``
-registry will present them using the es6 style import paths (i.e.
-``'example/lib'`` and ``'example/app'``), so users of that need those
-JavaScript modules to be sure they ``require`` those strings.  Also,
-the default extractor will extract all source files within those
-directories.  Also, as a consequence of how the imports are done, it is
-recommended that no relative imports be used.
+registry will present them using the CommonJS/ES6 style import paths
+(i.e.  ``'example/lib'`` and ``'example/app'``), so users of that need
+those JavaScript modules to be sure they ``require`` those strings.
 
-To extract all JavaScript modules declared within Python packages
-through this registry can be done like so through the ``calmjs rjs``
-build tool, which would extract all the relevant sources, create a
-temporary build directory, generate the build manifest and invoke
-``r.js`` on that file.  An example run:
+Please also note that the default source extractor will extract all
+JavaScript files within those directories.  Finally, as a consequence of
+how the imports are done, it is recommended that no relative imports are
+to be used.
+
+If the package at hand does not directly declare its dependency on
+|calmjs|, an explicit ``calmjs_module_registry=['calmjs.module']`` may
+need to be declared in the ``setup`` function for the package to ensure
+that this default module registry will be used to acquire the JavaScript
+sources from.
+
+Putting this together, the ``setup.py`` file should contain the
+following:
+
+.. code:: Python
+
+    setup(
+        name='example',
+        # ... plus other declarations
+        # This is one of the recommended options, even though the
+        # project will not be importing from Calmjs.
+        license='gpl',
+        install_requires=[
+            'calmjs>=3.0.0,<4',
+            'calmjs.rjs>=2.0.0,<3',
+            # plus other installation requirements
+        ],
+        # If the usage of the GPL is impossible for the project, or
+        # declaring a direct dependency on calmjs packages is impossible
+        # for the project for whatever other reasons (even though the
+        # project itself will NOT be required to include/import ANY code
+        # from the calmjs namespace), setup_requires may be used instead
+        # of install_requires, and the following should also be included
+        # as well:
+        package_json={
+            "devDependencies": {
+                "requirejs": "~2.1.17",
+            }
+        },
+        calmjs_module_registry=['calmjs.module'],
+        # the entry points are required to allow calmjs to pick this up
+        entry_points="""
+        [calmjs.module]
+        example = example
+        example.lib = example.lib
+        example.app = example.app
+        """,
+    )
+
+For the construction of the RequireJS artifact, the command ``calmjs
+rjs`` will automatically extract all relevant source files from the
+dependencies of the selected Python package(s) into a temporary build
+directory, where the build manifest will also be generated for the
+invocation of ``r.js`` to construct the artifact.  An example run:
 
 .. code:: sh
 
@@ -378,7 +465,7 @@ supported by the ``empty:`` scheme by ``r.js``, and to enable it for
 
 .. code:: sh
 
-    $ calmjs rjs example --bundle-map-method empty --export-filename main.js
+    $ calmjs rjs example --bundlepath-method empty --export-filename main.js
 
     Tracing dependencies for: /home/user/main.js
 
@@ -389,7 +476,7 @@ supported by the ``empty:`` scheme by ``r.js``, and to enable it for
     /tmp/tmp_build/build/example/lib/main.js
     /tmp/tmp_build/build/example/app/index.js
 
-    $ calmjs rjs example --source-map-method empty --export-filename deps.js
+    $ calmjs rjs example --sourcepath-method empty --export-filename deps.js
 
     Tracing dependencies for: /home/user/deps.js
 
@@ -454,6 +541,105 @@ declare their (dev)dependencies in their ``package_json`` to the plugin,
 ideally with a well constrained version, so to ensure a consistent build
 experience for all end users.
 
+Testing standalone, finalized RequireJS artifacts
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+AMD artifacts generated using the standard ``calmjs rjs`` toolchain
+runtime may be tested using the ``calmjs karma`` runtime provided by the
+``calmjs.dev`` package.  Given a finalized ``example.js`` that
+implements the features provided by the ``example`` package, the
+artifact may be tested with the tests provided by the ``example``
+package using the following command:
+
+.. code:: sh
+
+    $ calmjs karma run \
+        -t calmjs.rjs \
+        --artifact=example.js \
+        example
+
+The above command invokes the standalone Karma runner using the
+``calmjs.rjs`` settings to test against the ``example.js`` artifact
+file, using the tests provided by the ``example`` package.  The test
+execution is similar to the one during the development process.
+
+Declare prebuilt JavaScript artifacts for Python packages
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Finally, to complete the Python package deployment story, the process
+should include the automatic generation and inclusion of the JavaScript
+artifacts in the resulting Python wheel.  This can be achieved by
+specifying an entry in the ``calmjs.artifacts`` registry, with the key
+being the filename of the artifact and the value being the import
+location to a builder.  A default builder function provided at
+``calmjs.rjs.artifact:complete_rjs`` will enable the generation of a
+complete RequireJS artifact for the Python package.  For example:
+
+.. code:: ini
+
+    [calmjs.artifacts]
+    example.package.rjs.js = calmjs.rjs.artifact:complete_rjs
+
+Once those entry points are installed, running ``calmjs artifact build
+example.package`` will make use of the RequireJS toolchain and build the
+artifact at ``example.package.rjs.js`` inside the ``calmjs_artifacts``
+directory within the metadata directory for ``example.package``.
+Alternatively, for solution more integrated with ``setuptools``, the
+``setup`` function in ``setup.py`` should also enable the
+``build_calmjs_artifacts`` flag such that ``setup.py build`` will also
+trigger the building process.  This is useful for automatically
+generating and including the artifact as part of the wheel building
+process.  Consider this ``setup.py``:
+
+.. code:: Python
+
+    setup(
+        name='example.package',
+        # ... other required fields truncated
+        build_calmjs_artifacts=True,
+        entry_points="""
+        # ... other entry points truncated
+        [calmjs.module]
+        example.package = example.package
+
+        [calmjs.artifacts]
+        example.package.rjs.js = calmjs.rjs.artifact:complete_rjs
+        """,
+    )
+
+Building the wheel using ``setup.py`` may result in something like this.
+Note that the execution of ``r.js`` was part of the process and that the
+metadata (egg-info) directory was then built into the wheel.
+
+.. code::
+
+    $ python setup.py bdist_wheel
+    running bdist_wheel
+    running build
+    ...
+    running build_calmjs_artifacts
+    automatically picked registries ['calmjs.module'] for sourcepaths
+    using loaderplugin registry 'calmjs.rjs.loader_plugin'
+    ...
+    /src/example.package.egg-info/calmjs_artifacts/example.package.rjs.js
+    ----------------
+    /tmp/tmpm_2jf151/build/example/package/index.js
+    ...
+    running install_egg_info
+    Copying src/example.package.egg-info to build/.../wheel/example.package...
+    running install_scripts
+    creating build/.../wheel/example.package-1.0.dist-info/WHEEL
+
+For testing the package artifact, the following entry point should also
+be specified under the ``calmjs.artifacts.tests`` registry, such that
+running ``calmjs artifact karma example.package`` will execute the
+JavaScript tests declared by ``example.package`` against the artifacts
+that were declared in ``calmjs.artifacts``.
+
+.. code:: ini
+
+    [calmjs.artifacts.tests]
+    example.package.rjs.js = calmjs.rjs.artifact:test_complete_rjs
 
 Troubleshooting
 ---------------
@@ -479,18 +665,6 @@ artifact bundle not having all the required modules for its execution.
 The resulting artifact bundle should be used in conjunction with the
 other artifact bundles that provide the result of the required
 dependencies.
-
-WARNING: Couldn't write lextab module <module 'slimit.lextab' ...>
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-This is due to the ``slimit`` module shipping outdated table files.  Try
-removing the ``lextab.py`` file from that module (the path indicated)
-which should permit the ``ply`` library to regenerate the relevant files
-to remove the exception, and to speed up execution as generating the
-JavaScript parser without these precompiled tables in place for
-operations that involve working with the JavaScript source tree has
-significant performance penalties.  This information also applies for
-the ``slimit.yacctab`` module.
 
 RJSRuntimeError: unable to locate 'r.js'
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

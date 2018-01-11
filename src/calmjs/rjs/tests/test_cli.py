@@ -44,7 +44,7 @@ class CliTestCase(unittest.TestCase):
         log = stream.getvalue()
         self.assertIn(
             "automatically picked registries ['calmjs.module'] for "
-            "building source map", log,
+            "sourcepaths", log,
         )
 
     def test_create_spec_with_calmjs_rjs_manual_source(self):
@@ -61,7 +61,7 @@ class CliTestCase(unittest.TestCase):
         log = stream.getvalue()
         self.assertIn(
             "using manually specified registries ['calmjs.module.tests'] for "
-            "building source map", log,
+            "sourcepaths", log,
         )
 
     def test_toolchain_empty(self):
