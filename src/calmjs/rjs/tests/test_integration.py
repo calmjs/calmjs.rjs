@@ -329,12 +329,13 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
             'main.main(true);\n',
             spec['node_config_js'],
         )
-        self.assertIn(
-            join('example', 'package', 'bad.js') + ':%d:%d' % (
-                self._bad_notdefinedsymbol
-            ),
-            stderr
-        )
+        bad_file = join('example', 'package', 'bad.js')
+        patt = re.compile('%s:%d(:%d)?' % (
+            bad_file.replace('\\', '\\\\'),
+            self._bad_notdefinedsymbol[0],
+            self._bad_notdefinedsymbol[1],
+        ))
+        self.assertTrue(patt.search(stderr))
         self.assertEqual(stdout, '2\n4\n')
 
     def test_build_bundle_with_data(self):
@@ -1052,7 +1053,7 @@ class ToolchainIntegrationTestCase(unittest.TestCase):
         # The test should really test the files in the build directory,
         # but if we are doing this as an integration test, the bundle
         # should also at least maintain the same column when ran...
-        patt = re.compile('%s:[0-9]+:%d' % (
+        patt = re.compile('%s:[0-9]+(:%d)?' % (
             target_file.replace('\\', '\\\\'), self._bad_notdefinedsymbol[-1]))
         self.assertTrue(patt.search(stderr))
         self.assertEqual(stdout, '2\n4\n')
