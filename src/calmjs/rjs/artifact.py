@@ -9,7 +9,6 @@ from calmjs.rjs.cli import create_spec
 from calmjs.rjs.cli import default_toolchain
 
 from calmjs.rjs.dev import rjs_advice
-from calmjs.dev.toolchain import KarmaToolchain
 
 
 def complete_rjs(package_names, export_target):
@@ -26,6 +25,9 @@ def test_complete_rjs(package_names, export_target):
     """
     Accompanied testing entry point for the complete_rjs artifact.
     """
+
+    # importing in here as calmjs.dev is an optional dependency.
+    from calmjs.dev.toolchain import KarmaToolchain
 
     spec = Spec(
         export_target=export_target,
