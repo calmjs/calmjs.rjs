@@ -9,7 +9,7 @@ environment:
     - PYTHON: "C:\\Python35"
       nodejs_version: "6.9"
     - PYTHON: "C:\\Python36"
-      nodejs_version: "7.4"
+      nodejs_version: "8.9"
 
 install:
   - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
@@ -18,13 +18,15 @@ install:
   - virtualenv --clear venv
   - "venv\\Scripts\\activate.bat"
   - pip install coverage
-  - pip install -U calmjs.dev
+  - pip install -U calmjs
   - python setup.py develop
-  # regenerate egg_info for the package after installation of calmjs
-  - python setup.py egg_info
 
 test_script:
-  - coverage run setup.py test
+  # run base tests without optional dependencies
+  - python -m unittest calmjs.rjs.tests.make_suite
+  # run full coverage test suite with all dependencies
+  - pip install calmjs.dev
+  - coverage run --include=src/* -m unittest calmjs.rjs.tests.make_suite
   - coverage report -m
 
 artifacts:

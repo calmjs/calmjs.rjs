@@ -22,7 +22,7 @@ matrix:
       env: TRAVIS_NODE_VERSION=7.10
     - language: python
       python: 3.7-dev
-      env: TRAVIS_NODE_VERSION=8.0
+      env: TRAVIS_NODE_VERSION=8.9
     - language: python
       python: pypy
       env: TRAVIS_NODE_VERSION=4.8
@@ -31,15 +31,15 @@ matrix:
       env: TRAVIS_NODE_VERSION=6.9
     # test different versions of Node.js on osx
     - language: node_js
-      node_js: 4.6
+      node_js: 4.8
       os: osx
       env: TRAVIS_PYTHON_VERSION=3.4.5
     - language: node_js
-      node_js: 6.9
+      node_js: 6.12
       os: osx
       env: TRAVIS_PYTHON_VERSION=3.5.3
     - language: node_js
-      node_js: 7.4
+      node_js: 8.9
       os: osx
       env: TRAVIS_PYTHON_VERSION=3.6.0
 
@@ -72,10 +72,14 @@ install:
   # - python setup.py develop easy_install calmjs.rjs[dev]
   # - python setup.py egg_info
   # Use pypy friendly installation instructions
-  - pip install -U calmjs.dev
+  - pip install -U calmjs
   - python setup.py develop
 script:
+  # run initial tests without optional dependencies
   - flake8 setup.py src
+  - python -m unittest calmjs.rjs.tests.make_suite
+  # run full coverage of full test suite with complete dependencies
+  - pip install calmjs.dev
   - coverage run --include=src/* -m unittest calmjs.rjs.tests.make_suite
   - coverage report -m
 after_success:
