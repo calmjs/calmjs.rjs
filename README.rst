@@ -9,12 +9,12 @@ packages sourced from |npm|_ or other similar package repositories.
 
 .. __: http://requirejs.org/
 .. __: https://pypi.python.org/pypi/calmjs
-.. image:: https://travis-ci.org/calmjs/calmjs.rjs.svg?branch=2.0.x
+.. image:: https://travis-ci.org/calmjs/calmjs.rjs.svg?branch=2.0.0
     :target: https://travis-ci.org/calmjs/calmjs.rjs
-.. image:: https://ci.appveyor.com/api/projects/status/jbta6dfdynk5ke59/branch/2.0.x?svg=true
-    :target: https://ci.appveyor.com/project/metatoaster/calmjs-rjs/branch/2.0.x
-.. image:: https://coveralls.io/repos/github/calmjs/calmjs.rjs/badge.svg?branch=2.0.x
-    :target: https://coveralls.io/github/calmjs/calmjs.rjs?branch=2.0.x
+.. image:: https://ci.appveyor.com/api/projects/status/jbta6dfdynk5ke59/branch/2.0.0?svg=true
+    :target: https://ci.appveyor.com/project/metatoaster/calmjs-rjs/branch/2.0.0
+.. image:: https://coveralls.io/repos/github/calmjs/calmjs.rjs/badge.svg?branch=2.0.0
+    :target: https://coveralls.io/github/calmjs/calmjs.rjs?branch=2.0.0
 
 .. |AMD| replace:: AMD (Asynchronous Module Definition)
 .. |bower| replace:: ``bower``
