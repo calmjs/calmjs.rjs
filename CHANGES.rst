@@ -1,7 +1,7 @@
 Changelog
 =========
 
-2.0.0 (unreleased)
+2.0.0 (2018-01-12)
 ------------------
 
 - Support for ``calmjs-3.0.0`` features and breaking changes.
