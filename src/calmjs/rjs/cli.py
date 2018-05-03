@@ -3,6 +3,8 @@
 CalmJS RequireJS cli tools.
 """
 
+from os.path import join
+from os.path import realpath
 import logging
 
 from calmjs.toolchain import Spec
@@ -138,9 +140,11 @@ def create_spec(
     if export_target is None:
         # Take the final package name for now...
         if package_names:
-            export_target = package_names[-1] + '.js'
+            export_target = realpath(
+                join(working_dir, package_names[-1] + '.js'))
         else:
-            export_target = 'calmjs.rjs.export.js'
+            export_target = realpath(
+                join(working_dir, 'calmjs.rjs.export.js'))
 
     spec = Spec(
         transpile_no_indent=transpile_no_indent,
