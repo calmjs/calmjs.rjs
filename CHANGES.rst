@@ -1,7 +1,7 @@
 Changelog
 =========
 
-2.0.1 (Unreleased)
+2.0.1 (2018-05-03)
 ------------------
 
 - Update the export_target production and usage of working_dir to be
