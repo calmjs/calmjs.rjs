@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import os
+from os.path import join
 import unittest
 
 from calmjs.toolchain import Spec
@@ -9,6 +11,8 @@ from calmjs.rjs.cli import create_spec
 from calmjs.rjs.cli import compile_all
 
 from calmjs.testing.mocks import StringIO
+from calmjs.testing.utils import mkdtemp
+from calmjs.testing.utils import remember_cwd
 
 
 class CliTestCase(unittest.TestCase):
@@ -17,6 +21,11 @@ class CliTestCase(unittest.TestCase):
     in the toolchain and/or the integration tests.
     """
 
+    def setUp(self):
+        self.cwd = mkdtemp(self)
+        remember_cwd(self)
+        os.chdir(self.cwd)
+
     def test_create_spec_empty(self):
         with pretty_logging(stream=StringIO()) as stream:
             spec = create_spec([])
@@ -24,7 +33,8 @@ class CliTestCase(unittest.TestCase):
         self.assertNotIn('packages []', stream.getvalue())
         self.assertIn('no packages specified', stream.getvalue())
         self.assertTrue(isinstance(spec, Spec))
-        self.assertEqual(spec['export_target'], 'calmjs.rjs.export.js')
+        self.assertEqual(spec['export_target'], join(
+            self.cwd, 'calmjs.rjs.export.js'))
         self.assertEqual(spec['calmjs_module_registry_names'], [])
         self.assertEqual(
             RJS_LOADER_PLUGIN_REGISTRY_NAME,
@@ -35,7 +45,8 @@ class CliTestCase(unittest.TestCase):
         with pretty_logging(stream=StringIO()) as stream:
             spec = create_spec(['calmjs.rjs'])
         self.assertTrue(isinstance(spec, Spec))
-        self.assertEqual(spec['export_target'], 'calmjs.rjs.js')
+        self.assertEqual(spec['export_target'], join(
+            self.cwd, 'calmjs.rjs.js'))
         self.assertEqual(
             spec['calmjs_module_registry_names'], ['calmjs.module'])
         self.assertEqual(
@@ -52,7 +63,8 @@ class CliTestCase(unittest.TestCase):
             spec = create_spec(
                 ['calmjs.rjs'], source_registries=['calmjs.module.tests'])
         self.assertTrue(isinstance(spec, Spec))
-        self.assertEqual(spec['export_target'], 'calmjs.rjs.js')
+        self.assertEqual(spec['export_target'], join(
+            self.cwd, 'calmjs.rjs.js'))
         self.assertEqual(
             spec['calmjs_module_registry_names'], ['calmjs.module.tests'])
         self.assertEqual(
@@ -64,6 +76,12 @@ class CliTestCase(unittest.TestCase):
             "sourcepaths", log,
         )
 
+    def test_create_spec_with_calmjs_rjs_manual_target(self):
+        with pretty_logging(stream=StringIO()):
+            spec = create_spec(['calmjs.rjs'], export_target='foo.js')
+        self.assertTrue(isinstance(spec, Spec))
+        self.assertEqual(spec['export_target'], 'foo.js')
+
     def test_toolchain_empty(self):
         # dict works well enough as a null toolchain
         with pretty_logging(stream=StringIO()) as stream:
@@ -72,7 +90,8 @@ class CliTestCase(unittest.TestCase):
         self.assertNotIn('packages []', stream.getvalue())
         self.assertIn('no packages specified', stream.getvalue())
         self.assertTrue(isinstance(spec, Spec))
-        self.assertEqual(spec['export_target'], 'calmjs.rjs.export.js')
+        self.assertEqual(spec['export_target'], join(
+            self.cwd, 'calmjs.rjs.export.js'))
 
     def test_toolchain_transpile_empty(self):
         # dict works well enough as a null toolchain
